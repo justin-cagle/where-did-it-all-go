@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.database import Base
 
-
 # ---------------------------------------------------------------------------
 # Integration fixtures — only instantiated when -m integration is used
 # ---------------------------------------------------------------------------
@@ -28,9 +27,7 @@ def postgres_url() -> str:
     from testcontainers.postgres import PostgresContainer
 
     with PostgresContainer("postgres:16") as postgres:
-        yield postgres.get_connection_url().replace(
-            "postgresql://", "postgresql+asyncpg://"
-        )
+        yield postgres.get_connection_url().replace("postgresql://", "postgresql+asyncpg://")
 
 
 @pytest.fixture(scope="session")
