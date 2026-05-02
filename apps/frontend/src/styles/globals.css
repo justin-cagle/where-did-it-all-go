@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/*
+ * Semantic CSS-variable tokens — per DECISIONS.md R10 D11.
+ * Every component displaying color goes through these tokens.
+ * No hardcoded colors anywhere in the codebase.
+ *
+ * Tokens exposed:
+ *   --color-bg-primary / --color-bg-secondary / --color-bg-elevated
+ *   --color-fg-primary / --color-fg-secondary / --color-fg-muted
+ *   --color-accent
+ *   --color-success / --color-danger / --color-warning / --color-info
+ *   --color-border
+ *   --color-category-1 .. --color-category-10
+ */
+
+@layer base {
+  :root {
+    /* Light theme */
+    --color-bg-primary: oklch(100% 0 0);
+    --color-bg-secondary: oklch(97% 0 0);
+    --color-bg-elevated: oklch(100% 0 0);
+    --color-fg-primary: oklch(9% 0 0);
+    --color-fg-secondary: oklch(35% 0 0);
+    --color-fg-muted: oklch(55% 0 0);
+    --color-accent: oklch(55% 0.2 250);
+    --color-success: oklch(50% 0.18 142);
+    --color-danger: oklch(55% 0.22 27);
+    --color-warning: oklch(65% 0.2 80);
+    --color-info: oklch(55% 0.18 210);
+    --color-border: oklch(88% 0 0);
+
+    /* Category color slots — household-scoped colors for category tree */
+    --color-category-1: oklch(60% 0.2 250);
+    --color-category-2: oklch(58% 0.2 140);
+    --color-category-3: oklch(60% 0.22 30);
+    --color-category-4: oklch(58% 0.2 320);
+    --color-category-5: oklch(58% 0.2 190);
+    --color-category-6: oklch(62% 0.2 80);
+    --color-category-7: oklch(58% 0.2 0);
+    --color-category-8: oklch(58% 0.2 270);
+    --color-category-9: oklch(62% 0.2 50);
+    --color-category-10: oklch(58% 0.2 160);
+  }
+
+  .dark {
+    /* Dark theme */
+    --color-bg-primary: oklch(11% 0 0);
+    --color-bg-secondary: oklch(15% 0 0);
+    --color-bg-elevated: oklch(18% 0 0);
+    --color-fg-primary: oklch(95% 0 0);
+    --color-fg-secondary: oklch(75% 0 0);
+    --color-fg-muted: oklch(55% 0 0);
+    --color-accent: oklch(65% 0.2 250);
+    --color-success: oklch(65% 0.18 142);
+    --color-danger: oklch(65% 0.22 27);
+    --color-warning: oklch(72% 0.2 80);
+    --color-info: oklch(65% 0.18 210);
+    --color-border: oklch(28% 0 0);
+
+    /* Category colors — slightly lighter for dark backgrounds */
+    --color-category-1: oklch(70% 0.2 250);
+    --color-category-2: oklch(68% 0.2 140);
+    --color-category-3: oklch(70% 0.22 30);
+    --color-category-4: oklch(68% 0.2 320);
+    --color-category-5: oklch(68% 0.2 190);
+    --color-category-6: oklch(72% 0.2 80);
+    --color-category-7: oklch(68% 0.2 0);
+    --color-category-8: oklch(68% 0.2 270);
+    --color-category-9: oklch(72% 0.2 50);
+    --color-category-10: oklch(68% 0.2 160);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--color-bg-primary);
+    color: var(--color-fg-primary);
+  }
+}

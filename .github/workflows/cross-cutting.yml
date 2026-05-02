@@ -1,0 +1,126 @@
+name: Cross-cutting checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  api-drift-check:
+    name: OpenAPI → orval client drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install backend dependencies
+        run: uv sync --extra dev
+        working-directory: apps/backend
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate OpenAPI spec from backend
+        run: uv run python -c "
+          import json
+          from app.main import app
+          import sys
+          json.dump(app.openapi(), sys.stdout, indent=2)
+          " > packages/openapi/openapi.json
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://unused/unused
+          REDIS_URL: redis://unused:6379/0
+          MASTER_KEY: test-key-not-real
+
+      - name: Regenerate orval client
+        run: pnpm generate-api
+        working-directory: apps/frontend
+
+      - name: Check for client drift
+        run: |
+          if ! git diff --quiet apps/frontend/src/api/generated/; then
+            echo "::error::Frontend API client is out of sync with backend OpenAPI spec."
+            echo "Run 'pnpm generate-api' in apps/frontend and commit the changes."
+            git diff --stat apps/frontend/src/api/generated/
+            exit 1
+          fi
+
+  dependency-security-scan:
+    name: Dependency security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install backend dependencies
+        run: uv sync --extra dev
+        working-directory: apps/backend
+
+      - name: pip-audit (Python dependencies)
+        run: uv run pip-audit
+        working-directory: apps/backend
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: npm audit (Node dependencies)
+        run: pnpm audit --audit-level=high
+        working-directory: apps/frontend
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+  docker-build:
+    name: Docker image build
+    runs-on: self-hosted
+    if: |
+      contains(github.event.pull_request.changed_files, 'apps/backend/Dockerfile') ||
+      contains(github.event.pull_request.changed_files, 'docker-compose.yml') ||
+      github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          push: false
+          tags: wdiag-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

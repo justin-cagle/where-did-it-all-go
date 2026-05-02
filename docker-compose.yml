@@ -1,0 +1,136 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wdiag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-wdiag}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wdiag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/backend
+      target: production
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
+      REDIS_URL: redis://redis:6379/0
+      MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DEBUG: ${DEBUG:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  worker-fast:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/backend
+      target: production
+    restart: unless-stopped
+    command: ["uv", "run", "arq", "app.worker.fast.WorkerSettings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
+      REDIS_URL: redis://redis:6379/0
+      MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+  worker-slow:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/backend
+      target: production
+    restart: unless-stopped
+    command: ["uv", "run", "arq", "app.worker.slow.WorkerSettings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
+      REDIS_URL: redis://redis:6379/0
+      MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+  # Bundled reverse proxy. Active when COMPOSE_PROFILES includes 'bundled-proxy'.
+  # To use your own proxy, remove 'bundled-proxy' from COMPOSE_PROFILES and expose
+  # app port 8000 directly (or use a docker-compose.override.yml).
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["bundled-proxy"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:?DOMAIN_NAME is required when using bundled-proxy}
+      CADDY_EMAIL: ${CADDY_EMAIL:-}
+
+  # Optional local LLM. Active when COMPOSE_PROFILES includes 'ollama'.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    profiles: ["ollama"]
+    volumes:
+      - ollama_data:/root/.ollama
+    expose:
+      - "11434"
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+  ollama_data:
