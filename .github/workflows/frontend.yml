@@ -5,12 +5,16 @@ on:
     paths:
       - "apps/frontend/**"
       - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/frontend.yml"
   push:
     branches: [main]
     paths:
       - "apps/frontend/**"
       - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
 
 permissions:
   contents: read
