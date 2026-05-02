@@ -37,7 +37,7 @@ export async function customInstance<T>(config: RequestConfig): Promise<T> {
   })
 
   if (!response.ok) {
-    const problem = await response.json().catch(() => ({})) as Record<string, unknown>
+    const problem = (await response.json().catch(() => ({}))) as Record<string, unknown>
     throw new ApiError(response.status, problem)
   }
 
@@ -52,7 +52,7 @@ export async function customInstance<T>(config: RequestConfig): Promise<T> {
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
-    public readonly problem: Record<string, unknown>,
+    public readonly problem: Record<string, unknown>
   ) {
     const detail = typeof problem['detail'] === 'string' ? problem['detail'] : `HTTP ${status}`
     super(detail)

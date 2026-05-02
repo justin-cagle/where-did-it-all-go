@@ -25,6 +25,6 @@ export const useUIStore = create<UIState>()(
       theme: 'system',
       setTheme: (theme) => set({ theme }),
     }),
-    { name: 'wdiag-ui' },
-  ),
+    { name: 'wdiag-ui' }
+  )
 )

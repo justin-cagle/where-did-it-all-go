@@ -29,10 +29,7 @@ export interface FormatAmountOptions {
   privacyMode?: PrivacyMode
 }
 
-export function formatAmount(
-  amount: number | string,
-  options: FormatAmountOptions = {},
-): string {
+export function formatAmount(amount: number | string, options: FormatAmountOptions = {}): string {
   const { locale = 'en-US', currency = 'USD', privacyMode = 'off' } = options
 
   if (privacyMode === 'full_blur') {
