@@ -34,7 +34,7 @@ def create_app() -> FastAPI:
     # ---------------------------------------------------------------------------
 
     @app.get("/health", include_in_schema=False)
-    async def health() -> dict[str, str]:
+    async def health() -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
         return {"status": "ok"}
 
     # Prometheus metrics are exposed at /metrics by prometheus-client's
