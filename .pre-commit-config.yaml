@@ -35,4 +35,4 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: ^\.env\.example$
+        exclude: ^(\.env\.example|pnpm-lock\.yaml)$

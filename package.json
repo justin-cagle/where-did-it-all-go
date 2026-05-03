@@ -1,0 +1,10 @@
+{
+  "name": "wdiag",
+  "version": "0.0.0",
+  "private": true,
+  "pnpm": {
+    "overrides": {
+      "serialize-javascript": ">=7.0.3"
+    }
+  }
+}

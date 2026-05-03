@@ -97,6 +97,10 @@ jobs:
       - name: Run integration tests
         run: uv run pytest -m integration -v
         env:
+          # Placeholder URLs satisfy import-time get_settings(); testcontainers
+          # fixtures override the engine with the real container URL at runtime.
+          DATABASE_URL: postgresql+asyncpg://unused/unused
+          REDIS_URL: redis://unused:6379/0
           MASTER_KEY: test-key-not-real
 
   migration-test:
@@ -115,9 +119,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 15432:5432
     env:
-      DATABASE_URL: postgresql+asyncpg://wdiag_test:testpassword@localhost/wdiag_test
+      DATABASE_URL: postgresql+asyncpg://wdiag_test:testpassword@localhost:15432/wdiag_test
       MASTER_KEY: test-key-not-real
     steps:
       - uses: actions/checkout@v4
