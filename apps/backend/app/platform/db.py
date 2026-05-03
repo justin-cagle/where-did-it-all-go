@@ -129,16 +129,16 @@ def _apply_soft_delete_filter(state: ORMExecuteState) -> None:
     """
     if (
         state.is_select
+        and not state.is_column_load
         and not state.is_relationship_load
         and not state.execution_options.get("include_archived", False)
     ):
-        state.user_defined_options = (
-            *state.user_defined_options,
+        state.statement = state.statement.options(
             with_loader_criteria(
                 SoftDeleteMixin,
                 lambda cls: cls.archived_at.is_(None),  # type: ignore[attr-defined]
                 include_aliases=True,
-            ),
+            )
         )
 
 
