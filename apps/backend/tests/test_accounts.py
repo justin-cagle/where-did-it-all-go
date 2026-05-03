@@ -989,9 +989,9 @@ def test_soft_delete_always_excludes_archived(
                 live_accounts = await service.list_accounts(s, household_id=hh.id)
                 live_ids = {a.id for a in live_accounts}
 
-                assert archived_ids.isdisjoint(
-                    live_ids
-                ), f"Archived accounts appeared in default query: {archived_ids & live_ids}"
+                assert archived_ids.isdisjoint(live_ids), (
+                    f"Archived accounts appeared in default query: {archived_ids & live_ids}"
+                )
 
         await engine.dispose()
 
