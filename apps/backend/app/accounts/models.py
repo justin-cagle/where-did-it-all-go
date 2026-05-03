@@ -237,6 +237,4 @@ class DebtBalance(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Ef
     )
 
     def __repr__(self) -> str:
-        return (
-            f"DebtBalance(id={self.id}, apr={self.apr}, " f"effective_from={self.effective_from})"
-        )
+        return f"DebtBalance(id={self.id}, apr={self.apr}, effective_from={self.effective_from})"

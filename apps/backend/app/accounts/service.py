@@ -48,7 +48,7 @@ def validate_balance(
     """
     if account_type in ASSET_ACCOUNT_TYPES and new_balance < Decimal(0) and not allow_negative:
         raise ValidationError(
-            f"balance cannot be negative for {account_type} accounts " "without allow_negative=True"
+            f"balance cannot be negative for {account_type} accounts without allow_negative=True"
         )
 
 

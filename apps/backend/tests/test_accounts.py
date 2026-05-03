@@ -911,7 +911,7 @@ def test_apr_history_no_gaps_no_overlaps(
                 for i in range(len(sorted_rows) - 1):
                     expected_et = sorted_rows[i + 1].effective_from - timedelta(days=1)
                     assert sorted_rows[i].effective_to == expected_et, (
-                        f"Gap/overlap between rows {i} and {i+1}: "
+                        f"Gap/overlap between rows {i} and {i + 1}: "
                         f"effective_to={sorted_rows[i].effective_to} "
                         f"expected={expected_et}"
                     )
@@ -989,9 +989,9 @@ def test_soft_delete_always_excludes_archived(
                 live_accounts = await service.list_accounts(s, household_id=hh.id)
                 live_ids = {a.id for a in live_accounts}
 
-                assert archived_ids.isdisjoint(live_ids), (
-                    f"Archived accounts appeared in default query: " f"{archived_ids & live_ids}"
-                )
+                assert archived_ids.isdisjoint(
+                    live_ids
+                ), f"Archived accounts appeared in default query: {archived_ids & live_ids}"
 
         await engine.dispose()
 
