@@ -36,12 +36,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate OpenAPI spec from backend
-        run: uv run python -c "
-          import json
-          from app.main import app
-          import sys
-          json.dump(app.openapi(), sys.stdout, indent=2)
-          " > ../../packages/openapi/openapi.json
+        run: |
+          uv run python -c "import json; from app.main import app; import sys; json.dump(app.openapi(), sys.stdout, indent=2)" > ../../packages/openapi/openapi.json
         working-directory: apps/backend
         env:
           DATABASE_URL: postgresql+asyncpg://unused/unused

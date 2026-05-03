@@ -95,7 +95,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run integration tests
-        run: uv run pytest -m integration -v
+        run: uv run pytest -m integration -v || [ $? -eq 5 ]
         env:
           # Placeholder URLs satisfy import-time get_settings(); testcontainers
           # fixtures override the engine with the real container URL at runtime.
