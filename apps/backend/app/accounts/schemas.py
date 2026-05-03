@@ -69,8 +69,8 @@ class AccountGroupCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=255)
     primary_holder_id: uuid.UUID | None = None
-    authorized_user_ids: list[uuid.UUID] = Field(default_factory=list)
-    member_account_ids: list[uuid.UUID] = Field(default_factory=list)
+    authorized_user_ids: list[uuid.UUID] = []
+    member_account_ids: list[uuid.UUID] = []
 
 
 class AccountGroupUpdate(BaseModel):
