@@ -21,6 +21,7 @@ dependencies = [
     # Validation & settings
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
+    "email-validator>=2.0",
     # Worker queue
     "arq>=0.26",
     "redis>=5.2",
@@ -49,6 +50,7 @@ dev = [
     "pytest-cov>=6.0",
     "hypothesis>=6.122",
     "testcontainers[postgres,redis]>=4.9",
+    "psycopg2-binary>=2.9",
     "polyfactory>=2.18",
     "time-machine>=2.16",
     "respx>=0.21",
