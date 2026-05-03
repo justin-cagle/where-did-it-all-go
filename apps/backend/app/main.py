@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
 
+from app.accounts.router import router as accounts_router
 from app.config import get_settings
 from app.households.router import router as households_router
 from app.security.ratelimit import get_limiter, rate_limit_exceeded_handler
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     # ---------------------------------------------------------------------------
 
     app.include_router(households_router, prefix="/api/v1")
+    app.include_router(accounts_router, prefix="/api/v1")
 
     return app
 
