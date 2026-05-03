@@ -41,7 +41,7 @@ jobs:
           from app.main import app
           import sys
           json.dump(app.openapi(), sys.stdout, indent=2)
-          " > packages/openapi/openapi.json
+          " > ../../packages/openapi/openapi.json
         working-directory: apps/backend
         env:
           DATABASE_URL: postgresql+asyncpg://unused/unused
