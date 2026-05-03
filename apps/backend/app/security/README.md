@@ -10,7 +10,7 @@ env_var · file · vault (pluggable: HashiCorp Vault, Infisical, sops/age, AWS S
 
 ## Constraints
 
-- Uses established, audited libraries only: `cryptography`, `python-jose`, `authlib`, `passlib[argon2]`.
+- Uses established, audited libraries only: `cryptography`, `authlib`, `passlib[argon2]`.
 - Never roll custom auth, encryption, or token handling.
 - Aggregator credentials never logged, never sent to AI providers, encrypted at rest, rotatable.
 
