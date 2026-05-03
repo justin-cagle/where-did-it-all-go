@@ -374,7 +374,8 @@ def test_duplicate_membership_always_raises(roles: list[HouseholdRole]) -> None:
         from testcontainers.postgres import PostgresContainer  # type: ignore[import-untyped]
 
         with PostgresContainer("postgres:16") as pg:
-            url = pg.get_connection_url().replace("postgresql://", "postgresql+asyncpg://")
+            # testcontainers 4.x returns postgresql+psycopg2://; force asyncpg driver
+            url = "postgresql+asyncpg://" + pg.get_connection_url().split("://", 1)[1]
             engine = create_async_engine(url)
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)

@@ -27,7 +27,8 @@ def postgres_url() -> str:
     from testcontainers.postgres import PostgresContainer
 
     with PostgresContainer("postgres:16") as postgres:
-        yield postgres.get_connection_url().replace("postgresql://", "postgresql+asyncpg://")
+        # testcontainers 4.x returns postgresql+psycopg2://; force asyncpg driver
+        yield "postgresql+asyncpg://" + postgres.get_connection_url().split("://", 1)[1]
 
 
 @pytest.fixture(scope="session")
