@@ -25,6 +25,8 @@ from app.security import totp as totp_service
 
 _REFRESH_TOKEN_TTL = timedelta(days=30)
 _DEFAULT_IDLE_TIMEOUT = 1800  # 30 minutes
+# Pre-computed once at startup for constant-time guard on unknown-user auth paths
+_DUMMY_HASH: str = pwd_service.hash_password("dummy")
 
 
 class AuthenticationError(Exception):
@@ -97,12 +99,13 @@ async def authenticate_local(
     """
     user = await _get_user_by_email(session, email)
     if user is None or user.password_hash is None:
-        # Run a dummy verify to prevent timing attacks
-        pwd_service.verify_password(password, "$argon2id$v=19$m=65536,t=3,p=4$fake")
+        # Constant-time dummy verify to prevent user-enumeration via timing
+        pwd_service.verify_password(password, _DUMMY_HASH)
         raise AuthenticationError("invalid credentials")
 
     pm = auth_hooks.get_plugin_manager()
-    results: list[bool | None] = pm.hook.authenticate_local(
+    # firstresult=True → pluggy returns the first non-None result directly, not a list
+    result: bool | None = pm.hook.authenticate_local(
         username=email,
         password=password,
         stored_hash=user.password_hash,
@@ -110,8 +113,6 @@ async def authenticate_local(
         totp_secret=user.totp_secret,
         totp_enabled=user.totp_enabled,
     )
-    # firstresult=True means results is a single value wrapped in a list by pluggy
-    result = results[0] if results else None
     if not result:
         raise AuthenticationError("invalid credentials")
 
