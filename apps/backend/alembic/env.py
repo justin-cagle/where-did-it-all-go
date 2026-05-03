@@ -17,6 +17,13 @@ if config.config_file_name is not None:
 # Import Base from app.database so autogenerate can detect schema changes.
 # Every module's models must be imported here — importing registers them with
 # Base.metadata. Add a new import line each time a new module adds models.
+from app.accounts.models import (  # noqa: E402, F401
+    Account,
+    AccountGroup,
+    DebtAccount,
+    DebtBalance,
+    ManualAccount,
+)
 from app.audit.models import AuditEvent  # noqa: E402, F401
 from app.database import Base  # noqa: E402
 from app.households.models import (  # noqa: E402, F401
