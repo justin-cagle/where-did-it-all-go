@@ -31,6 +31,7 @@ Routes:
 """
 
 import uuid
+from collections.abc import Sequence
 from datetime import date
 from typing import Annotated
 
@@ -77,7 +78,7 @@ def _tx_out(tx: object) -> TransactionOut:
     return TransactionOut.model_validate(tx)
 
 
-def _tx_detail(tx: object, splits: list[object]) -> TransactionDetailOut:
+def _tx_detail(tx: object, splits: Sequence[object]) -> TransactionDetailOut:
     return TransactionDetailOut(
         **TransactionOut.model_validate(tx).model_dump(),
         splits=[SplitAllocationOut.model_validate(s) for s in splits],
