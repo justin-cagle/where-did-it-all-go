@@ -21,6 +21,7 @@ dependencies = [
     # Validation & settings
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
+    "email-validator>=2.0",
     # Worker queue
     "arq>=0.26",
     "redis>=5.2",
@@ -30,7 +31,11 @@ dependencies = [
     # Security — established audited libraries only (see DECISIONS.md R5)
     "cryptography>=44.0",
     "authlib>=1.4",
+    "joserfc>=1.6",
     "passlib[argon2]>=1.7",
+    "pyotp>=2.9",
+    "slowapi>=0.1.9",
+    "pluggy>=1.5",
     # IDs
     "uuid-utils>=0.10",
     # Utilities
@@ -45,11 +50,13 @@ dev = [
     "pytest-cov>=6.0",
     "hypothesis>=6.122",
     "testcontainers[postgres,redis]>=4.9",
+    "psycopg2-binary>=2.9",
     "polyfactory>=2.18",
     "time-machine>=2.16",
     "respx>=0.21",
     "pyright>=1.1.390",
     "ruff>=0.8",
+    "types-passlib>=1.7",
     "import-linter>=2.1",
     "pip-audit>=2.7",
 ]
@@ -169,6 +176,24 @@ forbidden_modules = [
 name = "Audit module must not import domain modules (except platform)"
 type = "forbidden"
 source_modules = ["app.audit"]
+forbidden_modules = [
+    "app.accounts",
+    "app.transactions",
+    "app.ingest",
+    "app.classification",
+    "app.recurrences",
+    "app.budgets",
+    "app.debts",
+    "app.goals",
+    "app.projections",
+    "app.recommendations",
+    "app.insights",
+]
+
+[[tool.importlinter.contracts]]
+name = "Households module must not import other domain modules (except platform, audit, security)"
+type = "forbidden"
+source_modules = ["app.households"]
 forbidden_modules = [
     "app.accounts",
     "app.transactions",

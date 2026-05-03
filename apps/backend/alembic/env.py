@@ -19,6 +19,12 @@ if config.config_file_name is not None:
 # Base.metadata. Add a new import line each time a new module adds models.
 from app.audit.models import AuditEvent  # noqa: E402, F401
 from app.database import Base  # noqa: E402
+from app.households.models import (  # noqa: E402, F401
+    Household,
+    HouseholdMembership,
+    RefreshToken,
+    User,
+)
 from app.platform.fx import FxRate  # noqa: E402, F401
 
 target_metadata = Base.metadata
