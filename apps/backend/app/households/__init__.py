@@ -1,8 +1,8 @@
 """Households module.
 
-Owns: Household, User, membership, visibility modes (fully_shared,
-separate_with_joint_view, role_based, admin_controlled), App Admin
-separation, OIDC / auth plugin integration.
+Owns: Household, User, HouseholdMembership, RefreshToken models, auth
+endpoints, household CRUD, visibility modes, App Admin separation, and
+integration with the security module's auth plugin system.
 """
 
 __all__: list[str] = []

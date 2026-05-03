@@ -3,8 +3,11 @@
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
 
 from app.config import get_settings
+from app.households.router import router as households_router
+from app.security.ratelimit import get_limiter, rate_limit_exceeded_handler
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +32,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Rate limiting
+    limiter = get_limiter()
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
     # ---------------------------------------------------------------------------
     # Built-in endpoints
     # ---------------------------------------------------------------------------
@@ -37,15 +45,11 @@ def create_app() -> FastAPI:
     async def health() -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
         return {"status": "ok"}
 
-    # Prometheus metrics are exposed at /metrics by prometheus-client's
-    # make_asgi_app(). Mounted once modules are set up.
-    # TODO: mount prometheus metrics app after initial module setup
+    # ---------------------------------------------------------------------------
+    # Module routers
+    # ---------------------------------------------------------------------------
 
-    # ---------------------------------------------------------------------------
-    # Module routers — registered here as modules are built out
-    # ---------------------------------------------------------------------------
-    # from app.households.router import router as households_router
-    # app.include_router(households_router, prefix="/api/v1")
+    app.include_router(households_router, prefix="/api/v1")
 
     return app
 

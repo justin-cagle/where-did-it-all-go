@@ -1,8 +1,10 @@
 """Application settings loaded from environment variables."""
 
+import hashlib
 from functools import lru_cache
+from typing import Self
 
-from pydantic import AnyUrl, PostgresDsn, RedisDsn
+from pydantic import AnyUrl, PostgresDsn, RedisDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +27,11 @@ class Settings(BaseSettings):
     # Key custody mode is configurable — see security.md.
     master_key: str
 
+    # JWT signing secret. If not set, derived from master_key via SHA-256
+    # with domain separation ("wdiag:jwt:<master_key>"). Set JWT_SECRET
+    # explicitly in production to maintain key separation.
+    jwt_secret: str = ""
+
     # App
     debug: bool = False
     log_level: str = "INFO"
@@ -33,12 +40,19 @@ class Settings(BaseSettings):
     # Observability — OpenTelemetry (optional; unset disables tracing)
     otel_exporter_otlp_endpoint: AnyUrl | None = None
 
-    # Backup — local volume always; S3 is optional
+    # Backup — local volume always; S3 is additional optional destination
     backup_s3_endpoint: str | None = None
     backup_s3_bucket: str | None = None
     backup_s3_access_key: str | None = None
     backup_s3_secret_key: str | None = None
     backup_encryption_key: str | None = None
+
+    @model_validator(mode="after")
+    def _derive_jwt_secret(self) -> Self:
+        """Derive JWT secret from master_key if not explicitly set."""
+        if not self.jwt_secret:
+            self.jwt_secret = hashlib.sha256(f"wdiag:jwt:{self.master_key}".encode()).hexdigest()
+        return self
 
 
 @lru_cache

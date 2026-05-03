@@ -1,0 +1,436 @@
+"""FastAPI routes for households and auth.
+
+Routes:
+  Auth:
+    POST /api/v1/auth/register
+    POST /api/v1/auth/login
+    POST /api/v1/auth/refresh
+    POST /api/v1/auth/logout
+    POST /api/v1/auth/step-up
+    GET  /api/v1/auth/me
+    POST /api/v1/auth/totp/setup
+    POST /api/v1/auth/totp/confirm
+
+  Households:
+    GET  /api/v1/households
+    POST /api/v1/households
+    GET  /api/v1/households/{household_id}
+    PATCH /api/v1/households/{household_id}
+    DELETE /api/v1/households/{household_id}
+    GET  /api/v1/households/{household_id}/members
+    POST /api/v1/households/{household_id}/members     (step-up required)
+    DELETE /api/v1/households/{household_id}/members/{user_id} (step-up required)
+
+No business logic in this file — all logic is in service.py.
+"""
+
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import get_settings
+from app.database import get_db
+from app.households import schemas, service
+from app.households.deps import CurrentUser, StepUpUser
+from app.households.schemas import (
+    AddMemberRequest,
+    HouseholdCreate,
+    HouseholdOut,
+    HouseholdUpdate,
+    LoginRequest,
+    MembershipOut,
+    RegisterRequest,
+    StepUpRequest,
+    TokenResponse,
+    TotpSetupOut,
+    UserOut,
+)
+from app.security import cookies as cookie_service
+from app.security.ratelimit import get_limiter
+
+router = APIRouter(tags=["households", "auth"])
+limiter = get_limiter()
+
+_DbSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+# ---------------------------------------------------------------------------
+# Auth routes
+# ---------------------------------------------------------------------------
+
+
+@router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register(
+    body: RegisterRequest,
+    response: Response,
+    session: _DbSession,
+) -> TokenResponse:
+    """Register a new user with local credentials."""
+    try:
+        user = await service.create_user(
+            session,
+            email=body.email,
+            display_name=body.display_name,
+            password=body.password,
+        )
+    except service.ConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    settings = get_settings()
+    access_token, refresh_token = await service.issue_tokens(
+        session,
+        user=user,
+        household_id=None,
+        jwt_secret=settings.jwt_secret,
+    )
+    cookie_service.set_auth_cookies(
+        response,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        secure=not settings.debug,
+    )
+    return TokenResponse(user_id=user.id, is_app_admin=user.is_app_admin)
+
+
+@router.post("/auth/login", response_model=TokenResponse)
+@limiter.limit("10/minute")  # type: ignore[misc]
+async def login(
+    request: Request,
+    body: LoginRequest,
+    response: Response,
+    session: _DbSession,
+) -> TokenResponse:
+    """Authenticate with local credentials and receive session cookies."""
+    try:
+        user = await service.authenticate_local(
+            session,
+            email=body.email,
+            password=body.password,
+            totp_code=body.totp_code,
+        )
+    except service.AuthenticationError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid credentials",
+        ) from None
+
+    # Resolve default household (first membership, if any)
+    memberships = await service.list_households(session, actor=user)
+    household_id = memberships[0].id if memberships else None
+
+    settings = get_settings()
+    access_token, refresh_token = await service.issue_tokens(
+        session,
+        user=user,
+        household_id=household_id,
+        jwt_secret=settings.jwt_secret,
+    )
+    cookie_service.set_auth_cookies(
+        response,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        secure=not settings.debug,
+    )
+    return TokenResponse(user_id=user.id, is_app_admin=user.is_app_admin)
+
+
+@router.post("/auth/refresh", response_model=TokenResponse)
+async def refresh(
+    request: Request,
+    response: Response,
+    session: _DbSession,
+) -> TokenResponse:
+    """Rotate the refresh token (sliding-window idle timeout)."""
+    raw_token = cookie_service.get_refresh_token(request)
+    if not raw_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="refresh token missing",
+        )
+
+    settings = get_settings()
+    try:
+        new_access, new_raw = await service.refresh_tokens(
+            session,
+            raw_refresh_token=raw_token,
+            jwt_secret=settings.jwt_secret,
+        )
+    except service.AuthenticationError as exc:
+        cookie_service.clear_auth_cookies(response)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    # Load the user from the new access token claims for the response
+    from app.security import jwt as jwt_service
+
+    claims = jwt_service.validate_access_token(new_access, settings.jwt_secret)
+    user_id = uuid.UUID(str(claims["sub"]))
+    user = await service.get_user_by_id(session, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user not found")
+
+    cookie_service.set_auth_cookies(
+        response,
+        access_token=new_access,
+        refresh_token=new_raw,
+        secure=not settings.debug,
+    )
+    return TokenResponse(user_id=user.id, is_app_admin=user.is_app_admin)
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    response: Response,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Revoke all refresh tokens for the current user and clear cookies."""
+    await service.revoke_all_tokens(session, user_id=current_user.id)
+    cookie_service.clear_auth_cookies(response)
+
+
+@router.post("/auth/step-up", response_model=TokenResponse)
+@limiter.limit("5/minute")  # type: ignore[misc]
+async def step_up(
+    request: Request,
+    body: StepUpRequest,
+    response: Response,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> TokenResponse:
+    """Grant step-up elevation for App Admin actions (5-minute window)."""
+    settings = get_settings()
+    try:
+        step_up_token = await service.step_up_auth(
+            session,
+            user=current_user,
+            password=body.password,
+            totp_code=body.totp_code,
+            jwt_secret=settings.jwt_secret,
+        )
+    except service.AuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    cookie_service.set_step_up_cookie(
+        response,
+        step_up_token=step_up_token,
+        secure=not settings.debug,
+    )
+    return TokenResponse(user_id=current_user.id, is_app_admin=current_user.is_app_admin)
+
+
+@router.get("/auth/me", response_model=UserOut)
+async def me(current_user: CurrentUser) -> UserOut:
+    """Return the authenticated user's profile."""
+    return UserOut.model_validate(current_user)
+
+
+@router.post("/auth/totp/setup", response_model=TotpSetupOut)
+async def totp_setup(
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> TotpSetupOut:
+    """Begin TOTP enrollment — returns a provisioning URI for QR-code display."""
+    uri = await service.setup_totp(session, user=current_user)
+    return TotpSetupOut(provisioning_uri=uri)
+
+
+@router.post("/auth/totp/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def totp_confirm(
+    body: schemas.StepUpRequest,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Confirm TOTP enrollment with the first generated code."""
+    if not body.totp_code:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="totp_code is required",
+        )
+    try:
+        await service.confirm_totp(session, user=current_user, code=body.totp_code)
+    except service.AuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Household routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/households", response_model=list[HouseholdOut])
+async def list_households(
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> list[HouseholdOut]:
+    """List all households the current user is a member of."""
+    households = await service.list_households(session, actor=current_user)
+    return [HouseholdOut.model_validate(h) for h in households]
+
+
+@router.post("/households", response_model=HouseholdOut, status_code=status.HTTP_201_CREATED)
+async def create_household(
+    body: HouseholdCreate,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> HouseholdOut:
+    """Create a new household. The creator becomes the owner."""
+    household = await service.create_household(
+        session,
+        name=body.name,
+        visibility_mode=body.visibility_mode,
+        home_currency=body.home_currency,
+        owner=current_user,
+    )
+    return HouseholdOut.model_validate(household)
+
+
+@router.get("/households/{household_id}", response_model=HouseholdOut)
+async def get_household(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> HouseholdOut:
+    """Return household details (actor must be a member)."""
+    try:
+        household = await service.get_household(
+            session, household_id=household_id, actor=current_user
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return HouseholdOut.model_validate(household)
+
+
+@router.patch("/households/{household_id}", response_model=HouseholdOut)
+async def update_household(
+    household_id: uuid.UUID,
+    body: HouseholdUpdate,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> HouseholdOut:
+    """Update household settings (actor must be owner)."""
+    try:
+        household = await service.update_household(
+            session,
+            household_id=household_id,
+            actor=current_user,
+            name=body.name,
+            visibility_mode=body.visibility_mode,
+            home_currency=body.home_currency,
+        )
+    except service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return HouseholdOut.model_validate(household)
+
+
+@router.delete("/households/{household_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def archive_household(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Soft-delete (archive) a household (actor must be owner)."""
+    try:
+        await service.archive_household(session, household_id=household_id, actor=current_user)
+    except service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/households/{household_id}/members", response_model=list[MembershipOut])
+async def list_members(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> list[MembershipOut]:
+    """List all active members of the household."""
+    try:
+        memberships = await service.list_members(
+            session, household_id=household_id, actor=current_user
+        )
+    except service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    # Eagerly load user objects for the response
+    results: list[MembershipOut] = []
+    for m in memberships:
+        user = await service.get_user_by_id(session, m.user_id)
+        if user is not None:
+            results.append(
+                MembershipOut(
+                    id=m.id,
+                    household_id=m.household_id,
+                    user_id=m.user_id,
+                    role=m.role,
+                    created_at=m.created_at,
+                    user=UserOut.model_validate(user),
+                )
+            )
+    return results
+
+
+@router.post(
+    "/households/{household_id}/members",
+    response_model=MembershipOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_member(
+    household_id: uuid.UUID,
+    body: AddMemberRequest,
+    _step_up_user: StepUpUser,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> MembershipOut:
+    """Add a user to the household (requires step-up auth + App Admin)."""
+    try:
+        membership = await service.add_member(
+            session,
+            household_id=household_id,
+            email=body.email,
+            role=body.role,
+            actor=current_user,
+        )
+    except service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except (service.NotFoundError, service.ConflictError) as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    user = await service.get_user_by_id(session, membership.user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
+    return MembershipOut(
+        id=membership.id,
+        household_id=membership.household_id,
+        user_id=membership.user_id,
+        role=membership.role,
+        created_at=membership.created_at,
+        user=UserOut.model_validate(user),
+    )
+
+
+@router.delete(
+    "/households/{household_id}/members/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def remove_member(
+    household_id: uuid.UUID,
+    user_id: uuid.UUID,
+    _step_up_user: StepUpUser,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Remove a member from the household (requires step-up auth + App Admin)."""
+    try:
+        await service.remove_member(
+            session,
+            household_id=household_id,
+            user_id=user_id,
+            actor=current_user,
+        )
+    except service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
