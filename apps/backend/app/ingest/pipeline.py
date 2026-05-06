@@ -40,7 +40,7 @@ class IngestResult:
     imported: int = 0
     duplicate: int = 0
     errors: int = 0
-    error_messages: list[str] = field(default_factory=list)
+    error_messages: list[str] = field(default_factory=lambda: [])
 
 
 def _map_direction(direction: str) -> TransactionDirection:

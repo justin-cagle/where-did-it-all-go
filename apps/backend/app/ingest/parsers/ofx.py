@@ -65,7 +65,7 @@ def _find_blocks(text: str) -> list[str]:
     # SGML style: <STMTTRN>...<STMTTRN> or <STMTTRN>...</STMTTRNLIST>
     sgml_blocks = re.split(r"<STMTTRN>", text, flags=re.IGNORECASE)
     if len(sgml_blocks) > 1:
-        results = []
+        results: list[str] = []
         for raw in sgml_blocks[1:]:
             end = re.search(r"</STMTTRNLIST>|</STMTRS>|</CCSTMTRS>", raw, re.IGNORECASE)
             results.append(raw[: end.start()] if end else raw)
