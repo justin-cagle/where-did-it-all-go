@@ -11,6 +11,7 @@ from typing import ClassVar
 from arq.connections import RedisSettings
 
 from app.classification import reclassify_all_job
+from app.ingest import process_upload_job, sync_account_job
 from app.worker.settings import get_redis_settings
 
 
@@ -19,6 +20,8 @@ class WorkerSettings:
     # Each function must be idempotent (safe to run twice).
     functions: ClassVar[list[object]] = [
         reclassify_all_job,
+        sync_account_job,
+        process_upload_job,
     ]
 
     redis_settings: RedisSettings = get_redis_settings()
