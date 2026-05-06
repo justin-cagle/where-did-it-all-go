@@ -14,6 +14,7 @@ Import from sub-modules directly; this __init__.py only re-exports the
 most-used public symbols.
 """
 
+from app.security.encryption import DecryptionError, decrypt_dict, encrypt_dict
 from app.security.jwt import (
     InvalidTokenError,
     has_step_up,
@@ -24,7 +25,10 @@ from app.security.jwt import (
 from app.security.password import hash_password, needs_rehash, verify_password
 
 __all__ = [
+    "DecryptionError",
     "InvalidTokenError",
+    "decrypt_dict",
+    "encrypt_dict",
     "has_step_up",
     "hash_password",
     "issue_access_token",
