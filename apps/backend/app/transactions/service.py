@@ -878,6 +878,41 @@ async def archive_payment_group(
 # ---------------------------------------------------------------------------
 
 
+async def update_recurrence_id(
+    session: AsyncSession,
+    *,
+    transaction_id: uuid.UUID,
+    household_id: uuid.UUID,
+    recurrence_id: uuid.UUID | None,
+) -> Transaction:
+    """Set or clear the recurrence_id on a transaction.
+
+    Called exclusively by the recurrences module. Writes audit event with
+    actor_source='recurrence_detector' so reversals are traceable.
+    """
+    tx = await get_transaction(session, transaction_id=transaction_id, household_id=household_id)
+    old_value = str(tx.recurrence_id) if tx.recurrence_id is not None else None
+    tx.recurrence_id = recurrence_id
+    await session.flush()
+    await _write_audit(
+        session,
+        actor_id=None,
+        household_id=household_id,
+        entity_type="transaction",
+        entity_id=transaction_id,
+        operation=AuditOperation.UPDATE,
+        delta=[
+            {"op": "test", "path": "/recurrence_id", "value": old_value},
+            {
+                "op": "replace",
+                "path": "/recurrence_id",
+                "value": str(recurrence_id) if recurrence_id is not None else None,
+            },
+        ],
+    )
+    return tx
+
+
 async def _find_by_external_id(
     session: AsyncSession,
     *,
