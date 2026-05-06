@@ -725,7 +725,7 @@ async def get_category(
 ) -> Category:
     """Return a category visible to the household."""
     cat = await session.get(Category, category_id)
-    if cat is None:
+    if cat is None or cat.archived_at is not None:
         raise NotFoundError("category not found")
     if cat.household_id is not None and cat.household_id != household_id:
         raise NotFoundError("category not found")
@@ -874,7 +874,7 @@ async def list_tags(session: AsyncSession, *, household_id: uuid.UUID) -> list[T
 
 async def get_tag(session: AsyncSession, *, tag_id: uuid.UUID, household_id: uuid.UUID) -> Tag:
     tag = await session.get(Tag, tag_id)
-    if tag is None or tag.household_id != household_id:
+    if tag is None or tag.archived_at is not None or tag.household_id != household_id:
         raise NotFoundError("tag not found")
     return tag
 
@@ -990,7 +990,7 @@ async def list_rules(session: AsyncSession, *, household_id: uuid.UUID) -> list[
 
 async def get_rule(session: AsyncSession, *, rule_id: uuid.UUID, household_id: uuid.UUID) -> Rule:
     rule = await session.get(Rule, rule_id)
-    if rule is None or rule.household_id != household_id:
+    if rule is None or rule.archived_at is not None or rule.household_id != household_id:
         raise NotFoundError("rule not found")
     return rule
 
@@ -1212,7 +1212,7 @@ async def get_income_source(
     session: AsyncSession, *, source_id: uuid.UUID, household_id: uuid.UUID
 ) -> IncomeSource:
     src = await session.get(IncomeSource, source_id)
-    if src is None or src.household_id != household_id:
+    if src is None or src.archived_at is not None or src.household_id != household_id:
         raise NotFoundError("income source not found")
     return src
 
