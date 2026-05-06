@@ -394,8 +394,10 @@ async def _seed_household_and_account(
         household_id=hh.id,
         actor_id=user.id,
         name="Checking",
+        institution=None,
         account_type=AccountType.CHECKING,
         currency="USD",
+        current_balance=Decimal("0"),
     )
     return hh.id, user.id, account.id
 
