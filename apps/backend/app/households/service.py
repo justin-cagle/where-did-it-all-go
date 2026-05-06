@@ -18,6 +18,7 @@ from app.audit.models import ActorType, AuditEvent, AuditOperation
 from app.households import models
 from app.households.enums import HouseholdRole, VisibilityMode
 from app.households.models import Household, HouseholdMembership, RefreshToken, User
+from app.platform import events as platform_events
 from app.security import hooks as auth_hooks
 from app.security import jwt as jwt_service
 from app.security import password as pwd_service
@@ -316,6 +317,8 @@ async def create_household(
     )
     session.add(membership)
     await session.flush()
+
+    await platform_events.fire_household_created(session, household.id)
 
     await _write_audit(
         session,

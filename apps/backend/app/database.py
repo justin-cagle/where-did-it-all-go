@@ -37,7 +37,7 @@ def _get_engine() -> AsyncEngine:
     return _engine
 
 
-def _get_session_factory() -> async_sessionmaker[AsyncSession]:
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
     global _session_factory
     if _session_factory is None:
         _session_factory = async_sessionmaker(
@@ -50,7 +50,7 @@ def _get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields a database session per request."""
-    async with _get_session_factory()() as session:
+    async with get_session_factory()() as session:
         try:
             yield session
             await session.commit()
