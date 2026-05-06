@@ -69,7 +69,7 @@ def upgrade() -> None:
         sa.Column("end_date", sa.Date, nullable=True),
         sa.Column("paused", sa.Boolean, nullable=False, server_default="false"),
         sa.Column("merchant_name", sa.Text, nullable=True),
-        sa.Column("recurrence_metadata", JSONB, nullable=False, server_default="'{}'"),
+        sa.Column("recurrence_metadata", JSONB, nullable=False, server_default=sa.text("'{}'")),
         sa.ForeignKeyConstraint(
             ["household_id"],
             ["households_household.id"],
@@ -124,10 +124,10 @@ def upgrade() -> None:
             "sample_transaction_ids",
             JSONB,
             nullable=False,
-            server_default="'[]'",
+            server_default=sa.text("'[]'"),
         ),
         sa.Column("occurrence_count", sa.Integer, nullable=False),
-        sa.Column("status", sa.String(16), nullable=False, server_default="'pending'"),
+        sa.Column("status", sa.String(16), nullable=False, server_default="pending"),
         sa.Column(
             "detected_at",
             sa.DateTime(timezone=True),
