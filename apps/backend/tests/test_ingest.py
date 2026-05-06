@@ -29,6 +29,7 @@ from app.accounts import service as accounts_service
 from app.accounts.enums import AccountType
 from app.database import Base
 from app.households import service as households_service
+from app.households.enums import VisibilityMode
 from app.ingest.parsers import ParsedTransaction
 from app.ingest.parsers.csv import CsvParseError, _parse_row_amount, parse_csv
 from app.ingest.parsers.ofx import _parse_dtposted, parse_ofx
@@ -375,19 +376,18 @@ async def _seed_household_and_account(
     session: AsyncSession,
 ) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
     """Create a household, user, and account. Returns (household_id, user_id, account_id)."""
-    hh = await households_service.create_household(session, name="Test HH")
     user = await households_service.create_user(
         session,
         email="test@example.com",
         display_name="Tester",
-        password_hash="$argon2id$v=19$m=65536,t=3,p=4$fake",
+        password="testpassword1",  # pragma: allowlist secret
     )
-    await households_service.add_member(
+    hh = await households_service.create_household(
         session,
-        household_id=hh.id,
-        user_id=user.id,
-        role="owner",
-        actor_id=user.id,
+        name="Test HH",
+        visibility_mode=VisibilityMode.FULLY_SHARED,
+        home_currency="USD",
+        owner=user,
     )
     account = await accounts_service.create_account(
         session,
