@@ -63,6 +63,9 @@ jobs:
     environment: homelab
     steps:
       - name: Pull & restart services
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          MASTER_KEY: ${{ secrets.MASTER_KEY }}
         run: |
           docker compose pull
           docker compose up -d --remove-orphans
