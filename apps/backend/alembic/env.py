@@ -44,6 +44,12 @@ from app.debts.models import (  # noqa: E402, F401
     DebtPlanSchedule,
     DebtPlanSummary,
 )
+from app.goals.models import (  # noqa: E402, F401
+    Goal,
+    GoalContribution,
+    GoalFundingSource,
+    GoalSnapshot,
+)
 from app.households.models import (  # noqa: E402, F401
     Household,
     HouseholdMembership,
