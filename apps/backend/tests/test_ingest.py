@@ -514,10 +514,11 @@ async def test_import_job_counter_invariant(ingest_db: tuple) -> None:
 
 @pytest.mark.integration
 async def test_fuzzy_dedup_creates_hitl_row(ingest_db: tuple) -> None:
-    """Fuzzy-match below threshold creates recommendations_pending row (not auto-merged)."""
+    """Fuzzy-match below threshold creates a Recommendation row (not auto-merged)."""
     from app.ingest import service
     from app.ingest.enums import ImportSource
-    from app.ingest.models import RecommendationPending
+    from app.recommendations.enums import RecommendationSource
+    from app.recommendations.models import Recommendation
     from app.transactions import service as tx_service
     from app.transactions.enums import TransactionState
 
@@ -578,9 +579,9 @@ async def test_fuzzy_dedup_creates_hitl_row(ingest_db: tuple) -> None:
 
     async with factory() as session:
         recs_result = await session.execute(
-            sa.select(RecommendationPending).where(
-                RecommendationPending.household_id == hh_id,
-                RecommendationPending.source == "dedup_fuzzy",
+            sa.select(Recommendation).where(
+                Recommendation.household_id == hh_id,
+                Recommendation.source == str(RecommendationSource.INGEST),
             )
         )
         pending = list(recs_result.scalars().all())

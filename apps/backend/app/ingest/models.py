@@ -1,10 +1,8 @@
 """SQLAlchemy models for the ingest module.
 
 Tables:
-  ingest_sync_config        — per-account sync configuration and encrypted credentials
-  ingest_import_job         — tracks one import run (upload or scheduled sync)
-  recommendations_pending   — stub table for cross-module suggestion queue
-                              (full recommendations module replaces this later)
+  ingest_sync_config  -- per-account sync configuration and encrypted credentials
+  ingest_import_job   -- tracks one import run (upload or scheduled sync)
 """
 
 import uuid
@@ -114,35 +112,3 @@ class ImportJob(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     def __repr__(self) -> str:
         return f"ImportJob(id={self.id}, source={self.source!r}, status={self.status!r})"
-
-
-class RecommendationPending(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Stub table for cross-module suggestion queue.
-
-    The full recommendations module will replace this later. For now, ingest
-    writes here for classification suggest-mode results and HITL items.
-    No soft delete — resolved rows will be archived by the recommendations module.
-    """
-
-    __tablename__ = "recommendations_pending"
-
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        sa.Uuid(as_uuid=True),
-        sa.ForeignKey("households_household.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    source: Mapped[str] = mapped_column(
-        sa.Text,
-        nullable=False,
-        comment="classification_rule_suggest | classification_multi_match | dedup_fuzzy",
-    )
-    payload: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=dict,
-    )
-
-    __table_args__ = (sa.Index("ix_recommendations_pending_household", "household_id"),)
-
-    def __repr__(self) -> str:
-        return f"RecommendationPending(id={self.id}, source={self.source!r})"
