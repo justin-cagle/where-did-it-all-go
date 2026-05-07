@@ -952,3 +952,52 @@ async def _write_audit(
     )
     session.add(audit_event)
     await session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Budget interface — allocations in date range with scope filtering
+# ---------------------------------------------------------------------------
+
+
+async def get_allocations_in_range(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    period_start: date,
+    period_end: date,
+    account_ids: list[uuid.UUID] | None = None,
+    category_ids: list[uuid.UUID] | None = None,
+    tag_ids: list[uuid.UUID] | None = None,
+    direction: str | None = None,
+) -> list[SplitAllocation]:
+    """Return SplitAllocations for a household within a date range.
+
+    Joins to Transaction for date and account filtering; all within the
+    transactions module, so no cross-module join is issued.
+
+    Date range uses Transaction.occurred_at (bank-reported date).
+    Scope lists: None or empty = no restriction on that dimension.
+    Tag matching: any allocation whose tag_ids contains any of the requested
+    tag_ids qualifies (OR semantics).
+    direction: 'debit' | 'credit' | None (no restriction)
+    """
+    stmt = (
+        sa.select(SplitAllocation)
+        .join(Transaction, Transaction.id == SplitAllocation.transaction_id)
+        .where(
+            SplitAllocation.household_id == household_id,
+            Transaction.occurred_at >= period_start,
+            Transaction.occurred_at <= period_end,
+        )
+    )
+    if account_ids:
+        stmt = stmt.where(Transaction.account_id.in_(account_ids))
+    if category_ids:
+        stmt = stmt.where(SplitAllocation.category_id.in_(category_ids))
+    if tag_ids:
+        tag_conditions = [SplitAllocation.tag_ids.contains([str(tid)]) for tid in tag_ids]
+        stmt = stmt.where(sa.or_(*tag_conditions))
+    if direction is not None:
+        stmt = stmt.where(Transaction.direction == direction)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())

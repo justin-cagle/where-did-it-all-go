@@ -25,6 +25,12 @@ from app.accounts.models import (  # noqa: E402, F401
     ManualAccount,
 )
 from app.audit.models import AuditEvent  # noqa: E402, F401
+from app.budgets.models import (  # noqa: E402, F401
+    Budget,
+    BudgetLine,
+    BudgetPeriodActual,
+    BudgetPeriodIncome,
+)
 from app.classification.models import (  # noqa: E402, F401
     Category,
     HouseholdClassificationSettings,

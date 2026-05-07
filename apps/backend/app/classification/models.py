@@ -49,6 +49,13 @@ class Category(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     renameable: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)
     color: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
+    budget_role: Mapped[str] = mapped_column(
+        sa.String(16),
+        nullable=False,
+        default="uncategorized",
+        server_default="uncategorized",
+        comment="needs | wants | savings | uncategorized — used by 50/30/20 budget method",
+    )
 
     __table_args__ = (
         sa.Index("ix_classification_category_household", "household_id"),
