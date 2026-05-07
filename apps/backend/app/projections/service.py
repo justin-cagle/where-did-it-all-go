@@ -121,7 +121,7 @@ class BudgetInput:
     budget_group_id: uuid.UUID
     expected_income: Decimal | None
     currency: str
-    lines: list[BudgetLineInput] = field(default_factory=list)
+    lines: list[BudgetLineInput] = field(default_factory=lambda: [])
 
 
 @dataclass
@@ -135,7 +135,7 @@ class DebtPaymentEntry:
 class DebtPlanInput:
     plan_group_id: uuid.UUID
     currency: str
-    payments: list[DebtPaymentEntry] = field(default_factory=list)
+    payments: list[DebtPaymentEntry] = field(default_factory=lambda: [])
 
 
 @dataclass
@@ -412,9 +412,8 @@ async def collect_inputs(
     raw_recurrences = await rec_svc.list_recurrences(session, household_id=household_id)
     for rec in raw_recurrences:
         strategy_map[rec.id] = rec.expected_amount_strategy
-        meta_map[rec.id] = (
-            rec.recurrence_metadata if isinstance(rec.recurrence_metadata, dict) else {}
-        )
+        raw_meta = rec.recurrence_metadata
+        meta_map[rec.id] = raw_meta if raw_meta else {}
 
     for rid in seen_rec_ids:
         strategy = strategy_map.get(rid, "fixed")
@@ -1048,7 +1047,7 @@ async def _load_run_events(
     return list(result.scalars().all())
 
 
-async def _load_run_breaches(
+async def load_run_breaches(
     session: AsyncSession,
     run_id: uuid.UUID,
 ) -> list[ProjectionBreachEvent]:
@@ -1094,7 +1093,7 @@ async def run_projection(
 
     if scenario_id is not None:
         scenario = await get_scenario(session, scenario_id=scenario_id, household_id=household_id)
-        overrides = scenario.overrides if isinstance(scenario.overrides, list) else []
+        overrides: list[Any] = scenario.overrides or []
         inputs = apply_scenario_overrides(inputs, overrides)
 
     if not force:
@@ -1108,7 +1107,7 @@ async def run_projection(
         )
         if cached is not None:
             events = await _load_run_events(session, cached.id)
-            breaches = await _load_run_breaches(session, cached.id)
+            breaches = await load_run_breaches(session, cached.id)
             logger.info(
                 "projection.cache_hit",
                 household_id=str(household_id),
@@ -1193,7 +1192,7 @@ async def run_projection(
 # ---------------------------------------------------------------------------
 
 
-async def _latest_run(
+async def latest_run(
     session: AsyncSession,
     *,
     household_id: uuid.UUID,
@@ -1228,7 +1227,7 @@ async def get_balance_curve(
     """
     import app.accounts.service as acct_svc
 
-    run = await _latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
 
@@ -1298,7 +1297,7 @@ async def get_cashflow_summary(
     scenario_id: uuid.UUID | None = None,
 ) -> list[CashflowPeriod]:
     """Aggregate projected events into income/expense periods."""
-    run = await _latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
 
@@ -1360,7 +1359,7 @@ async def get_net_worth_curve(
     """Compute household net worth curve with FX conversion to home_currency."""
     import app.accounts.service as acct_svc
 
-    run = await _latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
 
@@ -1685,7 +1684,7 @@ async def get_calendar_events(
     Returns events in date order within the window, with confidence levels
     preserved for the UI to render appropriately.
     """
-    run = await _latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
 

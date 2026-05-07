@@ -1,6 +1,6 @@
 """Projections domain tables.
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: a4b5c6d7e8f9
 Revises: f1a2b3c4d5e6
 Create Date: 2026-05-07 00:00:00.000000
 
@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from alembic import op
 
-revision = "a1b2c3d4e5f6"  # pragma: allowlist secret
+revision = "a4b5c6d7e8f9"  # pragma: allowlist secret
 down_revision = "f1a2b3c4d5e6"  # pragma: allowlist secret
 branch_labels = None
 depends_on = None

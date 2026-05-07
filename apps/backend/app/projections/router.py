@@ -102,7 +102,7 @@ async def list_events(
 
     from app.projections.models import ProjectedEvent
 
-    run = await service._latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await service.latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
 
@@ -254,10 +254,10 @@ async def list_breaches(
     session: Annotated[AsyncSession, Depends(get_db)],
     scenario_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> list[ProjectionBreachEventOut]:
-    run = await service._latest_run(session, household_id=household_id, scenario_id=scenario_id)
+    run = await service.latest_run(session, household_id=household_id, scenario_id=scenario_id)
     if run is None:
         return []
-    breaches = await service._load_run_breaches(session, run.id)
+    breaches = await service.load_run_breaches(session, run.id)
     return [ProjectionBreachEventOut.model_validate(b) for b in breaches]
 
 
