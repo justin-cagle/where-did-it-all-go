@@ -66,6 +66,16 @@ jobs:
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           MASTER_KEY: ${{ secrets.MASTER_KEY }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+          DEBUG: ${{ vars.DEBUG }}
+          CADDY_EMAIL: ${{ vars.CADDY_EMAIL }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
         run: |
           docker compose pull
           docker compose up -d --remove-orphans
