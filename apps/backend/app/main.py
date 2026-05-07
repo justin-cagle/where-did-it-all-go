@@ -13,6 +13,7 @@ from app.budgets.router import router as budgets_router
 from app.classification.router import router as classification_router
 from app.config import get_settings
 from app.debts.router import router as debts_router
+from app.goals.router import router as goals_router
 from app.households.router import router as households_router
 from app.ingest.router import router as ingest_router
 from app.recommendations.router import router as recommendations_router
@@ -80,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(recommendations_router, prefix="/api/v1")
     app.include_router(budgets_router, prefix="/api/v1")
     app.include_router(debts_router, prefix="/api/v1")
+    app.include_router(goals_router, prefix="/api/v1")
 
     return app
 
