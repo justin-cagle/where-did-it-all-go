@@ -58,6 +58,12 @@ from app.households.models import (  # noqa: E402, F401
 )
 from app.ingest.models import ImportJob, SyncConfig  # noqa: E402, F401
 from app.platform.fx import FxRate  # noqa: E402, F401
+from app.projections.models import (  # noqa: E402, F401
+    ProjectedEvent,
+    ProjectionBreachEvent,
+    ProjectionRun,
+    ProjectionScenario,
+)
 from app.recommendations.models import AutoApplyRule, Recommendation  # noqa: E402, F401
 
 target_metadata = Base.metadata
