@@ -174,10 +174,11 @@ def upgrade() -> None:
     op.create_index("ix_goals_contribution_goal", "goals_contribution", ["goal_id"])
     op.create_index("ix_goals_contribution_household", "goals_contribution", ["household_id"])
     op.create_index("ix_goals_contribution_transaction", "goals_contribution", ["transaction_id"])
-    op.create_unique_constraint(
+    op.create_index(
         "uq_goals_contribution_goal_transaction",
         "goals_contribution",
         ["goal_id", "transaction_id"],
+        unique=True,
         postgresql_where=sa.text("transaction_id IS NOT NULL"),
     )
 

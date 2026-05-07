@@ -342,7 +342,7 @@ async def update_goal(
         "minimum_balance_threshold",
         "metadata_",
     }
-    delta = []
+    delta: list[dict[str, str]] = []
     for k, v in kwargs.items():
         if k not in updatable or v is None:
             continue
@@ -718,8 +718,6 @@ async def scan_tag_contributions(
         )
 
         for alloc in allocations:
-            if alloc.transaction_id is None:
-                continue
             try:
                 await log_contribution(
                     session,
@@ -878,7 +876,7 @@ async def get_all_status(
 ) -> list[GoalSnapshot]:
     """Compute burn-up for all active goals and return snapshots."""
     goals = await list_goals(session, household_id=household_id, status=GoalStatus.ACTIVE)
-    snapshots = []
+    snapshots: list[GoalSnapshot] = []
     for goal in goals:
         try:
             snap = await compute_burn_up(
