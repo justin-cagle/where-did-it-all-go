@@ -13,6 +13,7 @@ from app.classification.router import router as classification_router
 from app.config import get_settings
 from app.households.router import router as households_router
 from app.ingest.router import router as ingest_router
+from app.recommendations.router import router as recommendations_router
 from app.recurrences.router import router as recurrences_router
 from app.security.ratelimit import get_limiter, rate_limit_exceeded_handler
 from app.transactions.router import router as transactions_router
@@ -74,6 +75,7 @@ def create_app() -> FastAPI:
     app.include_router(classification_router, prefix="/api/v1")
     app.include_router(ingest_router, prefix="/api/v1")
     app.include_router(recurrences_router, prefix="/api/v1")
+    app.include_router(recommendations_router, prefix="/api/v1")
 
     return app
 

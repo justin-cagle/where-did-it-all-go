@@ -4,7 +4,7 @@ For each ParsedTransaction:
   1. Create transaction via transactions.service (handles exact external_id dedup)
   2. Run fuzzy dedup via transactions.service.process_dedup
   3. Run classification via classification.service.classify_transaction
-  4. Write suggestion-mode results to recommendations_pending stub
+  4. Write suggestion-mode results to recommendations.service
   5. Update ImportJob counters
 
 Each transaction is processed in its own session to keep errors isolated and
@@ -22,8 +22,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.audit.models import ActorType, AuditEvent, AuditOperation
 from app.classification import service as classification_service
-from app.ingest.models import ImportJob, RecommendationPending
+from app.ingest.models import ImportJob
 from app.ingest.parsers import ParsedTransaction
+from app.recommendations import service as rec_service
+from app.recommendations.enums import RecommendationSource
 from app.transactions import service as tx_service
 from app.transactions.enums import TransactionDirection, TransactionState, TransactionType
 
@@ -93,17 +95,21 @@ async def _process_one(
     dedup_logs = await tx_service.process_dedup(session, transaction=tx, source=source)
     for log in dedup_logs:
         if log.resolution == "pending":
-            rec = RecommendationPending(
+            await rec_service.create(
+                session,
                 household_id=household_id,
-                source="dedup_fuzzy",
-                payload={
+                source=RecommendationSource.INGEST,
+                target_subsystem="transactions",
+                target_entity_id=log.candidate_a_id,
+                proposed_value={
                     "dedup_log_id": str(log.id),
                     "candidate_a_id": str(log.candidate_a_id),
                     "candidate_b_id": str(log.candidate_b_id),
-                    "confidence": str(log.confidence),
                 },
+                rationale_text="Possible duplicate transaction detected by fuzzy dedup.",
+                rationale_data={"confidence": str(log.confidence)},
+                confidence=log.confidence,
             )
-            session.add(rec)
 
     # If tx was auto-merged (archived) by process_dedup, count as duplicate
     if tx.archived_at is not None:
@@ -117,31 +123,37 @@ async def _process_one(
             household_id=household_id,
         )
 
-        # Suggest-mode and HITL items → recommendations_pending stub
+        # Suggest-mode and HITL items → recommendations service
         for suggestion in result.suggestions:
-            rec = RecommendationPending(
+            await rec_service.create(
+                session,
                 household_id=household_id,
-                source="classification_rule_suggest",
-                payload={
-                    "transaction_id": str(tx.id),
+                source=RecommendationSource.CLASSIFICATION_PIPELINE,
+                target_subsystem="transactions",
+                target_entity_id=tx.id,
+                proposed_value={
                     "allocation_id": str(suggestion.allocation_id),
                     "suggested_category_id": str(suggestion.suggested_category_id),
                     "rule_id": str(suggestion.rule_id),
                 },
+                rationale_text="Classification rule matched in suggest mode.",
+                rationale_data={"transaction_id": str(tx.id)},
             )
-            session.add(rec)
 
         for hitl in result.hitl_items:
-            rec = RecommendationPending(
+            await rec_service.create(
+                session,
                 household_id=household_id,
-                source="classification_multi_match",
-                payload={
-                    "transaction_id": str(tx.id),
+                source=RecommendationSource.CLASSIFICATION_PIPELINE,
+                target_subsystem="transactions",
+                target_entity_id=tx.id,
+                proposed_value={
                     "allocation_id": str(hitl.allocation_id),
                     "matching_rule_ids": [str(r) for r in hitl.matching_rule_ids],
                 },
+                rationale_text="Multiple classification rules matched; user review required.",
+                rationale_data={"transaction_id": str(tx.id)},
             )
-            session.add(rec)
 
         await session.flush()
     except Exception as exc:
