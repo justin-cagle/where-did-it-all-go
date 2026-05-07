@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from arq.connections import RedisSettings
 
+from app.projections import invalidate_projection_cache_job
 from app.recurrences import match_transaction_job
 from app.worker.settings import get_redis_settings
 
@@ -19,6 +20,7 @@ class WorkerSettings:
     # Each function must be idempotent (safe to run twice).
     functions: ClassVar[list[object]] = [
         match_transaction_job,
+        invalidate_projection_cache_job,
     ]
 
     redis_settings: RedisSettings = get_redis_settings()

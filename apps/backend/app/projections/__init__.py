@@ -5,4 +5,12 @@ goals, and calendar. Supports scenario/what-if analysis. Cache keyed to
 (inputs hash, as_of date), invalidated on any input change.
 """
 
-__all__: list[str] = []
+from app.projections.jobs import (
+    cleanup_transient_scenarios_job,
+    invalidate_projection_cache_job,
+)
+
+__all__ = [
+    "cleanup_transient_scenarios_job",
+    "invalidate_projection_cache_job",
+]
