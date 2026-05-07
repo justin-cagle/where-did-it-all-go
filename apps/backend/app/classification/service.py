@@ -17,7 +17,7 @@ without a DB session for Hypothesis property testing.
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
@@ -1426,3 +1426,54 @@ async def _write_audit(
     )
     session.add(event)
     await session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Budget interfaces
+# ---------------------------------------------------------------------------
+
+
+async def get_categories_budget_roles(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    category_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, str]:
+    """Return budget_role for each requested category_id.
+
+    Returns only categories visible to the household (own + system).
+    Missing category_ids are absent from the result (not an error).
+    """
+    if not category_ids:
+        return {}
+    result = await session.execute(
+        sa.select(Category.id, Category.budget_role).where(
+            Category.id.in_(category_ids),
+            sa.or_(
+                Category.household_id == household_id,
+                Category.household_id.is_(None),
+            ),
+        )
+    )
+    return {row[0]: row[1] for row in result.all()}
+
+
+async def get_income_sources_projected_amount(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    period_start: date,
+    period_end: date,
+) -> Decimal:
+    """Return projected income for a household in a period.
+
+    v1: sum of midpoint (min+max)/2 for all active income sources.
+    Cadence-based pro-rating is deferred to a future iteration.
+    period_start/period_end are accepted for future cadence-aware implementation.
+    """
+    del period_start, period_end
+    sources = await list_income_sources(session, household_id=household_id)
+    return sum(
+        ((src.expected_amount_min + src.expected_amount_max) / 2 for src in sources),
+        Decimal("0"),
+    )

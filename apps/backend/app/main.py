@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
 
 from app.accounts.router import router as accounts_router
+from app.budgets.router import router as budgets_router
 from app.classification.router import router as classification_router
 from app.config import get_settings
 from app.households.router import router as households_router
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(ingest_router, prefix="/api/v1")
     app.include_router(recurrences_router, prefix="/api/v1")
     app.include_router(recommendations_router, prefix="/api/v1")
+    app.include_router(budgets_router, prefix="/api/v1")
 
     return app
 
