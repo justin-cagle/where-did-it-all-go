@@ -39,6 +39,11 @@ from app.classification.models import (  # noqa: E402, F401
     Tag,
 )
 from app.database import Base  # noqa: E402
+from app.debts.models import (  # noqa: E402, F401
+    DebtPlan,
+    DebtPlanSchedule,
+    DebtPlanSummary,
+)
 from app.households.models import (  # noqa: E402, F401
     Household,
     HouseholdMembership,
