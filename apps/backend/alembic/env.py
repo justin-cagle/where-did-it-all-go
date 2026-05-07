@@ -39,8 +39,9 @@ from app.households.models import (  # noqa: E402, F401
     RefreshToken,
     User,
 )
-from app.ingest.models import ImportJob, RecommendationPending, SyncConfig  # noqa: E402, F401
+from app.ingest.models import ImportJob, SyncConfig  # noqa: E402, F401
 from app.platform.fx import FxRate  # noqa: E402, F401
+from app.recommendations.models import AutoApplyRule, Recommendation  # noqa: E402, F401
 
 target_metadata = Base.metadata
 
