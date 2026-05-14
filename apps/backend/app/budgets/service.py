@@ -36,7 +36,8 @@ import sqlalchemy as sa
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.budgets.enums import (
     BudgetLineStatus,
     BudgetMethod,
@@ -244,19 +245,17 @@ async def create_budget(
     session.add(budget)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="budget",
-            entity_id=budget_id,
-            operation=str(AuditOperation.CREATE),
-            delta=[{"op": "add", "path": "/name", "value": name}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="budget",
+        entity_id=budget_id,
+        operation=AuditOperation.CREATE,
+        delta=[{"op": "add", "path": "/name", "value": name}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("budget.created", budget_id=str(budget_id), household_id=str(household_id))
     return budget
 
@@ -366,19 +365,17 @@ async def update_budget(
     session.add(new_version)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="budget",
-            entity_id=new_version.id,
-            operation=str(AuditOperation.UPDATE),
-            delta=[{"op": "replace", "path": "/budget_group_id", "value": str(budget_group_id)}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="budget",
+        entity_id=new_version.id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/budget_group_id", "value": str(budget_group_id)}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info(
         "budget.updated",
         budget_group_id=str(budget_group_id),
@@ -413,19 +410,17 @@ async def archive_budget(
         b.archived_by = actor_id
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="budget",
-            entity_id=budget_group_id,
-            operation=str(AuditOperation.ARCHIVE),
-            delta=[],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="budget",
+        entity_id=budget_group_id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("budget.archived", budget_group_id=str(budget_group_id))
     # Return whichever was current
     current = next((b for b in budgets if b.effective_to is None), budgets[0])
@@ -503,19 +498,17 @@ async def create_budget_line(
     session.add(line)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="budget_line",
-            entity_id=line.id,
-            operation=str(AuditOperation.CREATE),
-            delta=[{"op": "add", "path": "/planned_amount", "value": str(planned_amount)}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="budget_line",
+        entity_id=line.id,
+        operation=AuditOperation.CREATE,
+        delta=[{"op": "add", "path": "/planned_amount", "value": str(planned_amount)}],
+        actor_id=actor_id,
     )
-    await session.flush()
     return line
 
 
@@ -569,19 +562,17 @@ async def update_budget_line(
 
     await session.flush()
     if delta:
-        session.add(
-            AuditEvent(
-                actor_type=str(ActorType.USER),
-                actor_id=actor_id,
-                actor_source="user_action",
-                household_id=household_id,
-                entity_type="budget_line",
-                entity_id=line_id,
-                operation=str(AuditOperation.UPDATE),
-                delta=delta,
-            )
+        await audit_service.log(
+            session,
+            household_id=household_id,
+            actor_type=ActorType.USER,
+            actor_source="user_action",
+            entity_type="budget_line",
+            entity_id=line_id,
+            operation=AuditOperation.UPDATE,
+            delta=delta,
+            actor_id=actor_id,
         )
-        await session.flush()
     return line
 
 
@@ -600,19 +591,17 @@ async def archive_budget_line(
     line.archived_by = actor_id
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="budget_line",
-            entity_id=line_id,
-            operation=str(AuditOperation.ARCHIVE),
-            delta=[],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="budget_line",
+        entity_id=line_id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[],
+        actor_id=actor_id,
     )
-    await session.flush()
     return line
 
 
@@ -1077,20 +1066,18 @@ async def period_close(
 
         await session.flush()
 
-        session.add(
-            AuditEvent(
-                actor_type=str(ActorType.SYSTEM),
-                actor_id=None,
-                actor_source="budget_period_close",
-                household_id=household_id,
-                entity_type="budget",
-                entity_id=budget.budget_group_id,
-                operation=str(AuditOperation.APPLY),
-                delta=[
-                    {"op": "replace", "path": "/period_closed", "value": str(period_end)},
-                    {"op": "replace", "path": "/lines_closed", "value": len(lines)},
-                ],
-            )
+        await audit_service.log(
+            session,
+            household_id=household_id,
+            actor_type=ActorType.SYSTEM,
+            actor_source="budget_period_close",
+            entity_type="budget",
+            entity_id=budget.budget_group_id,
+            operation=AuditOperation.APPLY,
+            delta=[
+                {"op": "replace", "path": "/period_closed", "value": str(period_end)},
+                {"op": "replace", "path": "/lines_closed", "value": len(lines)},
+            ],
         )
         closed += 1
 

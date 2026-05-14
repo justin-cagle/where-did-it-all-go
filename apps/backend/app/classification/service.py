@@ -24,7 +24,8 @@ from typing import Any, cast
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.classification.enums import RuleMode, StrictnessMode
 from app.classification.models import (
     Category,
@@ -1413,19 +1414,18 @@ async def _write_audit(
     delta: list[dict[str, Any]],
     rationale: str | None = None,
 ) -> None:
-    event = AuditEvent(
-        actor_type=str(actor_type),
-        actor_id=actor_id,
-        actor_source=actor_source,
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=actor_type,
+        actor_source=actor_source,
         entity_type=entity_type,
         entity_id=entity_id,
-        operation=str(operation),
+        operation=operation,
         delta=delta,
         rationale=rationale,
+        actor_id=actor_id,
     )
-    session.add(event)
-    await session.flush()
 
 
 # ---------------------------------------------------------------------------

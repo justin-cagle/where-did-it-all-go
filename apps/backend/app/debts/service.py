@@ -34,7 +34,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.accounts as accounts_svc
 import app.recommendations.service as rec_svc
 from app.accounts.models import Account, DebtBalance
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.debts.enums import DebtPlanMethod
 from app.debts.models import DebtPlan, DebtPlanSchedule, DebtPlanSummary
 from app.platform.ids import new_uuid
@@ -460,19 +461,17 @@ async def create_plan(
     session.add(plan)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="debt_plan",
-            entity_id=plan_id,
-            operation=str(AuditOperation.CREATE),
-            delta=[{"op": "add", "path": "/name", "value": name}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="debt_plan",
+        entity_id=plan_id,
+        operation=AuditOperation.CREATE,
+        delta=[{"op": "add", "path": "/name", "value": name}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("debt_plan.created", plan_id=str(plan_id), household_id=str(household_id))
     return plan
 
@@ -569,25 +568,17 @@ async def update_plan(
     session.add(new_version)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="debt_plan",
-            entity_id=new_version.id,
-            operation=str(AuditOperation.UPDATE),
-            delta=[
-                {
-                    "op": "replace",
-                    "path": "/plan_group_id",
-                    "value": str(plan_group_id),
-                }
-            ],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="debt_plan",
+        entity_id=new_version.id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/plan_group_id", "value": str(plan_group_id)}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info(
         "debt_plan.updated",
         plan_group_id=str(plan_group_id),
@@ -622,19 +613,17 @@ async def archive_plan(
         p.archived_by = actor_id
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="debt_plan",
-            entity_id=plan_group_id,
-            operation=str(AuditOperation.ARCHIVE),
-            delta=[],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="debt_plan",
+        entity_id=plan_group_id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("debt_plan.archived", plan_group_id=str(plan_group_id))
     current = next((p for p in plans if p.effective_to is None), plans[0])
     return current
@@ -760,20 +749,16 @@ async def compute_schedule(
         savings=savings,
     )
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.SYSTEM),
-            actor_id=None,
-            actor_source="debt_engine",
-            household_id=household_id,
-            entity_type="debt_plan",
-            entity_id=plan.id,
-            operation=str(AuditOperation.APPLY),
-            delta=[{"op": "replace", "path": "/schedule_recomputed", "value": True}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.SYSTEM,
+        actor_source="debt_engine",
+        entity_type="debt_plan",
+        entity_id=plan.id,
+        operation=AuditOperation.APPLY,
+        delta=[{"op": "replace", "path": "/schedule_recomputed", "value": True}],
     )
-    await session.flush()
-
     logger.info(
         "debt_engine.schedule_computed",
         plan_id=str(plan.id),
@@ -983,22 +968,19 @@ async def check_payment_deviation(
         },
     )
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.SYSTEM),
-            actor_id=None,
-            actor_source="debt_engine",
-            household_id=household_id,
-            entity_type="debt_account",
-            entity_id=account_id,
-            operation=str(AuditOperation.APPLY),
-            delta=[
-                {"op": "add", "path": "/payment_recorded", "value": str(actual_payment)},
-                {"op": "add", "path": "/deviation_direction", "value": direction},
-            ],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.SYSTEM,
+        actor_source="debt_engine",
+        entity_type="debt_account",
+        entity_id=account_id,
+        operation=AuditOperation.APPLY,
+        delta=[
+            {"op": "add", "path": "/payment_recorded", "value": str(actual_payment)},
+            {"op": "add", "path": "/deviation_direction", "value": direction},
+        ],
     )
-    await session.flush()
 
 
 async def recommend_budget_line(

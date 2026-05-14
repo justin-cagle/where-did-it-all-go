@@ -39,7 +39,8 @@ import sqlalchemy as sa
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.platform.time import utcnow
 from app.projections.enums import (
     BreachType,
@@ -1482,19 +1483,17 @@ async def create_scenario(
     session.add(scenario)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="projection_scenario",
-            entity_id=scenario.id,
-            operation=str(AuditOperation.CREATE),
-            delta=[{"op": "add", "path": "/name", "value": name or ""}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="projection_scenario",
+        entity_id=scenario.id,
+        operation=AuditOperation.CREATE,
+        delta=[{"op": "add", "path": "/name", "value": name or ""}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info(
         "projection.scenario.created",
         scenario_id=str(scenario.id),
@@ -1564,19 +1563,17 @@ async def update_scenario(
     await session.flush()
 
     if delta:
-        session.add(
-            AuditEvent(
-                actor_type=str(ActorType.USER),
-                actor_id=actor_id,
-                actor_source="user_action",
-                household_id=household_id,
-                entity_type="projection_scenario",
-                entity_id=scenario_id,
-                operation=str(AuditOperation.UPDATE),
-                delta=delta,
-            )
+        await audit_service.log(
+            session,
+            household_id=household_id,
+            actor_type=ActorType.USER,
+            actor_source="user_action",
+            entity_type="projection_scenario",
+            entity_id=scenario_id,
+            operation=AuditOperation.UPDATE,
+            delta=delta,
+            actor_id=actor_id,
         )
-        await session.flush()
 
     return scenario
 
@@ -1595,19 +1592,17 @@ async def archive_scenario(
     scenario.archived_by = actor_id
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="projection_scenario",
-            entity_id=scenario_id,
-            operation=str(AuditOperation.ARCHIVE),
-            delta=[],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="projection_scenario",
+        entity_id=scenario_id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("projection.scenario.archived", scenario_id=str(scenario_id))
     return scenario
 

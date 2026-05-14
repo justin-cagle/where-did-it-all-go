@@ -32,7 +32,8 @@ import sqlalchemy as sa
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.insights.enums import (
     REMOTE_PROVIDERS,
     AiDataSharing,
@@ -1009,7 +1010,7 @@ async def create_provider_config(
     session.add(config)
     await session.flush()
 
-    _write_config_audit(
+    await _write_config_audit(
         session,
         actor_id=actor_id,
         household_id=household_id,
@@ -1017,7 +1018,6 @@ async def create_provider_config(
         operation=str(AuditOperation.CREATE),
         delta=[{"op": "add", "path": "/provider", "value": provider}],
     )
-    await session.flush()
     logger.info(
         "insights.provider_config.created",
         config_id=str(config.id),
@@ -1069,7 +1069,7 @@ async def update_provider_config(
 
     if delta:
         await session.flush()
-        _write_config_audit(
+        await _write_config_audit(
             session,
             actor_id=actor_id,
             household_id=household_id,
@@ -1077,7 +1077,6 @@ async def update_provider_config(
             operation=str(AuditOperation.UPDATE),
             delta=delta,
         )
-        await session.flush()
 
     return config
 
@@ -1096,7 +1095,7 @@ async def archive_provider_config(
     config.archived_by = actor_id
     await session.flush()
 
-    _write_config_audit(
+    await _write_config_audit(
         session,
         actor_id=actor_id,
         household_id=household_id,
@@ -1104,7 +1103,6 @@ async def archive_provider_config(
         operation=str(AuditOperation.ARCHIVE),
         delta=[{"op": "replace", "path": "/archived_at", "value": "now"}],
     )
-    await session.flush()
     logger.info(
         "insights.provider_config.archived",
         config_id=str(config_id),
@@ -1145,7 +1143,7 @@ async def update_budget(
 
     if delta:
         await session.flush()
-        _write_config_audit(
+        await _write_config_audit(
             session,
             actor_id=actor_id,
             household_id=household_id,
@@ -1153,7 +1151,6 @@ async def update_budget(
             operation=str(AuditOperation.UPDATE),
             delta=delta,
         )
-        await session.flush()
 
     return budget
 
@@ -1198,7 +1195,7 @@ def _validate_data_sharing(provider: str, ai_data_sharing: str) -> None:
         )
 
 
-def _write_config_audit(
+async def _write_config_audit(
     session: AsyncSession,
     *,
     actor_id: uuid.UUID,
@@ -1207,14 +1204,14 @@ def _write_config_audit(
     operation: str,
     delta: list[dict[str, Any]],
 ) -> None:
-    event = AuditEvent(
-        actor_type=str(ActorType.USER),
-        actor_id=actor_id,
-        actor_source="insights_config",
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="insights_config",
         entity_type="insights_provider_config",
         entity_id=entity_id,
-        operation=operation,
+        operation=AuditOperation(operation),
         delta=delta,
+        actor_id=actor_id,
     )
-    session.add(event)

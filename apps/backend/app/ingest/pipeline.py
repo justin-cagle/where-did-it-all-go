@@ -20,7 +20,8 @@ from typing import Any
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.classification import service as classification_service
 from app.ingest.models import ImportJob
 from app.ingest.parsers import ParsedTransaction
@@ -228,22 +229,20 @@ async def run_pipeline(
                     "total_errors": result.errors,
                 }
 
-            # Batch audit event
-            audit = AuditEvent(
-                actor_type=str(ActorType.SYSTEM),
-                actor_id=None,
-                actor_source="ingest_pipeline",
+            await audit_service.log(
+                session,
                 household_id=household_id,
+                actor_type=ActorType.SYSTEM,
+                actor_source="ingest_pipeline",
                 entity_type="import_job",
                 entity_id=import_job_id,
-                operation=str(AuditOperation.CREATE),
+                operation=AuditOperation.CREATE,
                 delta=[
                     {"op": "add", "path": "/imported_count", "value": result.imported},
                     {"op": "add", "path": "/duplicate_count", "value": result.duplicate},
                     {"op": "add", "path": "/error_count", "value": result.errors},
                 ],
             )
-            session.add(audit)
             await session.commit()
 
     logger.info(

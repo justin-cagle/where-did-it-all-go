@@ -24,7 +24,8 @@ import sqlalchemy as sa
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.recommendations.enums import RecommendationSource, RecommendationStatus
 from app.recommendations.models import AutoApplyRule, Recommendation
 
@@ -129,19 +130,18 @@ async def accept(
     rec.resolved_by = user_id
     await session.flush()
 
-    audit = AuditEvent(
-        actor_type=str(ActorType.USER),
-        actor_id=user_id,
-        actor_source="recommendation_hitl",
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="recommendation_hitl",
         entity_type="recommendation",
         entity_id=recommendation_id,
-        operation=str(AuditOperation.ACCEPT),
+        operation=AuditOperation.ACCEPT,
         delta=[{"op": "replace", "path": "/status", "value": "accepted"}],
         rationale=rec.rationale_text,
+        actor_id=user_id,
     )
-    session.add(audit)
-    await session.flush()
     logger.info(
         "recommendation.accepted",
         recommendation_id=str(recommendation_id),
@@ -167,19 +167,18 @@ async def reject(
     rec.resolved_by = user_id
     await session.flush()
 
-    audit = AuditEvent(
-        actor_type=str(ActorType.USER),
-        actor_id=user_id,
-        actor_source="recommendation_hitl",
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="recommendation_hitl",
         entity_type="recommendation",
         entity_id=recommendation_id,
-        operation=str(AuditOperation.REJECT),
+        operation=AuditOperation.REJECT,
         delta=[{"op": "replace", "path": "/status", "value": "rejected"}],
         rationale=rec.rationale_text,
+        actor_id=user_id,
     )
-    session.add(audit)
-    await session.flush()
     logger.info(
         "recommendation.rejected",
         recommendation_id=str(recommendation_id),
