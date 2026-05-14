@@ -48,7 +48,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.accounts.service as accounts_svc
 import app.recommendations.service as rec_svc
 import app.transactions.service as txn_svc
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.goals.enums import (
     BurnUpStatus,
     CompletionPolicy,
@@ -279,19 +280,17 @@ async def create_goal(
     session.add(goal)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal.id,
-            operation=str(AuditOperation.CREATE),
-            delta=[{"op": "add", "path": "/name", "value": name}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal.id,
+        operation=AuditOperation.CREATE,
+        delta=[{"op": "add", "path": "/name", "value": name}],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("goal.created", goal_id=str(goal.id), household_id=str(household_id))
     return goal
 
@@ -358,19 +357,17 @@ async def update_goal(
 
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.UPDATE),
-            delta=delta,
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.UPDATE,
+        delta=delta,
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("goal.updated", goal_id=str(goal_id))
     return goal
 
@@ -390,19 +387,17 @@ async def archive_goal(
     goal.status = str(GoalStatus.ARCHIVED)
     await session.flush()
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.ARCHIVE),
-            delta=[],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[],
+        actor_id=actor_id,
     )
-    await session.flush()
     logger.info("goal.archived", goal_id=str(goal_id))
     return goal
 
@@ -438,19 +433,17 @@ async def pause_goal(
         raise ConflictError(f"goal is {goal.status}, cannot pause")
     goal.status = str(GoalStatus.PAUSED)
     await session.flush()
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.UPDATE),
-            delta=[{"op": "replace", "path": "/status", "value": "paused"}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/status", "value": "paused"}],
+        actor_id=actor_id,
     )
-    await session.flush()
     return goal
 
 
@@ -467,19 +460,17 @@ async def resume_goal(
         raise ConflictError(f"goal is {goal.status}, cannot resume")
     goal.status = str(GoalStatus.ACTIVE)
     await session.flush()
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.UPDATE),
-            delta=[{"op": "replace", "path": "/status", "value": "active"}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/status", "value": "active"}],
+        actor_id=actor_id,
     )
-    await session.flush()
     return goal
 
 
@@ -599,22 +590,20 @@ async def log_contribution(
     await session.flush()
 
     if actor_id is not None:
-        session.add(
-            AuditEvent(
-                actor_type=str(ActorType.USER),
-                actor_id=actor_id,
-                actor_source="user_action",
-                household_id=household_id,
-                entity_type="goal_contribution",
-                entity_id=contrib.id,
-                operation=str(AuditOperation.CREATE),
-                delta=[
-                    {"op": "add", "path": "/amount", "value": str(amount)},
-                    {"op": "add", "path": "/goal_id", "value": str(goal_id)},
-                ],
-            )
+        await audit_service.log(
+            session,
+            household_id=household_id,
+            actor_type=ActorType.USER,
+            actor_source="user_action",
+            entity_type="goal_contribution",
+            entity_id=contrib.id,
+            operation=AuditOperation.CREATE,
+            delta=[
+                {"op": "add", "path": "/amount", "value": str(amount)},
+                {"op": "add", "path": "/goal_id", "value": str(goal_id)},
+            ],
+            actor_id=actor_id,
         )
-        await session.flush()
 
     logger.info(
         "goal.contribution.logged",
@@ -928,17 +917,16 @@ async def check_completion(
         goal.archived_at = now
         goal.archived_by = actor_id
         await session.flush()
-        session.add(
-            AuditEvent(
-                actor_type=str(ActorType.SYSTEM),
-                actor_id=actor_id,
-                actor_source="goal_engine",
-                household_id=household_id,
-                entity_type="goal",
-                entity_id=goal_id,
-                operation=str(AuditOperation.ARCHIVE),
-                delta=[{"op": "replace", "path": "/status", "value": "completed"}],
-            )
+        await audit_service.log(
+            session,
+            household_id=household_id,
+            actor_type=ActorType.SYSTEM,
+            actor_source="goal_engine",
+            entity_type="goal",
+            entity_id=goal_id,
+            operation=AuditOperation.ARCHIVE,
+            delta=[{"op": "replace", "path": "/status", "value": "completed"}],
+            actor_id=actor_id,
         )
 
     elif policy == CompletionPolicy.PROMPT_ON_COMPLETE:
@@ -1025,22 +1013,20 @@ async def check_completion(
             rationale_data={"snapshot_id": str(snap.id)},
         )
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.SYSTEM),
-            actor_id=actor_id,
-            actor_source="goal_engine",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.APPLY),
-            delta=[
-                {"op": "add", "path": "/completion_policy_applied", "value": str(policy)},
-                {"op": "add", "path": "/progress_pct", "value": str(snap.progress_pct)},
-            ],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.SYSTEM,
+        actor_source="goal_engine",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.APPLY,
+        delta=[
+            {"op": "add", "path": "/completion_policy_applied", "value": str(policy)},
+            {"op": "add", "path": "/progress_pct", "value": str(snap.progress_pct)},
+        ],
+        actor_id=actor_id,
     )
-    await session.flush()
 
 
 async def manual_complete(
@@ -1074,19 +1060,17 @@ async def manual_complete(
         rationale_data={"snapshot_id": str(snap.id)},
     )
 
-    session.add(
-        AuditEvent(
-            actor_type=str(ActorType.USER),
-            actor_id=actor_id,
-            actor_source="user_action",
-            household_id=household_id,
-            entity_type="goal",
-            entity_id=goal_id,
-            operation=str(AuditOperation.APPLY),
-            delta=[{"op": "add", "path": "/manual_complete", "value": True}],
-        )
+    await audit_service.log(
+        session,
+        household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
+        entity_type="goal",
+        entity_id=goal_id,
+        operation=AuditOperation.APPLY,
+        delta=[{"op": "add", "path": "/manual_complete", "value": True}],
+        actor_id=actor_id,
     )
-    await session.flush()
 
 
 # ---------------------------------------------------------------------------

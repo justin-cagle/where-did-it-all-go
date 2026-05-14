@@ -20,7 +20,8 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 from app.transactions.enums import (
     DedupResolution,
     GroupType,
@@ -939,19 +940,18 @@ async def _write_audit(
     delta: list[dict[str, Any]],
     rationale: str | None = None,
 ) -> None:
-    audit_event = AuditEvent(
-        actor_type=str(ActorType.USER) if actor_id is not None else str(ActorType.SYSTEM),
-        actor_id=actor_id,
-        actor_source="user_action",
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=ActorType.USER if actor_id is not None else ActorType.SYSTEM,
+        actor_source="user_action",
         entity_type=entity_type,
         entity_id=entity_id,
-        operation=str(operation),
+        operation=operation,
         delta=delta,
         rationale=rationale,
+        actor_id=actor_id,
     )
-    session.add(audit_event)
-    await session.flush()
 
 
 # ---------------------------------------------------------------------------

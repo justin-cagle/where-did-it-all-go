@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.enums import ASSET_ACCOUNT_TYPES, AccountType, MinimumPaymentStrategy
 from app.accounts.models import Account, AccountGroup, DebtAccount, DebtBalance, ManualAccount
-from app.audit.models import ActorType, AuditEvent, AuditOperation
+from app.audit import ActorType, AuditOperation
+from app.audit import service as audit_service
 
 
 class NotFoundError(Exception):
@@ -744,16 +745,15 @@ async def _write_audit(
     delta: list[dict[str, Any]],
     rationale: str | None = None,
 ) -> None:
-    audit_event = AuditEvent(
-        actor_type=str(ActorType.USER),
-        actor_id=actor_id,
-        actor_source="user_action",
+    await audit_service.log(
+        session,
         household_id=household_id,
+        actor_type=ActorType.USER,
+        actor_source="user_action",
         entity_type=entity_type,
         entity_id=entity_id,
-        operation=str(operation),
+        operation=operation,
         delta=delta,
         rationale=rationale,
+        actor_id=actor_id,
     )
-    session.add(audit_event)
-    await session.flush()
