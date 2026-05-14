@@ -57,6 +57,11 @@ from app.households.models import (  # noqa: E402, F401
     User,
 )
 from app.ingest.models import ImportJob, SyncConfig  # noqa: E402, F401
+from app.insights.models import (  # noqa: E402, F401
+    InsightAuditLog,
+    InsightProviderConfig,
+    TokenBudget,
+)
 from app.platform.fx import FxRate  # noqa: E402, F401
 from app.projections.models import (  # noqa: E402, F401
     ProjectedEvent,

@@ -15,6 +15,7 @@ from app.classification import reclassify_all_job
 from app.debts import recompute_debt_schedule_job
 from app.goals import goal_status_recalc_job
 from app.ingest import process_upload_job, sync_account_job
+from app.insights import generate_insights_job
 from app.projections import cleanup_transient_scenarios_job
 from app.recurrences import recurrence_detection_sweep_job
 from app.worker.settings import get_redis_settings
@@ -32,6 +33,7 @@ class WorkerSettings:
         recompute_debt_schedule_job,
         goal_status_recalc_job,
         cleanup_transient_scenarios_job,
+        generate_insights_job,
     ]
 
     redis_settings: RedisSettings = get_redis_settings()
