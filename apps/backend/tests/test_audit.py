@@ -373,14 +373,11 @@ async def test_get_reversal_chain_missing_root_returns_empty() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_audit_event_update_raises_db_error(db_session: Any) -> None:
-    """Trigger prevents UPDATE on audit_event — DB raises exception."""
+async def _install_immutability_triggers(session: Any) -> None:
+    """Create append-only triggers on audit_event (migration 0013 not run in test DB)."""
     import sqlalchemy as sa
 
-    # Create trigger if not present (Base.metadata.create_all doesn't run migrations)
-    await db_session.execute(
+    await session.execute(
         sa.text(
             """
             CREATE OR REPLACE FUNCTION audit_event_immutable()
@@ -393,27 +390,36 @@ async def test_audit_event_update_raises_db_error(db_session: Any) -> None:
             """
         )
     )
-    await db_session.execute(
+    await session.execute(sa.text("DROP TRIGGER IF EXISTS audit_event_no_update ON audit_event"))
+    await session.execute(
         sa.text(
             """
-            DROP TRIGGER IF EXISTS audit_event_no_update ON audit_event;
             CREATE TRIGGER audit_event_no_update
                 BEFORE UPDATE ON audit_event
-                FOR EACH ROW EXECUTE FUNCTION audit_event_immutable();
+                FOR EACH ROW EXECUTE FUNCTION audit_event_immutable()
             """
         )
     )
-    await db_session.execute(
+    await session.execute(sa.text("DROP TRIGGER IF EXISTS audit_event_no_delete ON audit_event"))
+    await session.execute(
         sa.text(
             """
-            DROP TRIGGER IF EXISTS audit_event_no_delete ON audit_event;
             CREATE TRIGGER audit_event_no_delete
                 BEFORE DELETE ON audit_event
-                FOR EACH ROW EXECUTE FUNCTION audit_event_immutable();
+                FOR EACH ROW EXECUTE FUNCTION audit_event_immutable()
             """
         )
     )
-    await db_session.flush()
+    await session.flush()
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_audit_event_update_raises_db_error(db_session: Any) -> None:
+    """Trigger prevents UPDATE on audit_event — DB raises exception."""
+    import sqlalchemy as sa
+
+    await _install_immutability_triggers(db_session)
 
     entity_id = uuid.uuid4()
     household_id = uuid.uuid4()
@@ -444,6 +450,8 @@ async def test_audit_event_update_raises_db_error(db_session: Any) -> None:
 async def test_audit_event_delete_raises_db_error(db_session: Any) -> None:
     """Trigger prevents DELETE on audit_event — DB raises exception."""
     import sqlalchemy as sa
+
+    await _install_immutability_triggers(db_session)
 
     entity_id = uuid.uuid4()
     household_id = uuid.uuid4()
