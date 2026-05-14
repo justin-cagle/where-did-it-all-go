@@ -830,7 +830,7 @@ async def answer_question(
     Never routes through HITL — direct synchronous response.
     """
     provider, config = await get_active_provider(session, household_id, master_key)
-    if config is None:
+    if provider is None or config is None:
         # Distinguish disabled vs unavailable
         any_config_result = await session.execute(
             sa.select(InsightProviderConfig).where(

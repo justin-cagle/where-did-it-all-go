@@ -6,6 +6,7 @@ before this provider is ever invoked. Remote providers never receive raw data.
 """
 
 from decimal import Decimal
+from typing import Any
 
 from app.insights.providers.base import CompletionResult, InsightProvider
 
@@ -36,19 +37,20 @@ class OpenAIProvider(InsightProvider):
                 "openai package not installed; install with: pip install openai"
             ) from exc
 
-        client = _sdk.AsyncOpenAI(api_key=self._api_key)
+        sdk: Any = _sdk
+        client: Any = sdk.AsyncOpenAI(api_key=self._api_key)
         messages: list[dict[str, str]] = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        response = await client.chat.completions.create(
+        response: Any = await client.chat.completions.create(
             model=self._model,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             max_tokens=max_tokens,
         )
-        text = response.choices[0].message.content or ""
-        tokens_used = response.usage.total_tokens if response.usage else 0
+        text = str(response.choices[0].message.content or "")
+        tokens_used = int(response.usage.total_tokens) if response.usage else 0
         return CompletionResult(
             text=text,
             tokens_used=tokens_used,
