@@ -30,7 +30,7 @@ dependencies = [
     "prometheus-client>=0.21",
     # Security — established audited libraries only (see DECISIONS.md R5)
     "cryptography>=44.0",
-    "authlib>=1.4",
+    "authlib>=1.7.1",
     "joserfc>=1.6",
     "passlib[argon2]>=1.7",
     "pyotp>=2.9",
