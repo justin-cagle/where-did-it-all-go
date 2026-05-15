@@ -1,0 +1,2987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Where Did It All Go — Dashboard</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>  <!-- pragma: allowlist secret -->
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>  <!-- pragma: allowlist secret -->
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>  <!-- pragma: allowlist secret -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { width: 100%; min-height: 100%; }
+    body { background: #0a0a0a; font-family: 'Geist', sans-serif; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="new-screens.jsx"></script>
+<script type="text/babel">
+
+// ─── Token System ──────────────────────────────────────────────────────────
+const THEMES = {
+  light: {
+    bgPrimary:   'oklch(99.5% 0.002 250)',
+    bgSecondary: 'oklch(96.5% 0.004 250)',
+    bgElevated:  'oklch(100% 0 0)',
+    bgSidebar:   'oklch(97.5% 0.004 250)',
+    fgPrimary:   'oklch(10% 0.01 250)',
+    fgSecondary: 'oklch(36% 0.02 250)',
+    fgMuted:     'oklch(56% 0.01 250)',
+    accent:      'oklch(54% 0.22 250)',
+    accentFg:    'oklch(100% 0 0)',
+    success:     'oklch(48% 0.18 145)',
+    danger:      'oklch(54% 0.22 25)',
+    warning:     'oklch(62% 0.18 78)',
+    info:        'oklch(54% 0.18 212)',
+    border:      'oklch(89% 0.005 250)',
+    borderStrong:'oklch(80% 0.008 250)',
+    shadow:      '0 1px 3px rgba(0,0,50,0.06), 0 4px 12px rgba(0,0,50,0.04)',
+    cat1: 'oklch(58% 0.22 250)',
+    cat2: 'oklch(56% 0.2 145)',
+    cat3: 'oklch(58% 0.22 28)',
+    cat4: 'oklch(56% 0.2 318)',
+    cat5: 'oklch(56% 0.2 192)',
+    cat6: 'oklch(60% 0.2 82)',
+  },
+  dark: {
+    bgPrimary:   'oklch(11% 0.012 250)',
+    bgSecondary: 'oklch(14.5% 0.014 250)',
+    bgElevated:  'oklch(17% 0.012 250)',
+    bgSidebar:   'oklch(9.5% 0.014 250)',
+    fgPrimary:   'oklch(94% 0.008 250)',
+    fgSecondary: 'oklch(74% 0.01 250)',
+    fgMuted:     'oklch(48% 0.012 250)',
+    accent:      'oklch(68% 0.22 250)',
+    accentFg:    'oklch(100% 0 0)',
+    success:     'oklch(66% 0.18 145)',
+    danger:      'oklch(66% 0.22 25)',
+    warning:     'oklch(72% 0.18 78)',
+    info:        'oklch(66% 0.18 212)',
+    border:      'oklch(21% 0.018 250)',
+    borderStrong:'oklch(30% 0.018 250)',
+    shadow:      '0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2)',
+    cat1: 'oklch(70% 0.22 250)',
+    cat2: 'oklch(68% 0.2 145)',
+    cat3: 'oklch(70% 0.22 28)',
+    cat4: 'oklch(68% 0.2 318)',
+    cat5: 'oklch(68% 0.2 192)',
+    cat6: 'oklch(72% 0.2 82)',
+  }
+};
+
+// ─── Shared Data ───────────────────────────────────────────────────────────
+const SAMPLE = {
+  netWorth: 47832.50,
+  netWorthDelta: +1240.00,
+  monthlyIncome: 8400,
+  monthlySpent: 4218.77,
+  monthlyBudget: 5500,
+  savings: 3200,
+  accounts: [
+    { name: 'Checking', institution: 'Chase', balance: 6420.11, type: 'bank' },
+    { name: 'High-Yield Savings', institution: 'Ally', balance: 28340.00, type: 'bank' },
+    { name: 'Visa Signature', institution: 'Chase', balance: -1847.32, type: 'credit' },
+    { name: 'Auto Loan', institution: 'USAA', balance: -14280.00, type: 'debt' },
+  ],
+  recentTx: [
+    { merchant: 'Whole Foods', amount: -94.32, cat: 'Groceries', catColor: 0, date: 'Today', posted: true },
+    { merchant: 'Netflix', amount: -22.99, cat: 'Subscriptions', catColor: 4, date: 'Today', posted: true },
+    { merchant: 'Employer Direct Dep', amount: +4200.00, cat: 'Income', catColor: 1, date: 'May 1', posted: true },
+    { merchant: 'Shell Gas Station', amount: -58.44, cat: 'Transport', catColor: 5, date: 'Apr 30', posted: true },
+    { merchant: 'Amazon', amount: -34.99, cat: 'Shopping', catColor: 2, date: 'Apr 30', posted: true },
+    { merchant: 'Spotify', amount: -11.99, cat: 'Subscriptions', catColor: 4, date: 'Apr 29', posted: false },
+  ],
+  budgetLines: [
+    { name: 'Groceries', spent: 480, planned: 600, color: 0 },
+    { name: 'Dining', spent: 210, planned: 250, color: 2 },
+    { name: 'Transport', spent: 180, planned: 200, color: 5 },
+    { name: 'Subscriptions', spent: 135, planned: 150, color: 4 },
+    { name: 'Entertainment', spent: 89, planned: 150, color: 3 },
+  ],
+  goals: [
+    { name: 'Emergency Fund', current: 14200, target: 16800, color: 1 },
+    { name: 'Vacation — Italy', current: 2800, target: 5000, color: 0 },
+    { name: 'New MacBook', current: 900, target: 2000, color: 4 },
+  ],
+  cashflow: [
+    { month: 'Nov', income: 8400, expense: 5200 },
+    { month: 'Dec', income: 8400, expense: 6100 },
+    { month: 'Jan', income: 8400, expense: 4800 },
+    { month: 'Feb', income: 8400, expense: 4200 },
+    { month: 'Mar', income: 9200, expense: 5100 },
+    { month: 'Apr', income: 8400, expense: 4219 },
+  ],
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function fmt(n, privacyMode = 'off', currency = 'USD') {
+  if (privacyMode === 'full_blur') return '••••';
+  const abs = Math.abs(n);
+  const str = new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 }).format(abs);
+  if (privacyMode === 'partial_blur') return str.replace(/\d/g, '•');
+  return (n < 0 ? '-' : '') + str;
+}
+function pct(a, b) { return Math.min(100, Math.round((a / b) * 100)); }
+
+// ─── SVG Sparkline ─────────────────────────────────────────────────────────
+function Sparkline({ data, width = 120, height = 40, color, fill = false }) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * height;
+    return `${x},${y}`;
+  });
+  const path = `M ${pts.join(' L ')}`;
+  const fillPath = `${path} L ${width},${height} L 0,${height} Z`;
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+      {fill && <path d={fillPath} fill={color} fillOpacity={0.12} stroke="none" />}
+      <path d={path} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ─── Mini Bar Chart ────────────────────────────────────────────────────────
+function MiniBarChart({ data, t, width = 180, height = 60 }) {
+  const max = Math.max(...data.flatMap(d => [d.income, d.expense]));
+  const bw = (width / data.length) * 0.35;
+  const gap = (width / data.length) * 0.15;
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      {data.map((d, i) => {
+        const x = (i / data.length) * width + gap;
+        const ih = (d.income / max) * (height - 10);
+        const eh = (d.expense / max) * (height - 10);
+        return (
+          <g key={i}>
+            <rect x={x} y={height - ih} width={bw} height={ih} rx={2} fill={t.success} fillOpacity={0.7} />
+            <rect x={x + bw + 2} y={height - eh} width={bw} height={eh} rx={2} fill={t.danger} fillOpacity={0.6} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ─── Donut Chart ───────────────────────────────────────────────────────────
+function DonutChart({ segments, size = 80, thickness = 14 }) {
+  const r = (size - thickness) / 2;
+  const cx = size / 2, cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  let offset = 0;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeOpacity={0.06} strokeWidth={thickness} />
+      {segments.map((seg, i) => {
+        const dash = (seg.value / total) * circumference;
+        const el = (
+          <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+            stroke={seg.color} strokeWidth={thickness}
+            strokeDasharray={`${dash} ${circumference - dash}`}
+            strokeDashoffset={-offset}
+            strokeLinecap="round"
+          />
+        );
+        offset += dash;
+        return el;
+      })}
+    </svg>
+  );
+}
+
+// ─── Nav Icons (inline SVG) ────────────────────────────────────────────────
+const icons = {
+  dashboard: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  accounts:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
+  txn:       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  budget:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+  goals:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  debt:      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  calendar:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  settings:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  eye:       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  eyeOff:    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+  inbox:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>,
+  plus:      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  chevron:   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>,
+};
+
+const catColors = (t) => [t.cat1, t.cat2, t.cat3, t.cat4, t.cat5, t.cat6];
+
+// ─── Sidebar ───────────────────────────────────────────────────────────────
+function Sidebar({ t, active = 'dashboard', compact = false }) {
+  const navItems = [
+    { id: 'dashboard', label: 'Overview', icon: icons.dashboard },
+    { id: 'accounts',  label: 'Accounts', icon: icons.accounts },
+    { id: 'txn',       label: 'Transactions', icon: icons.txn },
+    { id: 'budget',    label: 'Budget', icon: icons.budget },
+    { id: 'goals',     label: 'Goals', icon: icons.goals },
+    { id: 'debt',      label: 'Debts', icon: icons.debt },
+    { id: 'calendar',  label: 'Calendar', icon: icons.calendar },
+  ];
+  const w = compact ? 52 : 200;
+  return (
+    <div style={{
+      width: w, minWidth: w, height: '100%',
+      background: t.bgSidebar,
+      borderRight: `1px solid ${t.border}`,
+      display: 'flex', flexDirection: 'column',
+      padding: compact ? '12px 8px' : '16px 12px',
+      gap: 2, flexShrink: 0,
+      transition: 'width 0.2s',
+    }}>
+      {/* Wordmark */}
+      <div style={{
+        padding: compact ? '6px 6px 14px' : '6px 8px 18px',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+          background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ color: t.accentFg, fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600 }}>$</span>
+        </div>
+        {!compact && (
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12, fontWeight: 500, color: t.fgPrimary, letterSpacing: '0.02em', lineHeight: 1.3 }}>
+            where did<br/>it all go
+          </span>
+        )}
+      </div>
+
+      {/* Nav */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
+        {navItems.map(item => {
+          const isActive = item.id === active;
+          return (
+            <div key={item.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: compact ? '8px 10px' : '8px 10px',
+              borderRadius: 6,
+              background: isActive ? `${t.accent}18` : 'transparent',
+              color: isActive ? t.accent : t.fgSecondary,
+              cursor: 'pointer',
+              fontSize: 13, fontWeight: isActive ? 500 : 400,
+              transition: 'all 0.1s',
+              whiteSpace: 'nowrap',
+            }}>
+              {item.icon}
+              {!compact && <span>{item.label}</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Bottom */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 6, color: t.fgMuted, cursor: 'pointer', fontSize: 13 }}>
+          {icons.settings}
+          {!compact && <span>Settings</span>}
+        </div>
+        {!compact && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 4px', borderTop: `1px solid ${t.border}`, marginTop: 4 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: t.accent, opacity: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>JC</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: t.fgPrimary }}>Justin</div>
+              <div style={{ fontSize: 11, color: t.fgMuted }}>Home lab</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stat Card ─────────────────────────────────────────────────────────────
+function StatCard({ t, label, value, delta, deltaLabel, children, accent, mono = true }) {
+  const positive = delta > 0;
+  return (
+    <div style={{
+      background: t.bgElevated,
+      border: `1px solid ${t.border}`,
+      borderRadius: 12,
+      padding: '18px 20px',
+      display: 'flex', flexDirection: 'column', gap: 6,
+    }}>
+      <div style={{ fontSize: 12, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 600, fontFamily: mono ? "'Geist Mono', monospace" : undefined, color: accent || t.fgPrimary, letterSpacing: '-0.02em' }}>{value}</div>
+      {delta !== undefined && (
+        <div style={{ fontSize: 12, color: positive ? t.success : t.danger, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>{positive ? '↑' : '↓'}</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace" }}>{fmt(Math.abs(delta))}</span>
+          {deltaLabel && <span style={{ color: t.fgMuted }}>{deltaLabel}</span>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// ─── Progress Bar ──────────────────────────────────────────────────────────
+function Bar({ value, max, color, t, thin = false }) {
+  const p = pct(value, max);
+  const overBudget = value > max;
+  return (
+    <div style={{ position: 'relative', height: thin ? 4 : 6, borderRadius: 99, background: t.border, overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0,
+        width: `${Math.min(100, p)}%`,
+        background: overBudget ? t.danger : color,
+        borderRadius: 99,
+        transition: 'width 0.4s ease',
+      }} />
+    </div>
+  );
+}
+
+// ─── Transaction Row ───────────────────────────────────────────────────────
+function TxRow({ tx, t, privacy }) {
+  const cats = catColors(t);
+  const color = cats[tx.catColor] || cats[0];
+  const isIncome = tx.amount > 0;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 0',
+      borderBottom: `1px solid ${t.border}`,
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+        background: `${color}22`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: t.fgPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tx.merchant}</div>
+        <div style={{ fontSize: 11, color: t.fgMuted }}>{tx.cat} · {tx.date}{!tx.posted ? ' · pending' : ''}</div>
+      </div>
+      <div style={{
+        fontSize: 13, fontWeight: 500, fontFamily: "'Geist Mono', monospace",
+        color: isIncome ? t.success : t.fgPrimary,
+        flexShrink: 0,
+      }}>
+        {isIncome ? '+' : ''}{fmt(tx.amount, privacy)}
+      </div>
+    </div>
+  );
+}
+
+// ─── HITL Badge ────────────────────────────────────────────────────────────
+function HitlBadge({ t, count = 3 }) {
+  if (!count) return null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '8px 12px', borderRadius: 8,
+      background: `${t.warning}18`,
+      border: `1px solid ${t.warning}40`,
+      cursor: 'pointer',
+    }}>
+      <div style={{ color: t.warning }}>{icons.inbox}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 500, color: t.fgPrimary }}>{count} items need your review</div>
+        <div style={{ fontSize: 11, color: t.fgMuted }}>2 transfers · 1 recurrence</div>
+      </div>
+      <div style={{ color: t.fgMuted }}>{icons.chevron}</div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VARIATION A — "Command Center"
+// Hero net worth top, three-column grid below, strong data hierarchy
+// ══════════════════════════════════════════════════════════════════════════════
+function DashboardA({ t, privacy }) {
+  const cats = catColors(t);
+  const sparkData = [28000, 30200, 31500, 29800, 33000, 35200, 38100, 41000, 43200, 45800, 46200, 47832];
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="dashboard" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Top bar */}
+        <div style={{ padding: '14px 24px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: t.fgPrimary }}>Good morning, Justin</div>
+            <div style={{ fontSize: 12, color: t.fgMuted }}>May 4, 2026 · Home household</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HitlBadge t={t} count={3} />
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: t.accent, color: t.accentFg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+              {icons.plus} Add transaction
+            </button>
+          </div>
+        </div>
+
+        {/* Main scroll area */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Hero row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1 / 3', background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '20px 24px', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Net Worth</div>
+                <div style={{ fontSize: 34, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary, letterSpacing: '-0.03em', marginBottom: 4 }}>{fmt(SAMPLE.netWorth, privacy)}</div>
+                <div style={{ fontSize: 12, color: t.success, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>↑</span><span style={{ fontFamily: "'Geist Mono', monospace" }}>{fmt(SAMPLE.netWorthDelta)}</span><span style={{ color: t.fgMuted }}>this month</span>
+                </div>
+              </div>
+              <Sparkline data={sparkData} width={140} height={50} color={t.accent} fill />
+            </div>
+            <StatCard t={t} label="Spent this month" value={fmt(SAMPLE.monthlySpent, privacy)} delta={-SAMPLE.monthlySpent + 3800} deltaLabel="vs last month">
+              <Bar value={SAMPLE.monthlySpent} max={SAMPLE.monthlyBudget} color={t.accent} t={t} thin />
+              <div style={{ fontSize: 11, color: t.fgMuted }}>{pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}% of {fmt(SAMPLE.monthlyBudget)} budget</div>
+            </StatCard>
+            <StatCard t={t} label="Saved this month" value={fmt(SAMPLE.savings, privacy)} delta={SAMPLE.savings - 2800} deltaLabel="vs last month" accent={t.success} />
+          </div>
+
+          {/* Three-col grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 0.9fr', gap: 12 }}>
+
+            {/* Transactions */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Recent Transactions</div>
+                <span style={{ fontSize: 12, color: t.accent, cursor: 'pointer' }}>View all</span>
+              </div>
+              {SAMPLE.recentTx.slice(0, 5).map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+            </div>
+
+            {/* Budget */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Budget — May</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <DonutChart size={36} thickness={8} segments={[
+                    { value: SAMPLE.monthlySpent, color: t.accent },
+                    { value: SAMPLE.monthlyBudget - SAMPLE.monthlySpent, color: t.border },
+                  ]} />
+                  <div style={{ fontSize: 11, color: t.fgMuted }}>{pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}%</div>
+                </div>
+              </div>
+              {SAMPLE.budgetLines.map((line, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: cats[line.color], flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: t.fgSecondary }}>{line.name}</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>
+                      {fmt(line.spent, privacy)} <span style={{ color: t.fgMuted, fontWeight: 400 }}>/ {fmt(line.planned, privacy)}</span>
+                    </span>
+                  </div>
+                  <Bar value={line.spent} max={line.planned} color={cats[line.color]} t={t} />
+                </div>
+              ))}
+            </div>
+
+            {/* Goals + Accounts */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px', flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Goals</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {SAMPLE.goals.map((g, i) => (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                        <span style={{ color: t.fgSecondary }}>{g.name}</span>
+                        <span style={{ fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>{pct(g.current, g.target)}%</span>
+                      </div>
+                      <Bar value={g.current} max={g.target} color={cats[g.color]} t={t} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>Accounts</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {SAMPLE.accounts.map((a, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: t.fgPrimary }}>{a.name}</div>
+                        <div style={{ fontSize: 11, color: t.fgMuted }}>{a.institution}</div>
+                      </div>
+                      <div style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: a.balance < 0 ? t.danger : t.fgPrimary, fontWeight: 500 }}>
+                        {fmt(a.balance, privacy)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cash flow chart */}
+          <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Cash Flow — 6 months</div>
+              <div style={{ display: 'flex', gap: 16, fontSize: 11, color: t.fgMuted }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: t.success, display: 'inline-block' }} /> Income</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: t.danger, display: 'inline-block' }} /> Expenses</span>
+              </div>
+            </div>
+            <MiniBarChart data={SAMPLE.cashflow} t={t} width={600} height={70} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VARIATION B — "Focused Flow"
+// Accounts in sidebar, full-height tx feed on right, goals below budget on left
+// ══════════════════════════════════════════════════════════════════════════════
+// Account color dots for collapsed sidebar
+const ACCOUNT_DOTS = ['oklch(60% 0.2 250)', 'oklch(58% 0.2 140)', 'oklch(60% 0.22 30)', 'oklch(58% 0.2 320)'];
+
+function SidebarB({ t, privacy, privacyMode, setPrivacyMode, activeNav, setActiveNav }) {
+  const [expanded, setExpanded] = React.useState(true);
+  const navItems = [
+    { id: 'dashboard', label: 'Overview',     icon: icons.dashboard },
+    { id: 'txn',       label: 'Transactions', icon: icons.txn },
+    { id: 'budget',    label: 'Budget',       icon: icons.budget },
+    { id: 'goals',     label: 'Goals',        icon: icons.goals },
+    { id: 'debt',      label: 'Debts',        icon: icons.debt },
+    { id: 'calendar',  label: 'Calendar',     icon: icons.calendar },
+  ];
+
+  const w = expanded ? 220 : 52;
+  const privacyIcons = { off: icons.eye, partial_blur: icons.eyeOff, full_blur: icons.eyeOff };
+  const nextPrivacy = { off: 'partial_blur', partial_blur: 'full_blur', full_blur: 'off' };
+  const privacyLabel = { off: 'Visible', partial_blur: 'Blurred', full_blur: 'Hidden' };
+
+  return (
+    <div style={{
+      width: w, minWidth: w, height: '100%',
+      background: t.bgSidebar,
+      borderRight: `1px solid ${t.border}`,
+      display: 'flex', flexDirection: 'column',
+      padding: expanded ? '16px 12px' : '16px 8px',
+      gap: 2, flexShrink: 0,
+      transition: 'width 0.2s cubic-bezier(0.4,0,0.2,1), min-width 0.2s cubic-bezier(0.4,0,0.2,1), padding 0.2s',
+      overflow: 'hidden',
+    }}>
+      {/* Wordmark / collapse toggle */}
+      <div
+        onClick={() => setExpanded(e => !e)}
+        style={{ padding: expanded ? '6px 8px 18px' : '6px 4px 18px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}
+      >
+        <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: t.accentFg, fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600 }}>$</span>
+        </div>
+        {expanded && (
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12, fontWeight: 500, color: t.fgPrimary, letterSpacing: '0.02em', lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+            where did<br />it all go
+          </span>
+        )}
+      </div>
+
+      {/* Nav */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {navItems.map(item => {
+          const isActive = item.id === (activeNav || 'dashboard');
+          return (
+            <div key={item.id}
+              onClick={() => setActiveNav && setActiveNav(item.id)}
+              title={!expanded ? item.label : undefined}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: expanded ? '8px 10px' : '8px',
+                justifyContent: expanded ? 'flex-start' : 'center',
+                borderRadius: 6,
+                background: isActive ? `${t.accent}18` : 'transparent',
+                color: isActive ? t.accent : t.fgSecondary,
+                cursor: 'pointer', fontSize: 13, fontWeight: isActive ? 500 : 400,
+                transition: 'background 0.1s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item.icon}
+              {expanded && <span>{item.label}</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Accounts section */}
+      <div style={{ marginTop: 20, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {expanded && (
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 10px', marginBottom: 6 }}>Accounts</div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {SAMPLE.accounts.map((a, i) => (
+            <div key={i} title={!expanded ? `${a.name}: ${fmt(a.balance, privacy)}` : undefined} style={{
+              display: 'flex', justifyContent: expanded ? 'space-between' : 'center', alignItems: 'center',
+              padding: expanded ? '7px 10px' : '7px',
+              borderRadius: 6, cursor: 'pointer',
+            }}>
+              {expanded ? (
+                <>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: t.fgSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
+                    <div style={{ fontSize: 10, color: t.fgMuted }}>{a.institution}</div>
+                  </div>
+                  <div style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: a.balance < 0 ? t.danger : t.fgSecondary, flexShrink: 0, marginLeft: 6 }}>
+                    {fmt(a.balance, privacy)}
+                  </div>
+                </>
+              ) : (
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: ACCOUNT_DOTS[i] || t.fgMuted }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Privacy toggle + user */}
+      <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Privacy toggle */}
+        <div
+          onClick={() => setPrivacyMode && setPrivacyMode(nextPrivacy[privacyMode || 'off'])}
+          title="Toggle privacy mode"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: expanded ? '7px 10px' : '7px',
+            justifyContent: expanded ? 'flex-start' : 'center',
+            borderRadius: 6, cursor: 'pointer',
+            color: privacyMode !== 'off' ? t.warning : t.fgMuted,
+            background: privacyMode !== 'off' ? `${t.warning}12` : 'transparent',
+            transition: 'all 0.15s',
+          }}
+        >
+          {privacyIcons[privacyMode || 'off']}
+          {expanded && <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{privacyLabel[privacyMode || 'off']}</span>}
+        </div>
+
+        {/* User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: expanded ? '6px 10px 2px' : '6px 4px 2px', justifyContent: expanded ? 'flex-start' : 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: t.accent, opacity: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>JC</span>
+          </div>
+          {expanded && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: t.fgPrimary }}>Justin</div>
+              <div style={{ fontSize: 11, color: t.fgMuted }}>Home lab</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardB({ t, privacy: privacyProp }) {
+  const cats = catColors(t);
+  const [selectedTx, setSelectedTx] = React.useState(null);
+  const [activeNav, setActiveNav] = React.useState('dashboard');
+  const [privacyMode, setPrivacyMode] = React.useState(privacyProp || 'off');
+  const [calOpen, setCalOpen] = React.useState(false);
+  const privacy = privacyMode;
+
+  // Sync privacy from tweaks prop
+  React.useEffect(() => { setPrivacyMode(privacyProp); }, [privacyProp]);
+
+  const spentPct = pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget);
+  const donutSegs = SAMPLE.budgetLines.map((l) => ({ value: l.spent, color: cats[l.color] }));
+
+  // Open calendar when nav item clicked
+  React.useEffect(() => {
+    if (activeNav === 'calendar') { setCalOpen(true); setActiveNav('dashboard'); }
+  }, [activeNav]);
+
+  const allTx = [
+    ...SAMPLE.recentTx,
+    { merchant: "Trader Joe's", amount: -62.14, cat: 'Groceries', catColor: 0, date: 'Apr 29', posted: true },
+    { merchant: 'Lyft', amount: -18.50, cat: 'Transport', catColor: 5, date: 'Apr 28', posted: true },
+    { merchant: 'Apple One', amount: -32.95, cat: 'Subscriptions', catColor: 4, date: 'Apr 28', posted: true },
+    { merchant: 'REI', amount: -124.00, cat: 'Shopping', catColor: 2, date: 'Apr 27', posted: true },
+  ];
+
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif", position: 'relative', overflow: 'hidden' }}>
+      {selectedTx && <TxModal tx={selectedTx} t={t} privacy={privacy} onClose={() => setSelectedTx(null)} />}
+
+      <SidebarB t={t} privacy={privacy} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} activeNav={activeNav} setActiveNav={setActiveNav} />
+
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+        {/* Left panel: budget focus + goals */}
+        <div style={{ width: 300, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
+          <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: t.fgPrimary }}>May 2026</div>
+            <div style={{ fontSize: 12, color: t.fgMuted }}>4 days elapsed · 27 remaining</div>
+          </div>
+
+          <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Net worth */}
+            <div style={{ padding: '12px 14px', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}` }}>
+              <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Net Worth</div>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary, letterSpacing: '-0.02em' }}>{fmt(SAMPLE.netWorth, privacy)}</div>
+              <div style={{ fontSize: 11, color: t.success, marginTop: 3 }}>↑ {fmt(SAMPLE.netWorthDelta)} this month</div>
+            </div>
+
+            {/* Donut */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '8px 0' }}>
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DonutChart segments={donutSegs} size={140} thickness={17} />
+                <div style={{ position: 'absolute', textAlign: 'center' }}>
+                  <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary, letterSpacing: '-0.03em' }}>{spentPct}%</div>
+                  <div style={{ fontSize: 10, color: t.fgMuted }}>of budget</div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary }}>{fmt(SAMPLE.monthlySpent, privacy)}</div>
+                <div style={{ fontSize: 11, color: t.fgMuted }}>of {fmt(SAMPLE.monthlyBudget, privacy)} budget</div>
+              </div>
+            </div>
+
+            {/* Budget lines */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {SAMPLE.budgetLines.map((line, i) => (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: 2, background: cats[line.color], flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: t.fgSecondary }}>{line.name}</span>
+                    </div>
+                    <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>
+                      {fmt(line.spent, privacy)} / {fmt(line.planned, privacy)}
+                    </span>
+                  </div>
+                  <Bar value={line.spent} max={line.planned} color={cats[line.color]} t={t} />
+                </div>
+              ))}
+            </div>
+
+            <div style={{ borderTop: `1px solid ${t.border}` }} />
+
+            {/* Goals */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>Goals</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                {SAMPLE.goals.map((g, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: 12, color: t.fgSecondary }}>{g.name}</span>
+                      <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: cats[g.color] }}>
+                        {fmt(g.current, privacy)} / {fmt(g.target, privacy)}
+                      </span>
+                    </div>
+                    <Bar value={g.current} max={g.target} color={cats[g.color]} t={t} />
+                    <div style={{ fontSize: 10, color: t.fgMuted }}>{pct(g.current, g.target)}% · on track</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: transactions */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: t.fgPrimary }}>Transactions</div>
+              <div style={{ fontSize: 11, color: t.fgMuted }}>May 2026</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <HitlBadge t={t} count={3} />
+              {/* Calendar toggle */}
+              <button
+                onClick={() => setCalOpen(o => !o)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, background: calOpen ? `${t.accent}20` : t.bgSecondary, color: calOpen ? t.accent : t.fgSecondary, border: `1px solid ${calOpen ? t.accent : t.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                {icons.calendar}
+              </button>
+              <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: t.accent, color: t.accentFg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                {icons.plus} Add
+              </button>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px' }}>
+            {[
+              { label: 'Today — May 4', txs: allTx.filter(tx => tx.date === 'Today') },
+              { label: 'May 1', txs: allTx.filter(tx => tx.date === 'May 1') },
+              { label: 'April 30', txs: allTx.filter(tx => tx.date === 'Apr 30') },
+              { label: 'April 29', txs: allTx.filter(tx => tx.date === 'Apr 29') },
+              { label: 'April 28', txs: allTx.filter(tx => tx.date === 'Apr 28') },
+              { label: 'April 27', txs: allTx.filter(tx => tx.date === 'Apr 27') },
+            ].filter(g => g.txs.length > 0).map((group, gi) => (
+              <div key={gi}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '16px 0 4px', position: 'sticky', top: 0, background: t.bgPrimary }}>
+                  {group.label}
+                </div>
+                {group.txs.map((tx, i) => <TxRowClickable key={i} tx={tx} t={t} privacy={privacy} onSelect={setSelectedTx} />)}
+              </div>
+            ))}
+            <div style={{ height: 24 }} />
+          </div>
+        </div>
+
+        {/* Calendar slide-out from right */}
+        <div style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0,
+          width: calOpen ? 560 : 0,
+          overflow: 'hidden',
+          transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
+          borderLeft: calOpen ? `1px solid ${t.border}` : 'none',
+          background: t.bgPrimary,
+          zIndex: 20,
+          boxShadow: calOpen ? '-8px 0 32px rgba(0,0,0,0.12)' : 'none',
+        }}>
+          <div style={{ width: 560, height: '100%', overflow: 'hidden' }}>
+            <CalendarSlideout t={t} privacy={privacy} onClose={() => setCalOpen(false)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VARIATION C — "Pulse"
+// Full-width sections, ambient sparklines in header, timeline-style tx feed
+// ══════════════════════════════════════════════════════════════════════════════
+function DashboardC({ t, privacy }) {
+  const cats = catColors(t);
+  const sparkData = [28000, 31000, 30200, 33500, 35200, 41000, 43200, 46200, 47832];
+
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="dashboard" compact />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Hero header with ambient chart */}
+        <div style={{
+          background: t.bgSecondary,
+          borderBottom: `1px solid ${t.border}`,
+          padding: '20px 28px 0',
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 12, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Net Worth</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <span style={{ fontSize: 40, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary, letterSpacing: '-0.03em' }}>{fmt(SAMPLE.netWorth, privacy)}</span>
+                <span style={{ fontSize: 13, color: t.success }}>↑ {fmt(SAMPLE.netWorthDelta)} this month</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <HitlBadge t={t} count={3} />
+              <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: t.accent, color: t.accentFg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                {icons.plus} Add
+              </button>
+            </div>
+          </div>
+
+          {/* Metric strip */}
+          <div style={{ display: 'flex', gap: 0, borderTop: `1px solid ${t.border}` }}>
+            {[
+              { label: 'Spent', value: fmt(SAMPLE.monthlySpent, privacy), sub: `${pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}% of budget`, color: t.fgPrimary },
+              { label: 'Budget left', value: fmt(SAMPLE.monthlyBudget - SAMPLE.monthlySpent, privacy), sub: '27 days remain', color: t.accent },
+              { label: 'Saved', value: fmt(SAMPLE.savings, privacy), sub: 'this month', color: t.success },
+              { label: 'Income', value: fmt(SAMPLE.monthlyIncome, privacy), sub: 'May income', color: t.fgPrimary },
+            ].map((m, i) => (
+              <div key={i} style={{ flex: 1, padding: '12px 16px', borderRight: i < 3 ? `1px solid ${t.border}` : 'none' }}>
+                <div style={{ fontSize: 11, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: m.color }}>{m.value}</div>
+                <div style={{ fontSize: 11, color: t.fgMuted, marginTop: 2 }}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', gap: 16 }}>
+
+          {/* Left: tx feed */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Activity</div>
+                <span style={{ fontSize: 12, color: t.accent, cursor: 'pointer' }}>All transactions</span>
+              </div>
+              {/* Today group */}
+              <div style={{ fontSize: 11, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '6px 0 2px' }}>Today</div>
+              {SAMPLE.recentTx.filter(tx => tx.date === 'Today').map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+              <div style={{ fontSize: 11, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '14px 0 2px' }}>May 1</div>
+              {SAMPLE.recentTx.filter(tx => tx.date === 'May 1').map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+              <div style={{ fontSize: 11, color: t.fgMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '14px 0 2px' }}>April 30</div>
+              {SAMPLE.recentTx.filter(tx => tx.date === 'Apr 30').map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+            </div>
+          </div>
+
+          {/* Right: sidebar widgets */}
+          <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Budget */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Budget</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {SAMPLE.budgetLines.map((line, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, color: t.fgSecondary, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: cats[line.color], display: 'inline-block', flexShrink: 0 }} />
+                        {line.name}
+                      </span>
+                      <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>{fmt(line.spent, privacy)}</span>
+                    </div>
+                    <Bar value={line.spent} max={line.planned} color={cats[line.color]} t={t} thin />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Accounts */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>Accounts</div>
+              {SAMPLE.accounts.map((a, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < SAMPLE.accounts.length - 1 ? `1px solid ${t.border}` : 'none' }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: t.fgSecondary }}>{a.name}</div>
+                    <div style={{ fontSize: 11, color: t.fgMuted }}>{a.institution}</div>
+                  </div>
+                  <div style={{ fontSize: 13, fontFamily: "'Geist Mono', monospace", color: a.balance < 0 ? t.danger : t.fgPrimary, fontWeight: 500 }}>
+                    {fmt(a.balance, privacy)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Goals compact */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Goals</div>
+              {SAMPLE.goals.map((g, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                    <span style={{ color: t.fgSecondary }}>{g.name}</span>
+                    <span style={{ fontFamily: "'Geist Mono', monospace", color: cats[g.color] }}>{pct(g.current, g.target)}%</span>
+                  </div>
+                  <Bar value={g.current} max={g.target} color={cats[g.color]} t={t} thin />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VARIATION D — "Terminal Warmth"
+// Subtle monospace accent, slightly warm muted palette, week-view strip, clean
+// ══════════════════════════════════════════════════════════════════════════════
+function DashboardD({ t, privacy }) {
+  const cats = catColors(t);
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const daySpend = [0, 94.32, 22.99, 0, 58.44, 34.99, 0];
+  const maxDaySpend = Math.max(...daySpend, 1);
+
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="dashboard" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Topbar */}
+        <div style={{ padding: '14px 24px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div>
+              <span style={{ fontSize: 16, fontWeight: 600, color: t.fgPrimary }}>Overview</span>
+              <span style={{ fontSize: 12, color: t.fgMuted, marginLeft: 8, fontFamily: "'Geist Mono', monospace" }}>May 2026</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HitlBadge t={t} count={3} />
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: t.accent, color: t.accentFg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+              {icons.plus} Add transaction
+            </button>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Top metrics row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            {[
+              { label: 'Net Worth', value: fmt(SAMPLE.netWorth, privacy), delta: `↑ ${fmt(SAMPLE.netWorthDelta)} this month`, deltaColor: t.success },
+              { label: 'Spent — May', value: fmt(SAMPLE.monthlySpent, privacy), sub: `${pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}% of ${fmt(SAMPLE.monthlyBudget)} budget` },
+              { label: 'Saved — May', value: fmt(SAMPLE.savings, privacy), delta: `↑ ${fmt(400)} vs last month`, deltaColor: t.success },
+              { label: 'Income — May', value: fmt(SAMPLE.monthlyIncome, privacy), sub: 'Employer payroll' },
+            ].map((m, i) => (
+              <div key={i} style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 11, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{m.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary, letterSpacing: '-0.02em' }}>{m.value}</div>
+                {m.delta && <div style={{ fontSize: 11, color: m.deltaColor, marginTop: 4 }}>{m.delta}</div>}
+                {m.sub && <div style={{ fontSize: 11, color: t.fgMuted, marginTop: 4 }}>{m.sub}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* This week strip */}
+          <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>This Week</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {days.map((day, i) => {
+                const h = daySpend[i] > 0 ? Math.max(16, (daySpend[i] / maxDaySpend) * 48) : 0;
+                const isToday = day === 'Sun';
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{
+                      height: 48, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', width: '100%',
+                    }}>
+                      {h > 0 && <div style={{ width: '100%', height: h, background: isToday ? t.accent : cats[0], borderRadius: '3px 3px 0 0', opacity: isToday ? 1 : 0.6 }} />}
+                    </div>
+                    <div style={{ fontSize: 10, color: isToday ? t.accent : t.fgMuted, fontWeight: isToday ? 600 : 400, fontFamily: "'Geist Mono', monospace" }}>{day}</div>
+                    {daySpend[i] > 0 && <div style={{ fontSize: 10, color: t.fgMuted, fontFamily: "'Geist Mono', monospace" }}>{fmt(daySpend[i], privacy, 'USD').replace('$', '')}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Two-col main */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 14 }}>
+            {/* Transactions */}
+            <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary }}>Transactions</div>
+                <span style={{ fontSize: 11, color: t.accent, cursor: 'pointer' }}>View all</span>
+              </div>
+              {SAMPLE.recentTx.map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+            </div>
+
+            {/* Right side */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Budget */}
+              <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Budget</div>
+                {SAMPLE.budgetLines.map((line, i) => (
+                  <div key={i} style={{ marginBottom: 9 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, color: t.fgSecondary, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 5, height: 5, borderRadius: 1, background: cats[line.color], display: 'inline-block' }} />{line.name}
+                      </span>
+                      <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>{fmt(line.spent, privacy)}</span>
+                    </div>
+                    <Bar value={line.spent} max={line.planned} color={cats[line.color]} t={t} thin />
+                  </div>
+                ))}
+              </div>
+
+              {/* Goals */}
+              <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Goals</div>
+                {SAMPLE.goals.map((g, i) => (
+                  <div key={i} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, color: t.fgSecondary }}>{g.name}</span>
+                      <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: cats[g.color] }}>{pct(g.current, g.target)}%</span>
+                    </div>
+                    <Bar value={g.current} max={g.target} color={cats[g.color]} t={t} thin />
+                  </div>
+                ))}
+              </div>
+
+              {/* Accounts compact */}
+              <div style={{ background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>Accounts</div>
+                {SAMPLE.accounts.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <span style={{ fontSize: 12, color: t.fgSecondary }}>{a.name}</span>
+                    <span style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: a.balance < 0 ? t.danger : t.fgPrimary }}>{fmt(a.balance, privacy)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOBILE VARIATION
+// ══════════════════════════════════════════════════════════════════════════════
+function MobileDashboard({ t, privacy }) {
+  const cats = catColors(t);
+  const [activeTab, setActiveTab] = React.useState('home');
+  const tabs = [
+    { id: 'home', label: 'Home', icon: icons.dashboard },
+    { id: 'txn', label: 'Transactions', icon: icons.txn },
+    { id: 'budget', label: 'Budget', icon: icons.budget },
+    { id: 'goals', label: 'Goals', icon: icons.goals },
+  ];
+
+  return (
+    <div style={{ width: 375, height: 812, background: t.bgPrimary, fontFamily: "'Geist', sans-serif", display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 0, position: 'relative' }}>
+      {/* Status bar */}
+      <div style={{ height: 44, background: t.bgPrimary, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px 8px', flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, fontFamily: "'Geist Mono', monospace" }}>9:41</span>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <div style={{ width: 16, height: 10, borderRadius: 2, border: `1.5px solid ${t.fgSecondary}`, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: 1, top: 1, bottom: 1, width: '80%', background: t.fgSecondary, borderRadius: 1 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ padding: '8px 20px 16px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 13, color: t.fgMuted }}>Good morning</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: t.fgPrimary }}>Justin ☀️</div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: 'white', fontSize: 14, fontWeight: 600 }}>JC</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Net worth hero card */}
+        <div style={{ margin: '0 16px 12px', padding: '20px', background: t.accent, borderRadius: 16, color: 'white' }}>
+          <div style={{ fontSize: 11, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Net Worth</div>
+          <div style={{ fontSize: 32, fontWeight: 700, fontFamily: "'Geist Mono', monospace", letterSpacing: '-0.02em', marginBottom: 6 }}>{fmt(SAMPLE.netWorth, privacy)}</div>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>↑ {fmt(SAMPLE.netWorthDelta)} this month</div>
+        </div>
+
+        {/* Quick stats */}
+        <div style={{ display: 'flex', gap: 8, margin: '0 16px 12px' }}>
+          <div style={{ flex: 1, background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Spent</div>
+            <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary }}>{fmt(SAMPLE.monthlySpent, privacy)}</div>
+            <Bar value={SAMPLE.monthlySpent} max={SAMPLE.monthlyBudget} color={t.accent} t={t} thin />
+            <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 4 }}>{pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}% of budget</div>
+          </div>
+          <div style={{ flex: 1, background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Saved</div>
+            <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: t.success }}>{fmt(SAMPLE.savings, privacy)}</div>
+            <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 16 }}>this month</div>
+          </div>
+        </div>
+
+        {/* HITL */}
+        <div style={{ margin: '0 16px 12px' }}>
+          <HitlBadge t={t} count={3} />
+        </div>
+
+        {/* Recent transactions */}
+        <div style={{ margin: '0 16px 12px', background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Recent</div>
+            <span style={{ fontSize: 12, color: t.accent }}>See all</span>
+          </div>
+          {SAMPLE.recentTx.slice(0, 4).map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+        </div>
+
+        {/* Goals */}
+        <div style={{ margin: '0 16px 80px', background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px 16px' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 12 }}>Goals</div>
+          {SAMPLE.goals.map((g, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontSize: 13, color: t.fgSecondary }}>{g.name}</span>
+                <span style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: cats[g.color] }}>{pct(g.current, g.target)}%</span>
+              </div>
+              <Bar value={g.current} max={g.target} color={cats[g.color]} t={t} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom tab bar */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: 80, background: t.bgElevated,
+        borderTop: `1px solid ${t.border}`,
+        display: 'flex', alignItems: 'flex-start', paddingTop: 8,
+        paddingBottom: 20,
+      }}>
+        {tabs.map(tab => {
+          const isActive = tab.id === activeTab;
+          return (
+            <div key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer', color: isActive ? t.accent : t.fgMuted }}>
+              {tab.icon}
+              <span style={{ fontSize: 10, fontWeight: isActive ? 500 : 400 }}>{tab.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSACTION DETAIL MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function TxModal({ tx, t, privacy, onClose }) {
+  if (!tx) return null;
+  const cats = catColors(t);
+  const color = cats[tx.catColor] || cats[0];
+  const isIncome = tx.amount > 0;
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      background: 'rgba(0,0,0,0.32)',
+      backdropFilter: 'blur(2px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 100,
+    }} onClick={onClose}>
+      <div style={{
+        width: 400, background: t.bgElevated,
+        border: `1px solid ${t.borderStrong}`,
+        borderRadius: 16,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Color band + merchant */}
+        <div style={{ background: `${color}18`, borderBottom: `1px solid ${color}30`, padding: '20px 22px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: t.fgPrimary }}>{tx.merchant}</div>
+                <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 2 }}>{tx.cat} · {tx.date}</div>
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.fgMuted, fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
+          </div>
+          <div style={{ marginTop: 14, fontSize: 32, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: isIncome ? t.success : t.fgPrimary, letterSpacing: '-0.02em' }}>
+            {isIncome ? '+' : ''}{fmt(tx.amount, privacy)}
+          </div>
+        </div>
+
+        {/* Details */}
+        <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[
+            { label: 'Status', value: tx.posted ? 'Posted' : 'Pending', valueColor: tx.posted ? t.success : t.warning },
+            { label: 'Category', value: tx.cat, swatch: color },
+            { label: 'Account', value: 'Chase Checking ···4821' },
+            { label: 'Date', value: tx.date === 'Today' ? 'May 4, 2026' : tx.date + ', 2026' },
+            { label: 'Rule', value: 'Auto-categorized by "Groceries" rule' },
+          ].map((row, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}` }}>
+              <span style={{ fontSize: 12, color: t.fgMuted }}>{row.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {row.swatch && <div style={{ width: 8, height: 8, borderRadius: '50%', background: row.swatch }} />}
+                <span style={{ fontSize: 13, fontWeight: 500, color: row.valueColor || t.fgPrimary }}>{row.value}</span>
+              </div>
+            </div>
+          ))}
+
+          {/* Split allocation teaser */}
+          <div style={{ marginTop: 12, padding: '12px 14px', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary }}>Split allocation</span>
+              <span style={{ fontSize: 11, color: t.accent, cursor: 'pointer' }}>+ Add split</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+                <span style={{ fontSize: 12, color: t.fgSecondary }}>{tx.cat}</span>
+              </div>
+              <span style={{ fontSize: 12, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary }}>{fmt(Math.abs(tx.amount), privacy)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: '0 22px 18px', display: 'flex', gap: 8 }}>
+          <button style={{ flex: 1, padding: '9px', borderRadius: 8, border: `1px solid ${t.border}`, background: 'none', color: t.fgSecondary, fontSize: 13, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>
+            Edit
+          </button>
+          <button style={{ flex: 1, padding: '9px', borderRadius: 8, border: `1px solid ${t.border}`, background: 'none', color: t.fgSecondary, fontSize: 13, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>
+            Exclude
+          </button>
+          <button style={{ flex: 2, padding: '9px', borderRadius: 8, border: 'none', background: t.accent, color: t.accentFg, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>
+            Recategorize
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CLICKABLE TRANSACTION ROW (wraps TxRow with modal trigger)
+// ──────────────────────────────────────────────────────────────────────────────
+function TxRowClickable({ tx, t, privacy, onSelect }) {
+  const [hovered, setHovered] = React.useState(false);
+  const cats = catColors(t);
+  const color = cats[tx.catColor] || cats[0];
+  const isIncome = tx.amount > 0;
+  return (
+    <div
+      onClick={() => onSelect(tx)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '10px 8px', margin: '0 -8px',
+        borderBottom: `1px solid ${t.border}`,
+        borderRadius: 6,
+        background: hovered ? `${t.accent}08` : 'transparent',
+        cursor: 'pointer', transition: 'background 0.1s',
+      }}
+    >
+      <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: t.fgPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tx.merchant}</div>
+        <div style={{ fontSize: 11, color: t.fgMuted }}>{tx.cat} · {tx.date}{!tx.posted ? ' · pending' : ''}</div>
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 500, fontFamily: "'Geist Mono', monospace", color: isIncome ? t.success : t.fgPrimary, flexShrink: 0 }}>
+        {isIncome ? '+' : ''}{fmt(tx.amount, privacy)}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CALENDAR SLIDEOUT — compact panel sliding in from right of dashboard
+// Full event interactivity: paid / pending / late states, mark-as-paid
+// ══════════════════════════════════════════════════════════════════════════════
+
+const RECURRING_EVENTS = [
+  { id: 'r1', d: 1,  label: 'Paycheck',       amount: 4200,   type: 'income',  status: 'paid',    account: 'Chase Checking', icon: '⬆' },
+  { id: 'r2', d: 8,  label: 'Netflix',         amount: -22.99, type: 'bill',    status: 'upcoming', account: 'Visa Signature', icon: '↻' },
+  { id: 'r3', d: 15, label: 'Paycheck',        amount: 4200,   type: 'income',  status: 'upcoming', account: 'Chase Checking', icon: '⬆' },
+  { id: 'r4', d: 21, label: 'Rent',            amount: -1850,  type: 'bill',    status: 'upcoming', account: 'Chase Checking', icon: '↻' },
+  { id: 'r5', d: 26, label: 'Spotify',         amount: -11.99, type: 'bill',    status: 'upcoming', account: 'Visa Signature', icon: '↻' },
+  { id: 'r6', d: 29, label: 'Auto Loan',       amount: -412,   type: 'bill',    status: 'upcoming', account: 'Chase Checking', icon: '↻' },
+  // Late event from April
+  { id: 'r7', d: 28, label: 'Gym Membership',  amount: -45,    type: 'bill',    status: 'late',     account: 'Visa Signature', icon: '↻', daysLate: 6 },
+];
+
+function CalendarSlideout({ t, privacy, onClose }) {
+  const [selectedDay, setSelectedDay] = React.useState(4);
+  const [paidEvents, setPaidEvents] = React.useState({ r1: true }); // r1 already paid
+  const cats = catColors(t);
+  const DOW = ['S','M','T','W','T','F','S'];
+
+  const runningBalance = (() => {
+    let bal = 6420;
+    const out = [bal];
+    for (let d = 1; d <= 31; d++) {
+      const evs = RECURRING_EVENTS.filter(e => e.d === d);
+      evs.forEach(e => { bal += e.amount; });
+      out.push(Math.max(0, bal));
+    }
+    return out;
+  })();
+
+  const maxBal = Math.max(...runningBalance);
+  const minBal = Math.min(...runningBalance);
+  const range = maxBal - minBal || 1;
+  const W = 500, H = 56;
+  const pts = runningBalance.map((b, i) => {
+    const x = (i / (runningBalance.length - 1)) * W;
+    const y = H - ((b - minBal) / range) * (H - 8) - 4;
+    return `${x},${y}`;
+  });
+  const terrainPath = `M ${pts.join(' L ')}`;
+  const fillPath = `${terrainPath} L ${W},${H} L 0,${H} Z`;
+  const todayX = (4 / (runningBalance.length - 1)) * W;
+
+  // events on selected day
+  const dayEvents = RECURRING_EVENTS.filter(e => e.d === selectedDay);
+  const dayTxs = SAMPLE.recentTx.filter(tx =>
+    (selectedDay === 4 && tx.date === 'Today') ||
+    (selectedDay === 1 && tx.date === 'May 1')
+  );
+
+  const statusStyle = (ev) => {
+    const isPaid = paidEvents[ev.id];
+    if (isPaid || ev.status === 'paid') return { dotBg: t.success, border: `${t.success}30`, bg: `${t.success}08`, label: 'Paid', labelColor: t.success };
+    if (ev.status === 'late') return { dotBg: t.danger, border: `${t.danger}40`, bg: `${t.danger}10`, label: `${ev.daysLate}d late`, labelColor: t.danger };
+    return { dotBg: t.fgMuted, border: t.border, bg: t.bgSecondary, label: 'Expected', labelColor: t.fgMuted };
+  };
+
+  // Build flat day list for grid
+  const dayGrid = [];
+  for (let i = 0; i < 5; i++) dayGrid.push(null); // May 1 = Friday → pad 5
+  for (let d = 1; d <= 31; d++) dayGrid.push(d);
+
+  const weeks = [];
+  for (let i = 0; i < dayGrid.length; i += 7) weeks.push(dayGrid.slice(i, i + 7));
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: t.bgPrimary }}>
+      {/* Header */}
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: t.fgPrimary }}>Calendar</div>
+          <div style={{ fontSize: 11, color: t.fgMuted, fontFamily: "'Geist Mono', monospace" }}>May 2026</div>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: t.fgMuted, cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>✕</button>
+      </div>
+
+      {/* Terrain */}
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Checking balance</span>
+          <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgSecondary }}>{fmt(runningBalance[selectedDay], privacy)}<span style={{ color: t.fgMuted, fontWeight: 400 }}> on May {selectedDay}</span></span>
+        </div>
+        <div style={{ position: 'relative', background: t.bgSecondary, borderRadius: 8, border: `1px solid ${t.border}`, padding: '8px 12px 4px', overflow: 'hidden' }}>
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="slGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={t.accent} stopOpacity="0.2" />
+                <stop offset="100%" stopColor={t.accent} stopOpacity="0.01" />
+              </linearGradient>
+            </defs>
+            <path d={fillPath} fill="url(#slGrad)" />
+            {/* Past portion — solid */}
+            <path d={`M ${pts.slice(0, 5).join(' L ')}`} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" />
+            {/* Future — dashed */}
+            <path d={`M ${pts.slice(4).join(' L ')}`} fill="none" stroke={t.accent} strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" opacity={0.6} />
+            {/* Today marker */}
+            <line x1={todayX} y1={0} x2={todayX} y2={H} stroke={t.accent} strokeWidth={1} strokeDasharray="3,2" />
+            {/* Selected day marker */}
+            {selectedDay !== 4 && (
+              <line x1={(selectedDay / (runningBalance.length - 1)) * W} y1={0} x2={(selectedDay / (runningBalance.length - 1)) * W} y2={H} stroke={t.fgMuted} strokeWidth={1} strokeDasharray="3,2" opacity={0.5} />
+            )}
+            {/* Event dots on terrain */}
+            {RECURRING_EVENTS.map(ev => {
+              const x = (ev.d / (runningBalance.length - 1)) * W;
+              const y = H - ((runningBalance[ev.d] - minBal) / range) * (H - 8) - 4;
+              const isPaid = paidEvents[ev.id] || ev.status === 'paid';
+              const isLate = ev.status === 'late';
+              return (
+                <circle key={ev.id} cx={x} cy={y} r={3.5}
+                  fill={isPaid ? t.success : isLate ? t.danger : ev.type === 'income' ? t.success : t.fgMuted}
+                  fillOpacity={isPaid ? 1 : 0.7}
+                  stroke={t.bgPrimary} strokeWidth={1}
+                />
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Mini calendar grid */}
+      <div style={{ padding: '12px 16px 8px', flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 4 }}>
+          {DOW.map((d, i) => <div key={i} style={{ fontSize: 9, color: t.fgMuted, textAlign: 'center', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>)}
+        </div>
+        {weeks.map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 2 }}>
+            {week.map((day, di) => {
+              if (!day) return <div key={di} />;
+              const isToday = day === 4;
+              const isSel = day === selectedDay;
+              const hasEvents = RECURRING_EVENTS.some(e => e.d === day);
+              const hasLate = RECURRING_EVENTS.some(e => e.d === day && e.status === 'late');
+              const hasIncome = RECURRING_EVENTS.some(e => e.d === day && e.type === 'income');
+              const isFuture = day > 4;
+              return (
+                <div key={di} onClick={() => setSelectedDay(day)} style={{
+                  height: 32, borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                  cursor: 'pointer',
+                  background: isSel ? t.accent : isToday ? `${t.accent}14` : 'transparent',
+                  border: isSel ? 'none' : isToday ? `1px solid ${t.accent}40` : `1px solid transparent`,
+                  opacity: isFuture ? 0.75 : 1,
+                }}>
+                  <span style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isSel ? t.accentFg : isToday ? t.accent : t.fgPrimary, lineHeight: 1 }}>{day}</span>
+                  {hasEvents && (
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {hasIncome && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : t.success }} />}
+                      {hasLate && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : t.danger }} />}
+                      {!hasIncome && !hasLate && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.5)' : t.fgMuted, opacity: 0.7 }} />}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ borderTop: `1px solid ${t.border}` }} />
+
+      {/* Day detail */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>
+          May {selectedDay}{selectedDay === 4 ? ' — Today' : selectedDay > 4 ? ' — Upcoming' : ''}
+        </div>
+
+        {/* Recurring events */}
+        {dayEvents.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {dayEvents.map(ev => {
+              const st = statusStyle(ev);
+              const isPaid = paidEvents[ev.id] || ev.status === 'paid';
+              const isIncome = ev.type === 'income';
+              return (
+                <div key={ev.id} style={{ background: st.bg, border: `1px solid ${st.border}`, borderRadius: 10, padding: '11px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isPaid ? 0 : 8 }}>
+                    {/* Status dot */}
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: st.dotBg, flexShrink: 0, boxShadow: ev.status === 'late' ? `0 0 0 3px ${t.danger}30` : 'none' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: t.fgPrimary }}>{ev.label}</div>
+                      <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 1 }}>{ev.account} · <span style={{ color: st.labelColor, fontWeight: 500 }}>{st.label}</span></div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: isIncome ? t.success : t.fgPrimary }}>
+                      {isIncome ? '+' : ''}{fmt(ev.amount, privacy)}
+                    </div>
+                  </div>
+                  {/* Actions for unpaid */}
+                  {!isPaid && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      {ev.status === 'late' && (
+                        <div style={{ fontSize: 10, color: t.danger, background: `${t.danger}12`, padding: '3px 8px', borderRadius: 4, fontWeight: 500 }}>
+                          ⚠ {ev.daysLate} days overdue
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setPaidEvents(p => ({ ...p, [ev.id]: true }))}
+                        style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.success}`, background: `${t.success}14`, color: t.success, cursor: 'pointer', fontWeight: 500, fontFamily: "'Geist', sans-serif" }}
+                      >
+                        ✓ Mark as paid
+                      </button>
+                      <button style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: 'none', color: t.fgMuted, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>
+                        Skip
+                      </button>
+                    </div>
+                  )}
+                  {isPaid && (
+                    <div style={{ fontSize: 10, color: t.success, marginTop: 4 }}>✓ Matched to transaction</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Actual transactions */}
+        {dayTxs.length > 0 && (
+          <>
+            <div style={{ fontSize: 10, fontWeight: 600, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Transactions</div>
+            {dayTxs.map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+          </>
+        )}
+
+        {dayEvents.length === 0 && dayTxs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '28px 0', color: t.fgMuted, fontSize: 12 }}>
+            {selectedDay > 4 ? 'No expected events' : 'No activity'}
+          </div>
+        )}
+
+        {/* Balance callout */}
+        <div style={{ marginTop: 14, padding: '10px 14px', background: t.bgSecondary, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: t.fgMuted }}>Checking balance{selectedDay > 4 ? ' (projected)' : ''}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: runningBalance[selectedDay] < 1000 ? t.warning : t.fgPrimary }}>
+              {fmt(runningBalance[selectedDay], privacy)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CALENDAR SCREEN (standalone artboard — full width)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Calendar data: full month of May 2026
+const MAY_CALENDAR = (() => {
+  const weeks = [];
+  // May 1 is a Friday (day index 5 in Sun-start week)
+  const days = [];
+  // pad start
+  for (let i = 0; i < 5; i++) days.push(null);
+  const dayData = [
+    // week 1
+    { d: 1,  spend: 4200, income: 8400, events: ['paycheck'], txCount: 1, future: false },
+    { d: 2,  spend: 0,    income: 0, events: [], txCount: 0, future: false },
+    // week 2
+    { d: 3,  spend: 0,    income: 0, events: [], txCount: 0, future: false },
+    { d: 4,  spend: 117,  income: 0, events: [], txCount: 2, future: false },  // today
+    { d: 5,  spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 6,  spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 7,  spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 8,  spend: 0,    income: 0, events: ['netflix'], txCount: 0, future: true  },
+    { d: 9,  spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    // week 3
+    { d: 10, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 11, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 12, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 13, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 14, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 15, spend: 0,    income: 4200, events: ['paycheck'], txCount: 0, future: true  },
+    { d: 16, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    // week 4
+    { d: 17, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 18, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 19, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 20, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 21, spend: 180,  income: 0, events: ['rent'], txCount: 1, future: true  },
+    { d: 22, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 23, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    // week 5
+    { d: 24, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 25, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 26, spend: 0,    income: 0, events: ['spotify'], txCount: 0, future: true  },
+    { d: 27, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 28, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 29, spend: 180,  income: 0, events: ['autoLoan'], txCount: 1, future: true  },
+    { d: 30, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+    { d: 31, spend: 0,    income: 0, events: [], txCount: 0, future: true  },
+  ];
+  dayData.forEach(d => days.push(d));
+  // chunk into weeks
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+  return weeks;
+})();
+
+const EVENT_META = {
+  paycheck:  { label: 'Paycheck',       color: 'success'  },
+  netflix:   { label: 'Netflix',         color: 'cat4'     },
+  spotify:   { label: 'Spotify',         color: 'cat4'     },
+  rent:      { label: 'Rent',            color: 'danger'   },
+  autoLoan:  { label: 'Auto loan',       color: 'danger'   },
+};
+
+function CalendarScreen({ t, privacy }) {
+  const [selectedDay, setSelectedDay] = React.useState(4);
+  const [paidEvents, setPaidEvents] = React.useState({ r1: true });
+  const cats = catColors(t);
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Running balance curve for the terrain
+  const runningBalance = (() => {
+    let bal = 6420; // checking start
+    const out = [bal];
+    MAY_CALENDAR.flat().filter(Boolean).forEach(d => {
+      bal = bal + (d.income || 0) - (d.spend || 0);
+      out.push(bal);
+    });
+    return out;
+  })();
+
+  const maxBal = Math.max(...runningBalance);
+  const minBal = Math.min(...runningBalance);
+  const balRange = maxBal - minBal || 1;
+
+  // SVG terrain path across all days
+  const terrainW = 760, terrainH = 80;
+  const totalDays = MAY_CALENDAR.flat().filter(Boolean).length;
+  const terrainPts = runningBalance.map((b, i) => {
+    const x = (i / (runningBalance.length - 1)) * terrainW;
+    const y = terrainH - ((b - minBal) / balRange) * (terrainH - 10) - 5;
+    return `${x},${y}`;
+  });
+  const terrainPath = `M ${terrainPts.join(' L ')}`;
+  const terrainFill = `${terrainPath} L ${terrainW},${terrainH} L 0,${terrainH} Z`;
+
+  // Today marker x position
+  const todayIdx = 4; // May 4 is index 3 in the days array (0-based after padding)
+  const todayX = (4 / (runningBalance.length - 1)) * terrainW;
+
+  const allDays = MAY_CALENDAR.flat();
+  const selDay = allDays.find(d => d && d.d === selectedDay);
+
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="calendar" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Topbar */}
+        <div style={{ padding: '14px 24px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div>
+              <span style={{ fontSize: 18, fontWeight: 600, color: t.fgPrimary }}>Calendar</span>
+              <span style={{ fontSize: 13, color: t.fgMuted, marginLeft: 10, fontFamily: "'Geist Mono', monospace" }}>May 2026</span>
+            </div>
+            <div style={{ display: 'flex', gap: 1 }}>
+              {['Month', 'Week', 'Pay period'].map((v, i) => (
+                <button key={i} style={{
+                  padding: '5px 12px', fontSize: 12, cursor: 'pointer', border: `1px solid ${t.border}`,
+                  borderRadius: i === 0 ? '6px 0 0 6px' : i === 2 ? '0 6px 6px 0' : '0',
+                  background: i === 0 ? t.bgSecondary : t.bgPrimary,
+                  color: i === 0 ? t.fgPrimary : t.fgMuted,
+                  fontFamily: "'Geist', sans-serif",
+                  fontWeight: i === 0 ? 500 : 400,
+                }}>{v}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+              {[
+                { dot: t.success, label: 'Income' },
+                { dot: t.danger, label: 'Bills' },
+                { dot: t.accent, label: 'Spending' },
+                { dot: t.fgMuted, label: 'Projected', dashed: true },
+              ].map((l, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: t.fgMuted }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.dot, display: 'inline-block', opacity: l.dashed ? 0.4 : 1, outline: l.dashed ? `1.5px dashed ${l.dot}` : 'none', outlineOffset: 1 }} />
+                  {l.label}
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 1 }}>
+              <button style={{ width: 28, height: 28, border: `1px solid ${t.border}`, borderRadius: '6px 0 0 6px', background: t.bgPrimary, cursor: 'pointer', color: t.fgMuted, fontSize: 14 }}>‹</button>
+              <button style={{ width: 28, height: 28, border: `1px solid ${t.border}`, borderRadius: '0 6px 6px 0', background: t.bgPrimary, cursor: 'pointer', color: t.fgMuted, fontSize: 14 }}>›</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* Cash flow terrain */}
+          <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Checking balance — May</div>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <span style={{ fontSize: 12, color: t.fgMuted }}>Start: <span style={{ fontFamily: "'Geist Mono', monospace", color: t.fgSecondary }}>$6,420</span></span>
+                <span style={{ fontSize: 12, color: t.fgMuted }}>Projected end: <span style={{ fontFamily: "'Geist Mono', monospace", color: t.success }}>$9,882</span></span>
+              </div>
+            </div>
+            <div style={{ position: 'relative', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}`, padding: '10px 16px 6px', overflow: 'hidden' }}>
+              <svg width="100%" height={terrainH} viewBox={`0 0 ${terrainW} ${terrainH}`} preserveAspectRatio="none">
+                {/* Fill: past solid, future dashed/faded */}
+                <defs>
+                  <linearGradient id="terrainGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={t.accent} stopOpacity="0.18" />
+                    <stop offset="100%" stopColor={t.accent} stopOpacity="0.02" />
+                  </linearGradient>
+                  <linearGradient id="terrainGradFuture" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={t.accent} stopOpacity="0.07" />
+                    <stop offset="100%" stopColor={t.accent} stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+                <path d={terrainFill} fill="url(#terrainGrad)" />
+                <path d={terrainPath} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                {/* Today vertical */}
+                <line x1={todayX} y1={0} x2={todayX} y2={terrainH} stroke={t.accent} strokeWidth={1} strokeDasharray="3,3" />
+                {/* Paycheck spikes */}
+                {[{ x: (4/31)*terrainW }, { x: (15/31)*terrainW }].map((p, i) => (
+                  <circle key={i} cx={p.x} cy={terrainH - ((runningBalance[i === 0 ? 4 : 15] - minBal) / balRange) * (terrainH - 10) - 5} r={3} fill={t.success} />
+                ))}
+              </svg>
+              {/* Today label */}
+              <div style={{ position: 'absolute', top: 6, left: `calc(${(todayX / terrainW) * 100}% + 4px)`, fontSize: 10, color: t.accent, fontWeight: 600, fontFamily: "'Geist Mono', monospace" }}>today</div>
+            </div>
+          </div>
+
+          {/* Calendar grid */}
+          <div style={{ padding: '12px 24px', flex: 1 }}>
+            {/* DOW headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+              {DOW.map(d => (
+                <div key={d} style={{ fontSize: 10, fontWeight: 600, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'center', padding: '4px 0' }}>{d}</div>
+              ))}
+            </div>
+
+            {/* Weeks */}
+            {MAY_CALENDAR.map((week, wi) => (
+              <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+                {week.map((day, di) => {
+                  if (!day) return <div key={di} style={{ height: 88, borderRadius: 8 }} />;
+                  const isToday = day.d === 4;
+                  const isSelected = day.d === selectedDay;
+                  const hasSpend = day.spend > 0;
+                  const hasIncome = day.income > 0;
+                  const hasBill = day.events.includes('rent') || day.events.includes('autoLoan');
+                  const hasRecurring = day.events.length > 0 && !hasIncome && !hasBill;
+                  const spendH = hasSpend ? Math.max(4, (day.spend / 500) * 28) : 0;
+
+                  return (
+                    <div key={di}
+                      onClick={() => setSelectedDay(day.d)}
+                      style={{
+                        height: 88, borderRadius: 8,
+                        border: isSelected ? `1.5px solid ${t.accent}` : `1px solid ${t.border}`,
+                        background: isToday ? `${t.accent}08` : day.future ? t.bgSecondary : t.bgElevated,
+                        padding: '8px 8px 6px',
+                        cursor: 'pointer',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                        transition: 'border-color 0.1s',
+                        opacity: day.future ? 0.85 : 1,
+                      }}
+                    >
+                      {/* Day number */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{
+                          fontSize: 13, fontWeight: isToday ? 700 : 400,
+                          color: isToday ? t.accent : t.fgPrimary,
+                          fontFamily: isToday ? "'Geist Mono', monospace" : undefined,
+                          width: 22, height: 22,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          borderRadius: '50%',
+                          background: isToday ? `${t.accent}18` : 'transparent',
+                        }}>{day.d}</span>
+                        {/* Event dots */}
+                        <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 28 }}>
+                          {hasIncome && <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.success }} />}
+                          {hasBill && <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.danger }} />}
+                          {hasRecurring && <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.cat4, opacity: 0.7 }} />}
+                        </div>
+                      </div>
+
+                      {/* Spending bar (bottom of cell) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {hasSpend && (
+                          <div style={{ fontSize: 10, fontFamily: "'Geist Mono', monospace", color: t.fgMuted }}>
+                            {fmt(day.spend, privacy).replace('$', '-$')}
+                          </div>
+                        )}
+                        {hasIncome && (
+                          <div style={{ fontSize: 10, fontFamily: "'Geist Mono', monospace", color: t.success }}>
+                            +{fmt(day.income, privacy)}
+                          </div>
+                        )}
+                        {/* Mini bar */}
+                        {(hasSpend || hasIncome) && (
+                          <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 10 }}>
+                            {hasIncome && <div style={{ width: 4, height: 10, background: t.success, borderRadius: 2, opacity: 0.7 }} />}
+                            {hasSpend && <div style={{ width: 4, height: Math.min(10, spendH), background: t.danger, borderRadius: 2, opacity: 0.7 }} />}
+                          </div>
+                        )}
+                        {/* Future recurring chips */}
+                        {day.future && day.events.map((ev, ei) => {
+                          const meta = EVENT_META[ev];
+                          if (!meta) return null;
+                          const dotColor = meta.color === 'success' ? t.success : meta.color === 'danger' ? t.danger : cats[4];
+                          return (
+                            <div key={ei} style={{ fontSize: 9, color: dotColor, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: 0.85 }}>
+                              {meta.label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Day detail panel — slides in on right */}
+      {selDay && (
+        <div style={{ width: 300, borderLeft: `1px solid ${t.border}`, background: t.bgElevated, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          <div style={{ padding: '16px 18px', borderBottom: `1px solid ${t.border}` }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: t.fgPrimary }}>May {selDay.d}{selDay.d === 4 ? ' · Today' : ''}</div>
+            {selDay.future && <div style={{ fontSize: 11, color: t.fgMuted, marginTop: 2 }}>Projected</div>}
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Balance */}
+            <div style={{ padding: '11px 14px', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}` }}>
+              <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>Balance · checking{selDay.future ? ' (proj.)' : ''}</div>
+              <div style={{ fontSize: 19, fontWeight: 700, fontFamily: "'Geist Mono', monospace", color: runningBalance[Math.min(selDay.d, runningBalance.length-1)] < 1000 ? t.warning : t.fgPrimary }}>
+                {fmt(runningBalance[Math.min(selDay.d, runningBalance.length-1)], privacy)}
+              </div>
+            </div>
+
+            {/* Recurring events with state */}
+            {RECURRING_EVENTS.filter(e => e.d === selDay.d).map(ev => {
+              const isPaid = paidEvents[ev.id] || ev.status === 'paid';
+              const isLate = ev.status === 'late';
+              const isIncome = ev.type === 'income';
+              const dotColor = isPaid ? t.success : isLate ? t.danger : isIncome ? t.success : t.fgMuted;
+              const bg = isPaid ? `${t.success}08` : isLate ? `${t.danger}10` : t.bgSecondary;
+              const border = isPaid ? `${t.success}25` : isLate ? `${t.danger}40` : t.border;
+              return (
+                <div key={ev.id} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: '11px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0,
+                      boxShadow: isLate ? `0 0 0 3px ${t.danger}30` : 'none',
+                      border: !isPaid && !isLate ? `1.5px dashed ${t.fgMuted}` : 'none',
+                    }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: t.fgPrimary }}>{ev.label}</div>
+                      <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 1 }}>
+                        {ev.account} ·{' '}
+                        <span style={{ color: isPaid ? t.success : isLate ? t.danger : t.fgMuted, fontWeight: 500 }}>
+                          {isPaid ? 'Paid' : isLate ? `${ev.daysLate}d late` : 'Expected'}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: isIncome ? t.success : t.fgPrimary }}>
+                      {isIncome ? '+' : ''}{fmt(ev.amount, privacy)}
+                    </div>
+                  </div>
+                  {!isPaid && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 9, alignItems: 'center' }}>
+                      {isLate && <span style={{ fontSize: 10, color: t.danger, background: `${t.danger}12`, padding: '2px 7px', borderRadius: 4, fontWeight: 500 }}>⚠ Overdue</span>}
+                      <button onClick={() => setPaidEvents(p => ({ ...p, [ev.id]: true }))}
+                        style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.success}`, background: `${t.success}14`, color: t.success, cursor: 'pointer', fontWeight: 500, fontFamily: "'Geist', sans-serif" }}>
+                        ✓ Mark paid
+                      </button>
+                      <button style={{ fontSize: 11, padding: '4px 9px', borderRadius: 6, border: `1px solid ${t.border}`, background: 'none', color: t.fgMuted, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>Skip</button>
+                    </div>
+                  )}
+                  {isPaid && <div style={{ fontSize: 10, color: t.success, marginTop: 6 }}>✓ Matched to transaction</div>}
+                </div>
+              );
+            })}
+
+            {/* Actual txs */}
+            {selDay.txCount > 0 && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '4px 0 6px' }}>Transactions</div>
+                {SAMPLE.recentTx.filter(tx => (selDay.d === 4 && tx.date === 'Today') || (selDay.d === 1 && tx.date === 'May 1')).map((tx, i) => (
+                  <TxRow key={i} tx={tx} t={t} privacy={privacy} />
+                ))}
+              </div>
+            )}
+
+            {RECURRING_EVENTS.filter(e => e.d === selDay.d).length === 0 && selDay.txCount === 0 && (
+              <div style={{ textAlign: 'center', padding: '28px 0', color: t.fgMuted, fontSize: 12 }}>
+                {selDay.future ? 'No expected events' : 'No activity'}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TERRAIN — Enhanced multi-account landscape with breach detection + animation
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ACCOUNT_SERIES = [
+  {
+    id: 'checking', label: 'Chase Checking', color: 'accent',
+    start: 6420,
+    events: [
+      { d: 1, delta: +8400 }, { d: 4, delta: -117 }, { d: 15, delta: +8400 },
+      { d: 21, delta: -1850 }, { d: 29, delta: -412 }, { d: 31, delta: -180 },
+    ],
+  },
+  {
+    id: 'savings', label: 'Ally Savings', color: 'success',
+    start: 28340,
+    events: [
+      { d: 1, delta: +200 }, { d: 15, delta: +200 },
+    ],
+  },
+  {
+    id: 'credit', label: 'Visa (balance owed)', color: 'danger',
+    start: -1847,
+    events: [
+      { d: 4, delta: -117 }, { d: 8, delta: -22.99 }, { d: 26, delta: -11.99 },
+    ],
+    invert: true, // show as positive debt growing
+  },
+];
+
+function buildSeries(acct) {
+  const vals = [acct.start];
+  for (let d = 1; d <= 31; d++) {
+    const evs = acct.events.filter(e => e.d === d);
+    const delta = evs.reduce((s, e) => s + e.delta, 0);
+    vals.push(vals[vals.length - 1] + delta);
+  }
+  return vals;
+}
+
+function TerrainChart({ t, privacy, width = 900, height = 160 }) {
+  const [animated, setAnimated] = React.useState(false);
+  const [visibleAccounts, setVisibleAccounts] = React.useState(['checking', 'savings']);
+  const [hoveredDay, setHoveredDay] = React.useState(null);
+  const svgRef = React.useRef(null);
+  const BREACH_THRESHOLD = 2000;
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const series = ACCOUNT_SERIES.map(acct => ({
+    ...acct,
+    vals: buildSeries(acct),
+  }));
+
+  const visibleSeries = series.filter(s => visibleAccounts.includes(s.id));
+  const allVals = visibleSeries.flatMap(s => s.vals);
+  const maxV = Math.max(...allVals, BREACH_THRESHOLD + 1000);
+  const minV = Math.min(...allVals, 0);
+  const range = maxV - minV || 1;
+
+  const toX = (i) => (i / 32) * width;
+  const toY = (v) => height - 20 - ((v - minV) / range) * (height - 36);
+
+  const makePath = (vals) => vals.map((v, i) => `${toX(i)},${toY(v)}`).join(' L ');
+  const makeFill = (vals) => `M ${makePath(vals)} L ${toX(vals.length-1)},${height} L ${toX(0)},${height} Z`;
+
+  const getColor = (colorKey) => ({
+    accent: t.accent, success: t.success, danger: t.danger, warning: t.warning,
+  }[colorKey] || t.accent);
+
+  // Breach points for checking
+  const checkingSeries = series.find(s => s.id === 'checking');
+  const breachDays = checkingSeries
+    ? checkingSeries.vals.map((v, i) => ({ d: i, v, breach: v < BREACH_THRESHOLD })).filter(p => p.breach)
+    : [];
+
+  // Month labels
+  const monthMarkers = [1, 8, 15, 22, 29];
+
+  const handleMouseMove = (e) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const day = Math.round((x / rect.width) * 32);
+    setHoveredDay(Math.max(0, Math.min(32, day)));
+  };
+
+  return (
+    <div style={{ background: t.bgPrimary, fontFamily: "'Geist', sans-serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ padding: '20px 28px 0', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: t.fgPrimary }}>Financial Landscape</div>
+            <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 2 }}>May 2026 · 30-day balance projection</div>
+          </div>
+          {/* Account toggles */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {ACCOUNT_SERIES.map(acct => {
+              const on = visibleAccounts.includes(acct.id);
+              const color = getColor(acct.color);
+              return (
+                <button key={acct.id}
+                  onClick={() => setVisibleAccounts(v => on ? v.filter(x => x !== acct.id) : [...v, acct.id])}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px',
+                    borderRadius: 20, border: `1px solid ${on ? color : t.border}`,
+                    background: on ? `${color}15` : 'transparent',
+                    color: on ? color : t.fgMuted,
+                    cursor: 'pointer', fontSize: 12, fontWeight: on ? 500 : 400,
+                    fontFamily: "'Geist', sans-serif",
+                    transition: 'all 0.15s',
+                  }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: on ? color : t.fgMuted }} />
+                  {acct.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* SVG terrain */}
+      <div style={{ flex: 1, padding: '0 28px 16px', position: 'relative' }}>
+        <svg
+          ref={svgRef}
+          width="100%" height="100%"
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHoveredDay(null)}
+          style={{ display: 'block', cursor: 'crosshair' }}
+        >
+          <defs>
+            {ACCOUNT_SERIES.map(acct => {
+              const color = getColor(acct.color);
+              return (
+                <linearGradient key={acct.id} id={`grad-${acct.id}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+                  <stop offset="100%" stopColor={color} stopOpacity="0.01" />
+                </linearGradient>
+              );
+            })}
+            {/* Clip for animation */}
+            <clipPath id="animClip">
+              <rect x="0" y="0" width={animated ? width : 0} height={height}
+                style={{ transition: animated ? 'width 1.8s cubic-bezier(0.4,0,0.2,1)' : 'none' }} />
+            </clipPath>
+          </defs>
+
+          {/* Y-axis grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((frac, i) => {
+            const v = minV + frac * range;
+            const y = toY(v);
+            return (
+              <g key={i}>
+                <line x1={0} y1={y} x2={width} y2={y} stroke={t.border} strokeWidth={1} />
+                <text x={4} y={y - 3} fill={t.fgMuted} fontSize={9} fontFamily="'Geist Mono', monospace">
+                  {v >= 0 ? `$${Math.round(v/1000)}k` : `-$${Math.round(Math.abs(v)/1000)}k`}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Breach threshold line */}
+          {visibleAccounts.includes('checking') && (
+            <g>
+              <line x1={0} y1={toY(BREACH_THRESHOLD)} x2={width} y2={toY(BREACH_THRESHOLD)}
+                stroke={t.warning} strokeWidth={1} strokeDasharray="6,4" />
+              <text x={width - 4} y={toY(BREACH_THRESHOLD) - 4} fill={t.warning} fontSize={9}
+                fontFamily="'Geist Mono', monospace" textAnchor="end">
+                min ${BREACH_THRESHOLD.toLocaleString()}
+              </text>
+            </g>
+          )}
+
+          {/* Today line */}
+          <line x1={toX(4)} y1={0} x2={toX(4)} y2={height} stroke={t.accent} strokeWidth={1} strokeDasharray="4,3" />
+          <text x={toX(4) + 4} y={12} fill={t.accent} fontSize={9} fontFamily="'Geist Mono', monospace">today</text>
+
+          {/* Month day labels */}
+          {monthMarkers.map(d => (
+            <text key={d} x={toX(d)} y={height - 4} fill={t.fgMuted} fontSize={9}
+              fontFamily="'Geist Mono', monospace" textAnchor="middle">{d}</text>
+          ))}
+
+          {/* Account series — fills then lines */}
+          <g clipPath="url(#animClip)">
+            {visibleSeries.map(acct => {
+              const color = getColor(acct.color);
+              return (
+                <g key={acct.id}>
+                  <path d={makeFill(acct.vals)} fill={`url(#grad-${acct.id})`} />
+                  <path d={`M ${makePath(acct.vals)}`} fill="none" stroke={color}
+                    strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                </g>
+              );
+            })}
+
+            {/* Breach zones — red fill below threshold */}
+            {visibleAccounts.includes('checking') && checkingSeries && (() => {
+              const segs = [];
+              let inBreach = false, segStart = null;
+              checkingSeries.vals.forEach((v, i) => {
+                if (v < BREACH_THRESHOLD && !inBreach) { inBreach = true; segStart = i; }
+                if ((v >= BREACH_THRESHOLD || i === checkingSeries.vals.length - 1) && inBreach) {
+                  inBreach = false;
+                  const end = i;
+                  const pts = checkingSeries.vals.slice(segStart, end + 1).map((vv, ii) =>
+                    `${toX(segStart + ii)},${toY(vv)}`).join(' L ');
+                  segs.push(
+                    <path key={segStart} d={`M ${pts} L ${toX(end)},${toY(BREACH_THRESHOLD)} L ${toX(segStart)},${toY(BREACH_THRESHOLD)} Z`}
+                      fill={t.danger} fillOpacity={0.15} />
+                  );
+                }
+              });
+              return segs;
+            })()}
+
+            {/* Event dots */}
+            {visibleSeries.flatMap(acct => acct.events.map((ev, i) => {
+              const color = getColor(acct.color);
+              const v = acct.vals[ev.d];
+              return (
+                <circle key={`${acct.id}-${i}`} cx={toX(ev.d)} cy={toY(v)} r={3.5}
+                  fill={color} stroke={t.bgPrimary} strokeWidth={1.5} />
+              );
+            }))}
+          </g>
+
+          {/* Hover crosshair */}
+          {hoveredDay !== null && (
+            <g>
+              <line x1={toX(hoveredDay)} y1={0} x2={toX(hoveredDay)} y2={height - 20}
+                stroke={t.fgMuted} strokeWidth={1} strokeDasharray="3,2" />
+              {visibleSeries.map(acct => {
+                const color = getColor(acct.color);
+                const v = acct.vals[Math.min(hoveredDay, acct.vals.length - 1)];
+                return (
+                  <g key={acct.id}>
+                    <circle cx={toX(hoveredDay)} cy={toY(v)} r={4}
+                      fill={color} stroke={t.bgPrimary} strokeWidth={2} />
+                    <rect x={toX(hoveredDay) + 8} y={toY(v) - 11} width={72} height={16} rx={4}
+                      fill={t.bgElevated} stroke={t.border} />
+                    <text x={toX(hoveredDay) + 12} y={toY(v) + 1} fill={color} fontSize={10}
+                      fontFamily="'Geist Mono', monospace" fontWeight="600">
+                      {fmt(v, privacy)}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          )}
+        </svg>
+
+        {/* Breach alert banner */}
+        {visibleAccounts.includes('checking') && breachDays.length > 0 && (
+          <div style={{
+            position: 'absolute', bottom: 32, left: 28,
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 8,
+            background: `${t.warning}18`, border: `1px solid ${t.warning}50`,
+          }}>
+            <span style={{ color: t.warning, fontSize: 13 }}>⚠</span>
+            <span style={{ fontSize: 12, color: t.fgPrimary }}>
+              Checking drops below <span style={{ fontFamily: "'Geist Mono', monospace", color: t.warning }}>${BREACH_THRESHOLD.toLocaleString()}</span> around May {breachDays[0]?.d || '?'} — consider transferring from savings
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TerrainScreen({ t, privacy }) {
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="dashboard" />
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <TerrainChart t={t} privacy={privacy} width={900} height={260} />
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HITL QUEUE — Human-in-the-loop review flows
+// ══════════════════════════════════════════════════════════════════════════════
+
+const HITL_ITEMS = [
+  {
+    id: 'h1', type: 'transfer', priority: 'high',
+    title: 'Possible internal transfer',
+    desc: 'Chase Checking → Ally Savings',
+    detail: 'Two matching transactions: -$500 from Chase on May 1 and +$500 to Ally on May 1. Same day, same amount.',
+    options: [
+      { label: 'Internal transfer', action: 'link', color: 'accent', desc: 'Link as internal — won\'t affect spending reports' },
+      { label: 'External payment', action: 'external', color: 'fgSecondary', desc: 'Unrelated — keep both as separate expenses' },
+      { label: 'Ignore', action: 'ignore', color: 'fgMuted', desc: 'Dismiss without linking' },
+    ],
+    txA: { merchant: 'ACH Transfer Out', amount: -500, account: 'Chase Checking', date: 'May 1' },
+    txB: { merchant: 'ACH Transfer In', amount: +500, account: 'Ally Savings', date: 'May 1' },
+    confidence: 94,
+  },
+  {
+    id: 'h2', type: 'dedup', priority: 'medium',
+    title: 'Possible duplicate transaction',
+    desc: 'Whole Foods · $94.32',
+    detail: 'Two transactions for the same amount at the same merchant within 2 hours. One may be a duplicate from your bank feed.',
+    options: [
+      { label: 'Keep both', action: 'keep', color: 'fgSecondary', desc: 'Both are real — e.g. two separate purchases' },
+      { label: 'Merge into one', action: 'merge', color: 'accent', desc: 'Remove duplicate, keep one transaction' },
+    ],
+    txA: { merchant: 'Whole Foods Market', amount: -94.32, account: 'Visa Signature', date: 'Today · 2:14pm' },
+    txB: { merchant: 'Whole Foods Market', amount: -94.32, account: 'Visa Signature', date: 'Today · 2:16pm' },
+    confidence: 87,
+  },
+  {
+    id: 'h3', type: 'recurrence', priority: 'low',
+    title: 'New recurring series detected',
+    desc: 'Adobe Creative Cloud · $59.99/mo',
+    detail: 'Detected 4 consistent monthly charges from Adobe Systems. Confirm as a recurring subscription to enable tracking and alerts.',
+    options: [
+      { label: 'Confirm recurrence', action: 'confirm', color: 'accent', desc: 'Track as $59.99/mo, alert on changes' },
+      { label: 'Not recurring', action: 'reject', color: 'fgSecondary', desc: 'Dismiss — these are coincidental' },
+    ],
+    txA: { merchant: 'ADOBE CREATIVE CLD', amount: -59.99, account: 'Visa Signature', date: 'Apr 5' },
+    history: ['Mar 5 · -$59.99', 'Feb 5 · -$59.99', 'Jan 5 · -$59.99'],
+    confidence: 98,
+  },
+];
+
+function HitlScreen({ t, privacy }) {
+  const [items, setItems] = React.useState(HITL_ITEMS);
+  const [resolved, setResolved] = React.useState({});
+  const [expanded, setExpanded] = React.useState('h1');
+  const cats = catColors(t);
+
+  const resolve = (id, action) => {
+    setResolved(r => ({ ...r, [id]: action }));
+    // auto-expand next unresolved
+    const next = items.find(i => i.id !== id && !resolved[i.id]);
+    if (next) setExpanded(next.id);
+  };
+
+  const typeIcon = { transfer: '⇄', dedup: '⊙', recurrence: '↻' };
+  const typeBadge = { transfer: t.info, dedup: t.warning, recurrence: t.accent };
+  const priorityDot = { high: t.danger, medium: t.warning, low: t.fgMuted };
+
+  return (
+    <div style={{ display: 'flex', height: '100%', background: t.bgPrimary, fontFamily: "'Geist', sans-serif" }}>
+      <Sidebar t={t} active="txn" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Topbar */}
+        <div style={{ padding: '16px 28px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: t.fgPrimary }}>Review Queue</div>
+            <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 2 }}>
+              {items.length - Object.keys(resolved).length} items need your attention
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['All', 'Transfers', 'Duplicates', 'Recurring'].map((f, i) => (
+              <button key={i} style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: `1px solid ${i === 0 ? t.accent : t.border}`, background: i === 0 ? `${t.accent}15` : 'none', color: i === 0 ? t.accent : t.fgMuted, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>{f}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {items.map(item => {
+            const isResolved = !!resolved[item.id];
+            const isExpanded = expanded === item.id && !isResolved;
+            const badgeColor = typeBadge[item.type];
+
+            return (
+              <div key={item.id} style={{
+                background: t.bgElevated, border: `1px solid ${isResolved ? t.border : isExpanded ? `${t.accent}40` : t.border}`,
+                borderRadius: 12, overflow: 'hidden',
+                opacity: isResolved ? 0.55 : 1,
+                transition: 'all 0.2s',
+              }}>
+                {/* Header row */}
+                <div
+                  onClick={() => !isResolved && setExpanded(isExpanded ? null : item.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: isResolved ? 'default' : 'pointer' }}
+                >
+                  {/* Type badge */}
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: `${badgeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
+                    {typeIcon[item.type]}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: t.fgPrimary }}>{item.title}</span>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: priorityDot[item.priority], flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: t.fgMuted, background: t.bgSecondary, padding: '1px 7px', borderRadius: 4 }}>
+                        {item.confidence}% match
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 2 }}>{item.desc}</div>
+                  </div>
+
+                  {isResolved ? (
+                    <div style={{ fontSize: 12, color: t.success, fontWeight: 500 }}>✓ Resolved</div>
+                  ) : (
+                    <div style={{ fontSize: 18, color: t.fgMuted, transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</div>
+                  )}
+                </div>
+
+                {/* Expanded detail */}
+                {isExpanded && (
+                  <div style={{ borderTop: `1px solid ${t.border}`, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ fontSize: 13, color: t.fgSecondary, lineHeight: 1.5 }}>{item.detail}</div>
+
+                    {/* Transaction pair */}
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {[item.txA, item.txB].filter(Boolean).map((tx, i) => (
+                        <div key={i} style={{ flex: 1, padding: '12px 14px', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}` }}>
+                          <div style={{ fontSize: 11, color: t.fgMuted, marginBottom: 4 }}>{tx.account}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: t.fgPrimary }}>{tx.merchant}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, alignItems: 'baseline' }}>
+                            <span style={{ fontSize: 11, color: t.fgMuted }}>{tx.date}</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: tx.amount < 0 ? t.fgPrimary : t.success }}>
+                              {tx.amount > 0 ? '+' : ''}{fmt(tx.amount, privacy)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Recurrence history */}
+                    {item.history && (
+                      <div>
+                        <div style={{ fontSize: 11, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Pattern history</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {item.history.map((h, i) => (
+                            <div key={i} style={{ fontSize: 11, padding: '3px 10px', background: t.bgSecondary, borderRadius: 6, color: t.fgSecondary, border: `1px solid ${t.border}` }}>{h}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+                      {item.options.map((opt, i) => {
+                        const color = { accent: t.accent, fgSecondary: t.fgSecondary, fgMuted: t.fgMuted, success: t.success }[opt.color] || t.accent;
+                        const isPrimary = i === 0;
+                        return (
+                          <div key={i} style={{ flex: 1 }}>
+                            <button
+                              onClick={() => resolve(item.id, opt.action)}
+                              style={{
+                                width: '100%', padding: '9px', borderRadius: 8,
+                                border: `1px solid ${isPrimary ? color : t.border}`,
+                                background: isPrimary ? `${color}18` : 'none',
+                                color: isPrimary ? color : t.fgSecondary,
+                                fontSize: 13, fontWeight: isPrimary ? 600 : 400,
+                                cursor: 'pointer', fontFamily: "'Geist', sans-serif",
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                            <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 4, textAlign: 'center', lineHeight: 1.3 }}>{opt.desc}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {Object.keys(resolved).length === items.length && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: t.success }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>✓</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Queue is clear</div>
+              <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 4 }}>All items reviewed · next sync in 2h</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOBILE CALENDAR — slide-up sheet with terrain + event states
+// ══════════════════════════════════════════════════════════════════════════════
+
+function MobileCalendarSheet({ t, privacy, onClose }) {
+  const [selectedDay, setSelectedDay] = React.useState(4);
+  const [paidEvents, setPaidEvents] = React.useState({ r1: true });
+  const DOW = ['S','M','T','W','T','F','S'];
+
+  const runningBalance = (() => {
+    let bal = 6420;
+    const out = [bal];
+    RECURRING_EVENTS.forEach((_, idx) => {
+      for (let d = 1; d <= 31; d++) {
+        // This loop builds day-by-day
+      }
+    });
+    // simpler approach
+    let b = 6420;
+    const vals = [b];
+    for (let d = 1; d <= 31; d++) {
+      RECURRING_EVENTS.filter(e => e.d === d).forEach(e => { b += e.amount; });
+      vals.push(Math.max(0, b));
+    }
+    return vals;
+  })();
+
+  const W = 340, H = 52;
+  const maxBal = Math.max(...runningBalance);
+  const minBal = Math.min(...runningBalance);
+  const rng = maxBal - minBal || 1;
+  const pts = runningBalance.map((b, i) => {
+    const x = (i / (runningBalance.length - 1)) * W;
+    const y = H - ((b - minBal) / rng) * (H - 8) - 4;
+    return `${x},${y}`;
+  });
+  const terrainPath = `M ${pts.join(' L ')}`;
+  const fillPath = `${terrainPath} L ${W},${H} L 0,${H} Z`;
+
+  const dayGrid = [];
+  for (let i = 0; i < 5; i++) dayGrid.push(null);
+  for (let d = 1; d <= 31; d++) dayGrid.push(d);
+  const weeks = [];
+  for (let i = 0; i < dayGrid.length; i += 7) weeks.push(dayGrid.slice(i, i + 7));
+
+  const dayEvents = RECURRING_EVENTS.filter(e => e.d === selectedDay);
+  const dayTxs = SAMPLE.recentTx.filter(tx =>
+    (selectedDay === 4 && tx.date === 'Today') || (selectedDay === 1 && tx.date === 'May 1')
+  );
+
+  return (
+    <div style={{
+      position: 'absolute', left: 0, right: 0, bottom: 0,
+      height: '88%',
+      background: t.bgElevated,
+      borderRadius: '16px 16px 0 0',
+      boxShadow: '0 -4px 40px rgba(0,0,0,0.2)',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+      zIndex: 50,
+    }}>
+      {/* Drag handle */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: t.border }} />
+      </div>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 12px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: t.fgPrimary }}>Calendar · May 2026</div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: t.fgMuted, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+      </div>
+
+      {/* Terrain strip */}
+      <div style={{ margin: '0 16px 10px', background: t.bgSecondary, borderRadius: 10, border: `1px solid ${t.border}`, padding: '8px 12px 4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+          <span style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Checking · May</span>
+          <span style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgSecondary }}>{fmt(runningBalance[selectedDay], privacy)}</span>
+        </div>
+        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="mGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={t.accent} stopOpacity="0.2" />
+              <stop offset="100%" stopColor={t.accent} stopOpacity="0.01" />
+            </linearGradient>
+          </defs>
+          <path d={fillPath} fill="url(#mGrad)" />
+          <path d={`M ${pts.slice(0, 5).join(' L ')}`} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" />
+          <path d={`M ${pts.slice(4).join(' L ')}`} fill="none" stroke={t.accent} strokeWidth={1.5} strokeDasharray="4,3" opacity={0.6} />
+          {/* Selected day marker */}
+          <line x1={(selectedDay / (runningBalance.length - 1)) * W} y1={0} x2={(selectedDay / (runningBalance.length - 1)) * W} y2={H} stroke={t.accent} strokeWidth={1} strokeDasharray="3,2" />
+          {/* Event dots */}
+          {RECURRING_EVENTS.map(ev => {
+            const x = (ev.d / (runningBalance.length - 1)) * W;
+            const y = H - ((runningBalance[ev.d] - minBal) / rng) * (H - 8) - 4;
+            const isPaid = paidEvents[ev.id] || ev.status === 'paid';
+            const isLate = ev.status === 'late';
+            return <circle key={ev.id} cx={x} cy={y} r={3} fill={isPaid ? t.success : isLate ? t.danger : t.fgMuted} stroke={t.bgElevated} strokeWidth={1} />;
+          })}
+        </svg>
+      </div>
+
+      {/* Mini calendar */}
+      <div style={{ padding: '0 16px 6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, marginBottom: 3 }}>
+          {DOW.map((d, i) => <div key={i} style={{ fontSize: 9, color: t.fgMuted, textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
+        </div>
+        {weeks.map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, marginBottom: 3 }}>
+            {week.map((day, di) => {
+              if (!day) return <div key={di} />;
+              const isToday = day === 4;
+              const isSel = day === selectedDay;
+              const hasEv = RECURRING_EVENTS.some(e => e.d === day);
+              const hasLate = RECURRING_EVENTS.some(e => e.d === day && e.status === 'late');
+              const hasInc = RECURRING_EVENTS.some(e => e.d === day && e.type === 'income');
+              return (
+                <div key={di} onClick={() => setSelectedDay(day)} style={{
+                  height: 36, borderRadius: 7, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                  cursor: 'pointer',
+                  background: isSel ? t.accent : isToday ? `${t.accent}14` : 'transparent',
+                  border: isToday && !isSel ? `1px solid ${t.accent}40` : '1px solid transparent',
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: isSel ? t.accentFg : isToday ? t.accent : t.fgPrimary, lineHeight: 1 }}>{day}</span>
+                  {hasEv && (
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {hasInc && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : t.success }} />}
+                      {hasLate && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : t.danger }} />}
+                      {!hasInc && !hasLate && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.5)' : t.fgMuted, opacity: 0.7 }} />}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ borderTop: `1px solid ${t.border}` }} />
+
+      {/* Day events — scrollable */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, marginBottom: 10 }}>
+          May {selectedDay}{selectedDay === 4 ? ' · Today' : selectedDay > 4 ? ' · Upcoming' : ''}
+        </div>
+
+        {dayEvents.map(ev => {
+          const isPaid = paidEvents[ev.id] || ev.status === 'paid';
+          const isLate = ev.status === 'late';
+          const isIncome = ev.type === 'income';
+          const dotColor = isPaid ? t.success : isLate ? t.danger : isIncome ? t.success : t.fgMuted;
+          const bg = isPaid ? `${t.success}08` : isLate ? `${t.danger}10` : t.bgSecondary;
+          return (
+            <div key={ev.id} style={{ background: bg, borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isPaid ? t.success+'25' : isLate ? t.danger+'40' : t.border}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: t.fgPrimary }}>{ev.label}</div>
+                  <div style={{ fontSize: 11, color: t.fgMuted }}>{ev.account}</div>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: isIncome ? t.success : t.fgPrimary }}>
+                  {isIncome ? '+' : ''}{fmt(ev.amount, privacy)}
+                </div>
+              </div>
+              {!isPaid && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  {isLate && <span style={{ fontSize: 11, color: t.danger, background: `${t.danger}12`, padding: '3px 8px', borderRadius: 4, fontWeight: 500 }}>⚠ {ev.daysLate}d late</span>}
+                  <button onClick={() => setPaidEvents(p => ({ ...p, [ev.id]: true }))}
+                    style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 14px', borderRadius: 8, border: `1px solid ${t.success}`, background: `${t.success}14`, color: t.success, cursor: 'pointer', fontWeight: 500, fontFamily: "'Geist', sans-serif" }}>
+                    ✓ Mark paid
+                  </button>
+                  <button style={{ fontSize: 12, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: 'none', color: t.fgMuted, cursor: 'pointer', fontFamily: "'Geist', sans-serif" }}>Skip</button>
+                </div>
+              )}
+              {isPaid && <div style={{ fontSize: 11, color: t.success, marginTop: 6 }}>✓ Matched to transaction</div>}
+            </div>
+          );
+        })}
+
+        {dayTxs.map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+
+        {dayEvents.length === 0 && dayTxs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: t.fgMuted, fontSize: 13 }}>
+            {selectedDay > 4 ? 'No expected events' : 'No activity'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MobileDashboardV2({ t, privacy }) {
+  const cats = catColors(t);
+  const [activeTab, setActiveTab] = React.useState('home');
+  const [calOpen, setCalOpen] = React.useState(false);
+  const tabs = [
+    { id: 'home', label: 'Home', icon: icons.dashboard },
+    { id: 'txn', label: 'Activity', icon: icons.txn },
+    { id: 'calendar', label: 'Calendar', icon: icons.calendar, action: () => setCalOpen(true) },
+    { id: 'budget', label: 'Budget', icon: icons.budget },
+  ];
+
+  return (
+    <div style={{ width: 375, height: 812, background: t.bgPrimary, fontFamily: "'Geist', sans-serif", display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      {/* Calendar sheet */}
+      {calOpen && <MobileCalendarSheet t={t} privacy={privacy} onClose={() => setCalOpen(false)} />}
+
+      {/* Status bar */}
+      <div style={{ height: 44, background: t.bgPrimary, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px 8px', flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary, fontFamily: "'Geist Mono', monospace" }}>9:41</span>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <div style={{ width: 16, height: 10, borderRadius: 2, border: `1.5px solid ${t.fgSecondary}`, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: 1, top: 1, bottom: 1, width: '80%', background: t.fgSecondary, borderRadius: 1 }} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 13, color: t.fgMuted }}>Good morning</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: t.fgPrimary }}>Justin</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {/* Calendar shortcut */}
+              <button onClick={() => setCalOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, background: t.bgElevated, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.fgSecondary }}>
+                {icons.calendar}
+              </button>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'white', fontSize: 14, fontWeight: 600 }}>JC</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Net worth hero */}
+        <div style={{ margin: '0 16px 10px', padding: '18px 20px', background: t.accent, borderRadius: 16, color: 'white' }}>
+          <div style={{ fontSize: 11, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Net Worth</div>
+          <div style={{ fontSize: 30, fontWeight: 700, fontFamily: "'Geist Mono', monospace", letterSpacing: '-0.02em', marginBottom: 4 }}>{fmt(SAMPLE.netWorth, privacy)}</div>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>↑ {fmt(SAMPLE.netWorthDelta)} this month</div>
+        </div>
+
+        {/* Quick stats */}
+        <div style={{ display: 'flex', gap: 8, margin: '0 16px 10px' }}>
+          <div style={{ flex: 1, background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Spent</div>
+            <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: t.fgPrimary }}>{fmt(SAMPLE.monthlySpent, privacy)}</div>
+            <Bar value={SAMPLE.monthlySpent} max={SAMPLE.monthlyBudget} color={t.accent} t={t} thin />
+            <div style={{ fontSize: 10, color: t.fgMuted, marginTop: 4 }}>{pct(SAMPLE.monthlySpent, SAMPLE.monthlyBudget)}% of budget</div>
+          </div>
+          <div style={{ flex: 1, background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: t.fgMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Next bill</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: t.fgPrimary }}>Netflix</div>
+            <div style={{ fontSize: 11, fontFamily: "'Geist Mono', monospace", color: t.fgMuted, marginTop: 2 }}>May 8 · {fmt(-22.99, privacy)}</div>
+            <button onClick={() => setCalOpen(true)} style={{ marginTop: 6, fontSize: 10, color: t.accent, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'Geist', sans-serif" }}>View calendar →</button>
+          </div>
+        </div>
+
+        {/* HITL if pending */}
+        <div style={{ margin: '0 16px 10px' }}>
+          <HitlBadge t={t} count={3} />
+        </div>
+
+        {/* Recent transactions */}
+        <div style={{ margin: '0 16px 80px', background: t.bgElevated, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: t.fgPrimary }}>Recent</div>
+            <span style={{ fontSize: 12, color: t.accent }}>See all</span>
+          </div>
+          {SAMPLE.recentTx.slice(0, 5).map((tx, i) => <TxRow key={i} tx={tx} t={t} privacy={privacy} />)}
+        </div>
+      </div>
+
+      {/* Bottom tab bar */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: t.bgElevated, borderTop: `1px solid ${t.border}`, display: 'flex', alignItems: 'flex-start', paddingTop: 10 }}>
+        {tabs.map(tab => {
+          const isActive = tab.id === activeTab && !calOpen;
+          const isCal = tab.id === 'calendar';
+          return (
+            <div key={tab.id} onClick={() => { if (tab.action) { tab.action(); } else { setActiveTab(tab.id); setCalOpen(false); } }}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer', color: (isCal && calOpen) ? t.accent : isActive ? t.accent : t.fgMuted }}>
+              {tab.icon}
+              <span style={{ fontSize: 10, fontWeight: (isActive || (isCal && calOpen)) ? 500 : 400 }}>{tab.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Root App ──────────────────────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "themeMode": "dark",
+  "privacyMode": "off",
+  "variation": "B"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  const tLight = THEMES.light;
+  const tDark = THEMES.dark;
+
+  const getTheme = (side) => {
+    if (tweaks.themeMode === 'light') return tLight;
+    if (tweaks.themeMode === 'dark') return tDark;
+    return side === 'left' ? tLight : tDark; // both
+  };
+
+  const showBoth = tweaks.themeMode === 'both';
+  const privacy = tweaks.privacyMode;
+  const variation = tweaks.variation;
+
+  const DashVariant = { A: DashboardA, B: DashboardB, C: DashboardC, D: DashboardD }[variation] || DashboardA;
+
+  return (
+    <>
+      <TweaksPanel>
+        <TweakSection label="Theme">
+          <TweakRadio label="Mode" value={tweaks.themeMode} options={[
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+            { value: 'both', label: 'Both' },
+          ]} onChange={(v) => setTweak('themeMode', v)} />
+        </TweakSection>
+        <TweakSection label="Privacy">
+          <TweakRadio label="Amounts" value={tweaks.privacyMode} options={[
+            { value: 'off', label: 'Visible' },
+            { value: 'partial_blur', label: 'Partial' },
+            { value: 'full_blur', label: 'Hidden' },
+          ]} onChange={(v) => setTweak('privacyMode', v)} />
+        </TweakSection>
+        <TweakSection label="Variation">
+          <TweakRadio label="Layout" value={tweaks.variation} options={[
+            { value: 'A', label: 'A' },
+            { value: 'B', label: 'B' },
+            { value: 'C', label: 'C' },
+            { value: 'D', label: 'D' },
+          ]} onChange={(v) => setTweak('variation', v)} />
+        </TweakSection>
+      </TweaksPanel>
+
+      <DesignCanvas>
+        <DCSection id="desktop" title={`Variation ${variation} — Desktop`}>
+          {showBoth ? (
+            <>
+              <DCArtboard id="desktop-light" label="Light" width={1280} height={800}>
+                <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                  <DashVariant t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="desktop-dark" label="Dark" width={1280} height={800}>
+                <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                  <DashVariant t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="desktop-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={800}>
+              <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                <DashVariant t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="terrain" title="Financial Landscape — Terrain">
+          {showBoth ? (
+            <>
+              <DCArtboard id="terrain-light" label="Light" width={1280} height={500}>
+                <div style={{ width: 1280, height: 500, overflow: 'hidden' }}>
+                  <TerrainScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="terrain-dark" label="Dark" width={1280} height={500}>
+                <div style={{ width: 1280, height: 500, overflow: 'hidden' }}>
+                  <TerrainScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="terrain-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={500}>
+              <div style={{ width: 1280, height: 500, overflow: 'hidden' }}>
+                <TerrainScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="hitl" title="HITL Review Queue">
+          {showBoth ? (
+            <>
+              <DCArtboard id="hitl-light" label="Light" width={1280} height={700}>
+                <div style={{ width: 1280, height: 700, overflow: 'hidden' }}>
+                  <HitlScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="hitl-dark" label="Dark" width={1280} height={700}>
+                <div style={{ width: 1280, height: 700, overflow: 'hidden' }}>
+                  <HitlScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="hitl-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={700}>
+              <div style={{ width: 1280, height: 700, overflow: 'hidden' }}>
+                <HitlScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="calendar" title="Calendar Screen">
+          {showBoth ? (
+            <>
+              <DCArtboard id="cal-light" label="Light" width={1280} height={800}>
+                <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                  <CalendarScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="cal-dark" label="Dark" width={1280} height={800}>
+                <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                  <CalendarScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="cal-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={800}>
+              <div style={{ width: 1280, height: 800, overflow: 'hidden' }}>
+                <CalendarScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="recap" title="Monthly Recap — Where Did It All Go">
+          {showBoth ? (
+            <>
+              <DCArtboard id="recap-light" label="Light" width={1280} height={920}>
+                <div style={{ width: 1280, height: 920, overflow: 'hidden' }}>
+                  <MonthlyRecapScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="recap-dark" label="Dark" width={1280} height={920}>
+                <div style={{ width: 1280, height: 920, overflow: 'hidden' }}>
+                  <MonthlyRecapScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="recap-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={920}>
+              <div style={{ width: 1280, height: 920, overflow: 'hidden' }}>
+                <MonthlyRecapScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="subs" title="Subscription Audit — price creep, ghosts, intel">
+          {showBoth ? (
+            <>
+              <DCArtboard id="subs-light" label="Light" width={1280} height={900}>
+                <div style={{ width: 1280, height: 900, overflow: 'hidden' }}>
+                  <SubscriptionAuditScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="subs-dark" label="Dark" width={1280} height={900}>
+                <div style={{ width: 1280, height: 900, overflow: 'hidden' }}>
+                  <SubscriptionAuditScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="subs-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={900}>
+              <div style={{ width: 1280, height: 900, overflow: 'hidden' }}>
+                <SubscriptionAuditScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="txdetail" title="Transaction Detail — split-and-expand inline">
+          {showBoth ? (
+            <>
+              <DCArtboard id="txdetail-light" label="Light" width={1280} height={760}>
+                <div style={{ width: 1280, height: 760, overflow: 'hidden' }}>
+                  <TxDetailScreen t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="txdetail-dark" label="Dark" width={1280} height={760}>
+                <div style={{ width: 1280, height: 760, overflow: 'hidden' }}>
+                  <TxDetailScreen t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="txdetail-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={1280} height={760}>
+              <div style={{ width: 1280, height: 760, overflow: 'hidden' }}>
+                <TxDetailScreen t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="mobile" title="Mobile PWA — with Calendar Sheet">
+          {showBoth ? (
+            <>
+              <DCArtboard id="mobile-light" label="Light" width={375} height={812}>
+                <div style={{ width: 375, height: 812, overflow: 'hidden' }}>
+                  <MobileDashboardV2 t={tLight} privacy={privacy} />
+                </div>
+              </DCArtboard>
+              <DCArtboard id="mobile-dark" label="Dark" width={375} height={812}>
+                <div style={{ width: 375, height: 812, overflow: 'hidden' }}>
+                  <MobileDashboardV2 t={tDark} privacy={privacy} />
+                </div>
+              </DCArtboard>
+            </>
+          ) : (
+            <DCArtboard id="mobile-single" label={tweaks.themeMode === 'light' ? 'Light' : 'Dark'} width={375} height={812}>
+              <div style={{ width: 375, height: 812, overflow: 'hidden' }}>
+                <MobileDashboardV2 t={getTheme('left')} privacy={privacy} />
+              </div>
+            </DCArtboard>
+          )}
+        </DCSection>
+      </DesignCanvas>
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
