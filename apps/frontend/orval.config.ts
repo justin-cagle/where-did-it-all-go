@@ -3,7 +3,7 @@ import { defineConfig } from 'orval'
 export default defineConfig({
   wdiag: {
     input: {
-      target: '../../packages/openapi/openapi.json',
+      target: 'http://localhost:8111/api/openapi.json',
     },
     output: {
       mode: 'tags-split',

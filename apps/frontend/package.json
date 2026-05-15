@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "generate-api": "orval"
+    "generate-api": "orval",
+    "api:generate": "orval"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -24,6 +25,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.55.0",
+    "react-router-dom": "^7.15.1",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.2",

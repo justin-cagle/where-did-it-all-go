@@ -1,0 +1,245 @@
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuthStore } from '@/store'
+import { customInstance, ApiError } from '@/api/client'
+
+const schema = z.object({
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
+})
+
+type Fields = z.infer<typeof schema>
+
+interface LoginResponse {
+  id: string
+  email: string
+  display_name: string
+  is_app_admin: boolean
+}
+
+export function LoginPage() {
+  const { setUser } = useAuthStore()
+  const navigate = useNavigate()
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<Fields>({ resolver: zodResolver(schema) })
+
+  const onSubmit = async (data: Fields) => {
+    try {
+      const user = await customInstance<LoginResponse>({
+        url: '/api/v1/auth/login',
+        method: 'POST',
+        data: { email: data.email, password: data.password },
+      })
+      setUser(user)
+      navigate('/', { replace: true })
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError('root', { message: 'Invalid email or password' })
+      } else {
+        setError('root', { message: 'Something went wrong. Try again.' })
+      }
+    }
+  }
+
+  return (
+    <AuthLayout>
+      <h1 style={styles.heading}>Sign in</h1>
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate style={styles.form}>
+        <Field label="Email" error={errors.email?.message}>
+          <input
+            {...register('email')}
+            type="email"
+            autoComplete="email"
+            style={inputStyle(!!errors.email)}
+            placeholder="you@example.com"
+          />
+        </Field>
+
+        <Field label="Password" error={errors.password?.message}>
+          <input
+            {...register('password')}
+            type="password"
+            autoComplete="current-password"
+            style={inputStyle(!!errors.password)}
+            placeholder="••••••••"
+          />
+        </Field>
+
+        {errors.root && (
+          <p style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>{errors.root.message}</p>
+        )}
+
+        <button type="submit" disabled={isSubmitting} style={styles.submitButton}>
+          {isSubmitting ? 'Signing in...' : 'Sign in'}
+        </button>
+      </form>
+
+      <p style={styles.footer}>
+        No account?{' '}
+        <Link to="/register" style={styles.link}>
+          Register
+        </Link>
+      </p>
+    </AuthLayout>
+  )
+}
+
+/* ── Shared auth page layout ── */
+
+export function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        background: 'var(--bg-primary)',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 380,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24,
+        }}
+      >
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                color: 'var(--accent-fg)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 16,
+                fontWeight: 600,
+              }}
+            >
+              $
+            </span>
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 18,
+              fontWeight: 600,
+              color: 'var(--fg-primary)',
+            }}
+          >
+            wdiag
+          </span>
+        </div>
+
+        {/* Card */}
+        <div
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '28px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20,
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Field wrapper ── */
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-secondary)' }}>{label}</label>
+      {children}
+      {error && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{error}</p>}
+    </div>
+  )
+}
+
+function inputStyle(hasError: boolean): React.CSSProperties {
+  return {
+    height: 40,
+    padding: '0 12px',
+    borderRadius: 8,
+    border: `1px solid ${hasError ? 'var(--danger)' : 'var(--border)'}`,
+    background: 'var(--bg-primary)',
+    color: 'var(--fg-primary)',
+    fontSize: 14,
+    fontFamily: 'var(--font-sans)',
+    outline: 'none',
+    width: '100%',
+  }
+}
+
+const styles = {
+  heading: {
+    fontSize: 20,
+    fontWeight: 600,
+    color: 'var(--fg-primary)',
+    margin: 0,
+  } as React.CSSProperties,
+  form: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 16,
+  },
+  submitButton: {
+    height: 40,
+    borderRadius: 8,
+    border: 'none',
+    background: 'var(--accent)',
+    color: 'var(--accent-fg)',
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'var(--font-sans)',
+    marginTop: 4,
+    opacity: 1,
+    transition: 'opacity 0.1s',
+  } as React.CSSProperties,
+  footer: {
+    fontSize: 13,
+    color: 'var(--fg-muted)',
+    textAlign: 'center' as const,
+    margin: 0,
+  } as React.CSSProperties,
+  link: {
+    color: 'var(--accent)',
+    textDecoration: 'none',
+  } as React.CSSProperties,
+}
