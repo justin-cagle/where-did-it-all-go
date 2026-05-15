@@ -113,10 +113,8 @@ export function AddAccountModal({ householdId, open, onClose, onAdded }: AddAcco
               new Date().toISOString().split('T')[0] ?? new Date().toISOString().slice(0, 10),
             minimum_payment_strategy: values.minimum_payment_strategy ?? undefined,
             statement_day:
-              values.statement_day && values.statement_day !== ''
-                ? Number(values.statement_day)
-                : undefined,
-            due_day: values.due_day && values.due_day !== '' ? Number(values.due_day) : undefined,
+              typeof values.statement_day === 'number' ? values.statement_day : undefined,
+            due_day: typeof values.due_day === 'number' ? values.due_day : undefined,
           },
         })
       }
