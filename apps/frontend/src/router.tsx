@@ -15,6 +15,7 @@ import {
   CalendarPage,
   SettingsPage,
 } from '@/pages/DashboardPage'
+import { AccountDetailPage } from '@/pages/accounts/AccountDetailPage'
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
   return (
@@ -56,6 +57,14 @@ export const router = createBrowserRouter([
     element: (
       <AuthedShell>
         <AccountsPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/accounts/:accountId',
+    element: (
+      <AuthedShell>
+        <AccountDetailPage />
       </AuthedShell>
     ),
   },

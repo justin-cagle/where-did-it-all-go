@@ -2,9 +2,7 @@ export function DashboardPage() {
   return <PlaceholderPage title="Overview" />
 }
 
-export function AccountsPage() {
-  return <PlaceholderPage title="Accounts" />
-}
+export { AccountsPage } from './accounts/AccountsPage'
 
 export function TransactionsPage() {
   return <PlaceholderPage title="Transactions" />
