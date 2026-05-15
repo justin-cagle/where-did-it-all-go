@@ -13,6 +13,7 @@ export interface RequestConfig {
   params?: Record<string, unknown>
   data?: unknown
   headers?: Record<string, string>
+  signal?: AbortSignal
 }
 
 export async function customInstance<T>(config: RequestConfig): Promise<T> {
@@ -34,6 +35,7 @@ export async function customInstance<T>(config: RequestConfig): Promise<T> {
     },
     credentials: 'include', // sends httpOnly auth cookies
     body: config.data !== undefined ? JSON.stringify(config.data) : undefined,
+    signal: config.signal,
   })
 
   if (!response.ok) {
