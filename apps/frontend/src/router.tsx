@@ -16,6 +16,7 @@ import {
   SettingsPage,
 } from '@/pages/DashboardPage'
 import { AccountDetailPage } from '@/pages/accounts/AccountDetailPage'
+import { ClassificationPage } from '@/pages/classification/ClassificationPage'
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
   return (
@@ -113,6 +114,14 @@ export const router = createBrowserRouter([
     element: (
       <AuthedShell>
         <SettingsPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/settings/classification',
+    element: (
+      <AuthedShell>
+        <ClassificationPage />
       </AuthedShell>
     ),
   },
