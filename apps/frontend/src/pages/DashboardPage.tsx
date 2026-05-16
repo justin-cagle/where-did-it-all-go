@@ -5,17 +5,13 @@ export function DashboardPage() {
 export { AccountsPage } from './accounts/AccountsPage'
 export { TransactionsPage } from './transactions/TransactionsPage'
 
-export function BudgetPage() {
-  return <PlaceholderPage title="Budget" />
-}
+export { BudgetsPage as BudgetPage } from './budgets/BudgetsPage'
 
 export function GoalsPage() {
   return <PlaceholderPage title="Goals" />
 }
 
-export function DebtsPage() {
-  return <PlaceholderPage title="Debts" />
-}
+export { DebtsPage } from './debts/DebtsPage'
 
 export function CalendarPage() {
   return <PlaceholderPage title="Calendar" />

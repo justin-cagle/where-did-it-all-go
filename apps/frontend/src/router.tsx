@@ -16,6 +16,8 @@ import {
   SettingsPage,
 } from '@/pages/DashboardPage'
 import { AccountDetailPage } from '@/pages/accounts/AccountDetailPage'
+import { BudgetDetailPage } from '@/pages/budgets/BudgetDetailPage'
+import { DebtPlanPage } from '@/pages/debts/DebtPlanPage'
 import { ClassificationPage } from '@/pages/classification/ClassificationPage'
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
@@ -86,6 +88,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: '/budget/:budgetId',
+    element: (
+      <AuthedShell>
+        <BudgetDetailPage />
+      </AuthedShell>
+    ),
+  },
+  {
     path: '/goals',
     element: (
       <AuthedShell>
@@ -98,6 +108,14 @@ export const router = createBrowserRouter([
     element: (
       <AuthedShell>
         <DebtsPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/debts/plan/:planId',
+    element: (
+      <AuthedShell>
+        <DebtPlanPage />
       </AuthedShell>
     ),
   },
