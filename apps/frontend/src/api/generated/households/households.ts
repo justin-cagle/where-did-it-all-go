@@ -24,6 +24,7 @@ import type {
 import type {
   AddMemberRequest,
   ChangePasswordRequest,
+  CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost202,
   HTTPValidationError,
   HouseholdCreate,
   HouseholdOut,
@@ -35,6 +36,7 @@ import type {
   StepUpRequest,
   TokenResponse,
   TotpSetupOut,
+  UpdateProfileRequest,
   UserOut,
 } from '.././model'
 
@@ -520,6 +522,83 @@ export function useMeApiV1AuthMeGet<
 }
 
 /**
+ * Update the authenticated user's display_name.
+ * @summary Update Me
+ */
+export const updateMeApiV1AuthMePatch = (updateProfileRequest: UpdateProfileRequest) => {
+  return customInstance<UserOut>({
+    url: `/api/v1/auth/me`,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    data: updateProfileRequest,
+  })
+}
+
+export const getUpdateMeApiV1AuthMePatchMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>,
+    TError,
+    { data: UpdateProfileRequest },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>,
+  TError,
+  { data: UpdateProfileRequest },
+  TContext
+> => {
+  const mutationKey = ['updateMeApiV1AuthMePatch']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>,
+    { data: UpdateProfileRequest }
+  > = (props) => {
+    const { data } = props ?? {}
+
+    return updateMeApiV1AuthMePatch(data)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type UpdateMeApiV1AuthMePatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>
+>
+export type UpdateMeApiV1AuthMePatchMutationBody = UpdateProfileRequest
+export type UpdateMeApiV1AuthMePatchMutationError = HTTPValidationError
+
+/**
+ * @summary Update Me
+ */
+export const useUpdateMeApiV1AuthMePatch = <TError = HTTPValidationError, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>,
+      TError,
+      { data: UpdateProfileRequest },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateMeApiV1AuthMePatch>>,
+  TError,
+  { data: UpdateProfileRequest },
+  TContext
+> => {
+  const mutationOptions = getUpdateMeApiV1AuthMePatchMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
  * Begin TOTP enrollment — returns a provisioning URI for QR-code display.
  * @summary Totp Setup
  */
@@ -788,6 +867,81 @@ export function useListSessionsApiV1AuthSessionsGet<
   return query
 }
 
+/**
+ * Revoke a specific refresh token (session) for the current user.
+ * @summary Revoke Session
+ */
+export const revokeSessionApiV1AuthSessionsTokenIdDelete = (tokenId: string) => {
+  return customInstance<void>({ url: `/api/v1/auth/sessions/${tokenId}`, method: 'DELETE' })
+}
+
+export const getRevokeSessionApiV1AuthSessionsTokenIdDeleteMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>,
+    TError,
+    { tokenId: string },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>,
+  TError,
+  { tokenId: string },
+  TContext
+> => {
+  const mutationKey = ['revokeSessionApiV1AuthSessionsTokenIdDelete']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>,
+    { tokenId: string }
+  > = (props) => {
+    const { tokenId } = props ?? {}
+
+    return revokeSessionApiV1AuthSessionsTokenIdDelete(tokenId)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type RevokeSessionApiV1AuthSessionsTokenIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>
+>
+
+export type RevokeSessionApiV1AuthSessionsTokenIdDeleteMutationError = HTTPValidationError
+
+/**
+ * @summary Revoke Session
+ */
+export const useRevokeSessionApiV1AuthSessionsTokenIdDelete = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>,
+      TError,
+      { tokenId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof revokeSessionApiV1AuthSessionsTokenIdDelete>>,
+  TError,
+  { tokenId: string },
+  TContext
+> => {
+  const mutationOptions = getRevokeSessionApiV1AuthSessionsTokenIdDeleteMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
 /**
  * Change the current user's password. Revokes all active sessions.
  * @summary Change Password
@@ -1704,6 +1858,89 @@ export const useRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDelete = <
 > => {
   const mutationOptions =
     getRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDeleteMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * @summary Create Invitation
+ */
+export const createInvitationApiV1HouseholdsHouseholdIdInvitationsPost = (
+  householdId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost202>({
+    url: `/api/v1/households/${householdId}/invitations`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
+    TError,
+    { householdId: string },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
+  TError,
+  { householdId: string },
+  TContext
+> => {
+  const mutationKey = ['createInvitationApiV1HouseholdsHouseholdIdInvitationsPost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
+    { householdId: string }
+  > = (props) => {
+    const { householdId } = props ?? {}
+
+    return createInvitationApiV1HouseholdsHouseholdIdInvitationsPost(householdId)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>
+>
+
+export type CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Create Invitation
+ */
+export const useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
+      TError,
+      { householdId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
+  TError,
+  { householdId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
 }

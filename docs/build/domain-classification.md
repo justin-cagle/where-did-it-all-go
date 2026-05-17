@@ -67,14 +67,14 @@ IF (conditions) THEN (actions) WITH (priority)
 
 | Field | Operators available |
 |-------|-------------------|
-| `merchant_name` | `equals`, `contains`, `starts_with`, `regex` |
-| `description` | `equals`, `contains`, `starts_with`, `regex` |
+| `merchant_name` | `equals`, `contains`, `starts_with`, `pattern_match` |
+| `description` | `equals`, `contains`, `starts_with`, `pattern_match` |
 | `amount` | `amount_equals`, `amount_between` |
 | `account` | `equals` |
 | `direction` | `equals` (debit/credit) |
 | `transaction_type` | `equals` (allows rules to match specific type-detected transactions) |
 
-`regex` is labeled "advanced pattern match" in the UI — not exposed as regex to avoid intimidating non-technical users.
+`pattern_match` is a regex operator, labeled "Advanced pattern match" in the UI to avoid intimidating non-technical users.
 
 ### Priority Resolution
 

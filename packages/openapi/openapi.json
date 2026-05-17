@@ -177,6 +177,44 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": ["households", "auth"],
+        "summary": "Update Me",
+        "description": "Update the authenticated user's display_name.",
+        "operationId": "update_me_api_v1_auth_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/auth/totp/setup": {
@@ -249,6 +287,41 @@
                   },
                   "type": "array",
                   "title": "Response List Sessions Api V1 Auth Sessions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/{token_id}": {
+      "delete": {
+        "tags": ["households", "auth"],
+        "summary": "Revoke Session",
+        "description": "Revoke a specific refresh token (session) for the current user.",
+        "operationId": "revoke_session_api_v1_auth_sessions__token_id__delete",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Token Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -603,6 +676,51 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/invitations": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Create Invitation",
+        "operationId": "create_invitation_api_v1_households__household_id__invitations_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Create Invitation Api V1 Households  Household Id  Invitations Post"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -17891,6 +18009,20 @@
         "type": "object",
         "required": ["import_job_id"],
         "title": "TriggerResponse"
+      },
+      "UpdateProfileRequest": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name"
+          }
+        },
+        "type": "object",
+        "required": ["display_name"],
+        "title": "UpdateProfileRequest",
+        "description": "Update mutable fields on the authenticated user's profile."
       },
       "UploadResponse": {
         "properties": {

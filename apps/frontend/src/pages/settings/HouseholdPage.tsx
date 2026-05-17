@@ -4,22 +4,36 @@ import {
   useGetHouseholdApiV1HouseholdsHouseholdIdGet,
   useListMembersApiV1HouseholdsHouseholdIdMembersGet,
   useRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDelete,
+  useUpdateHouseholdApiV1HouseholdsHouseholdIdPatch,
+  getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey,
   useMeApiV1AuthMeGet,
 } from '@/api/generated/households/households'
 import { useHousehold } from '@/hooks/use-household'
 import { useQueryClient } from '@tanstack/react-query'
 import type { MembershipOut } from '@/api/generated/model/membershipOut'
+import { VisibilityMode } from '@/api/generated/model/visibilityMode'
+import { customInstance } from '@/api/client'
 
 const VISIBILITY_OPTIONS = [
   {
-    value: 'private',
-    label: 'Private',
-    description: 'Only members can see this household',
+    value: VisibilityMode.fully_shared,
+    label: 'Fully shared',
+    description: 'All members see all transactions',
   },
   {
-    value: 'shared',
-    label: 'Shared',
-    description: 'Visible to invited collaborators',
+    value: VisibilityMode.separate_with_joint_view,
+    label: 'Separate + joint',
+    description: 'Members have separate views with a shared joint layer',
+  },
+  {
+    value: VisibilityMode.role_based,
+    label: 'Role-based',
+    description: 'Visibility controlled by member role',
+  },
+  {
+    value: VisibilityMode.admin_controlled,
+    label: 'Admin controlled',
+    description: 'Owner controls visibility per member',
   },
 ]
 
@@ -190,6 +204,7 @@ export function HouseholdPage() {
   })
   const { data: me } = useMeApiV1AuthMeGet()
   const removeMember = useRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDelete()
+  const updateHousehold = useUpdateHouseholdApiV1HouseholdsHouseholdIdPatch()
 
   if (!household) {
     return <div style={{ color: 'var(--fg-muted)', fontSize: 13 }}>Loading...</div>
@@ -206,8 +221,31 @@ export function HouseholdPage() {
     })
   }
 
-  const handleSaveName = async (_: string) => {
-    await Promise.resolve()
+  const handleSaveName = async (name: string) => {
+    await updateHousehold.mutateAsync({ householdId: hid, data: { name } })
+    await qc.invalidateQueries({
+      queryKey: getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey(hid),
+    })
+  }
+
+  const handleVisibilityChange = async (mode: VisibilityMode) => {
+    await updateHousehold.mutateAsync({
+      householdId: hid,
+      data: { visibility_mode: mode },
+    })
+    await qc.invalidateQueries({
+      queryKey: getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey(hid),
+    })
+  }
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return
+    await customInstance({
+      url: `/api/v1/households/${hid}/invitations`,
+      method: 'POST',
+      data: { email: inviteEmail.trim() },
+    })
+    setInviteEmail('')
   }
 
   return (
@@ -227,6 +265,7 @@ export function HouseholdPage() {
               key={opt.value}
               type="button"
               title={opt.description}
+              onClick={() => void handleVisibilityChange(opt.value as VisibilityMode)}
               style={{
                 padding: '5px 12px',
                 fontSize: 12,
@@ -383,19 +422,20 @@ export function HouseholdPage() {
             />
             <button
               type="button"
-              title="Coming soon"
+              onClick={() => void handleInvite()}
+              disabled={!inviteEmail.trim()}
               style={{
                 padding: '8px 16px',
-                background: 'var(--bg-secondary)',
+                background: inviteEmail.trim() ? 'var(--accent)' : 'var(--bg-secondary)',
                 border: '1px solid var(--border)',
                 borderRadius: 8,
                 fontSize: 13,
-                color: 'var(--fg-muted)',
-                cursor: 'default',
+                color: inviteEmail.trim() ? 'var(--accent-fg)' : 'var(--fg-muted)',
+                cursor: inviteEmail.trim() ? 'pointer' : 'not-allowed',
                 fontFamily: 'var(--font-sans)',
               }}
             >
-              Invite (coming soon)
+              Invite
             </button>
           </div>
         </div>

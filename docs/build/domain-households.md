@@ -87,9 +87,12 @@ Each active session is a `RefreshToken` row. Fields:
 | `revoked_at` | Set on logout or password change |
 | `user_agent` | HTTP `User-Agent` header from the session that issued the token (nullable) |
 
-### Session API Endpoints
+### Profile & Session API Endpoints
 
 | Method | Path | Notes |
 |--------|------|-------|
+| `GET` | `/api/v1/auth/me` | Return authenticated user's profile (`UserOut`). |
+| `PATCH` | `/api/v1/auth/me` | Update `display_name`. Body: `{ display_name: str }`. Returns `UserOut`. |
 | `GET` | `/api/v1/auth/sessions` | List non-revoked, non-expired refresh tokens for current user. Returns `id`, `created_at`, `last_used_at`, `user_agent`. |
+| `DELETE` | `/api/v1/auth/sessions/{token_id}` | Revoke a specific session. Verifies token belongs to current user. Returns 204. |
 | `POST` | `/api/v1/auth/change-password` | Verify current password, hash new password, revoke all active sessions. Rate-limited (5/min). |

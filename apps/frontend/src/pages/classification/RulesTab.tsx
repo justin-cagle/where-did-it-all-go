@@ -10,6 +10,7 @@ import { RuleConditionSchemaOperator } from '@/api/generated/model/ruleCondition
 import { RuleActionSchemaType } from '@/api/generated/model/ruleActionSchemaType'
 import type { RuleConditionSchema } from '@/api/generated/model/ruleConditionSchema'
 import type { RuleActionSchema } from '@/api/generated/model/ruleActionSchema'
+import type { TransactionSummary } from '@/api/generated/model/transactionSummary'
 import {
   useCreateRuleApiV1HouseholdsHouseholdIdRulesPost,
   useUpdateRuleApiV1HouseholdsHouseholdIdRulesRuleIdPatch,
@@ -444,6 +445,7 @@ function RuleEditor({ householdId, editRule, categories, tags, qc, onClose }: Ru
   const [testResult, setTestResult] = useState<{
     match_count: number
     sample_count: number
+    sample_transactions: TransactionSummary[]
   } | null>(null)
   const [testing, setTesting] = useState(false)
 
@@ -515,7 +517,11 @@ function RuleEditor({ householdId, editRule, categories, tags, qc, onClose }: Ru
       { householdId, ruleId: editRule.id },
       {
         onSuccess: (res) => {
-          setTestResult({ match_count: res.match_count, sample_count: res.sample_count })
+          setTestResult({
+            match_count: res.match_count,
+            sample_count: res.sample_count,
+            sample_transactions: res.sample_transactions ?? [],
+          })
           setTesting(false)
         },
         onError: () => setTesting(false),
@@ -709,10 +715,66 @@ function RuleEditor({ householdId, editRule, categories, tags, qc, onClose }: Ru
                 borderRadius: 8,
                 fontSize: 13,
                 color: 'var(--fg-primary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
               }}
             >
-              Rule matched <strong>{testResult.match_count}</strong> transactions out of{' '}
-              <strong>{testResult.sample_count}</strong> sampled.
+              <div>
+                Rule matched <strong>{testResult.match_count}</strong> transactions out of{' '}
+                <strong>{testResult.sample_count}</strong> sampled.
+              </div>
+              {testResult.sample_transactions.length > 0 && (
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: 12,
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      {(['Merchant', 'Amount', 'Date'] as const).map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            textAlign: 'left',
+                            padding: '4px 8px',
+                            borderBottom:
+                              '1px solid color-mix(in oklch, var(--info) 40%, transparent)',
+                            color: 'var(--fg-muted)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testResult.sample_transactions.map((tx) => (
+                      <tr key={tx.id}>
+                        <td style={{ padding: '4px 8px', color: 'var(--fg-primary)' }}>
+                          {tx.merchant_name ?? tx.description}
+                        </td>
+                        <td
+                          style={{
+                            padding: '4px 8px',
+                            color: tx.direction === 'debit' ? 'var(--danger)' : 'var(--success)',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {tx.direction === 'debit' ? '-' : '+'}
+                          {tx.amount} {tx.currency}
+                        </td>
+                        <td style={{ padding: '4px 8px', color: 'var(--fg-muted)' }}>
+                          {tx.posted_date}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </div>
