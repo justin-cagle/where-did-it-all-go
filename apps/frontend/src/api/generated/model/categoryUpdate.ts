@@ -9,11 +9,12 @@ import type { CategoryUpdateName } from './categoryUpdateName'
 import type { CategoryUpdateParentId } from './categoryUpdateParentId'
 import type { CategoryUpdateColor } from './categoryUpdateColor'
 import type { CategoryUpdateSortOrder } from './categoryUpdateSortOrder'
+import type { CategoryUpdateBudgetRole } from './categoryUpdateBudgetRole'
 
 export interface CategoryUpdate {
   name?: CategoryUpdateName
   parent_id?: CategoryUpdateParentId
   color?: CategoryUpdateColor
   sort_order?: CategoryUpdateSortOrder
-  budget_role?: string | null
+  budget_role?: CategoryUpdateBudgetRole
 }
