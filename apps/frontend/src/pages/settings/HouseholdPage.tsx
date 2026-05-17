@@ -206,7 +206,7 @@ export function HouseholdPage() {
     })
   }
 
-  const handleSaveName = async (_name: string) => {
+  const handleSaveName = async (_: string) => {
     await Promise.resolve()
   }
 

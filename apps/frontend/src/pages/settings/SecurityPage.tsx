@@ -31,7 +31,7 @@ export function SecurityPage() {
     resolver: zodResolver(passwordSchema),
   })
 
-  const onSubmit = async (_data: PasswordForm) => {
+  const onSubmit = async (_: PasswordForm) => {
     try {
       await Promise.resolve()
       reset()

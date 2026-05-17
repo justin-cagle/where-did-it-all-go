@@ -142,7 +142,7 @@ export function ProfilePage() {
 
   if (!me) return null
 
-  const handleSaveName = async (_name: string) => {
+  const handleSaveName = async (_: string) => {
     await Promise.resolve()
   }
 
