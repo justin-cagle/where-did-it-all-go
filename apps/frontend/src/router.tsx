@@ -13,13 +13,19 @@ import {
   GoalsPage,
   DebtsPage,
   CalendarPage,
-  SettingsPage,
 } from '@/pages/DashboardPage'
 import { AccountDetailPage } from '@/pages/accounts/AccountDetailPage'
 import { BudgetDetailPage } from '@/pages/budgets/BudgetDetailPage'
 import { DebtPlanPage } from '@/pages/debts/DebtPlanPage'
 import { GoalDetailPage } from '@/pages/goals/GoalDetailPage'
 import { ClassificationPage } from '@/pages/classification/ClassificationPage'
+import { ProjectionsPage } from '@/pages/projections/ProjectionsPage'
+import { InsightsPage } from '@/pages/insights/InsightsPage'
+import { SettingsLayout } from '@/pages/settings/SettingsPage'
+import { ProfilePage } from '@/pages/settings/ProfilePage'
+import { HouseholdPage } from '@/pages/settings/HouseholdPage'
+import { InsightsSettingsPage } from '@/pages/settings/InsightsSettingsPage'
+import { SecurityPage } from '@/pages/settings/SecurityPage'
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
   return (
@@ -137,19 +143,34 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/settings',
+    path: '/projections',
     element: (
       <AuthedShell>
-        <SettingsPage />
+        <ProjectionsPage />
       </AuthedShell>
     ),
   },
   {
-    path: '/settings/classification',
+    path: '/insights',
     element: (
       <AuthedShell>
-        <ClassificationPage />
+        <InsightsPage />
       </AuthedShell>
     ),
+  },
+  {
+    path: '/settings',
+    element: (
+      <AuthedShell>
+        <SettingsLayout />
+      </AuthedShell>
+    ),
+    children: [
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'household', element: <HouseholdPage /> },
+      { path: 'classification', element: <ClassificationPage /> },
+      { path: 'insights', element: <InsightsSettingsPage /> },
+      { path: 'security', element: <SecurityPage /> },
+    ],
   },
 ])
