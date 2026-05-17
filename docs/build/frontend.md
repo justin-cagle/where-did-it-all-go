@@ -109,6 +109,36 @@ Configured for:
 
 ---
 
+## E2E Tests (Playwright)
+
+Test files live in `apps/frontend/e2e/`. Separate from Vitest — excluded from Vitest config and ESLint.
+
+```
+e2e/
+  global-setup.ts        # registers test user, creates household, stores auth state
+  fixtures.ts            # extends base test: storageState, credentials, apiPost helper
+  auth.spec.ts
+  accounts.spec.ts
+  transactions.spec.ts
+  budgets.spec.ts
+  goals.spec.ts
+  classification.spec.ts
+```
+
+**Scripts:**
+
+| Script | What it does |
+|--------|-------------|
+| `pnpm e2e` | Headless Playwright run (chromium) |
+| `pnpm e2e:headed` | Same, with browser visible |
+| `pnpm e2e:report` | Open last HTML report |
+
+**Isolation:** `global-setup.ts` creates a shared household once. Each test creates its own data — never shares state across tests.
+
+**Config:** `playwright.config.ts` at `apps/frontend/`. Chromium only, 2 workers in CI, 1 worker locally when `CI` is not set.
+
+---
+
 ## React Native Prep (v2/v3 Target)
 
 What this means in practice today:

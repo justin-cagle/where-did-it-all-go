@@ -59,7 +59,26 @@ uv run pytest -m integration               # integration tests (requires Docker)
 ```bash
 cd apps/frontend
 pnpm test                                  # vitest unit tests
-pnpm type-check                            # TypeScript strict check
+pnpm typecheck                             # TypeScript strict check
+pnpm lint                                  # ESLint
+```
+
+**E2E (Playwright):**
+
+Requires the full stack running (backend + frontend dev server):
+
+```bash
+docker compose up -d                       # start backend
+cd apps/frontend && pnpm dev &             # start frontend dev server
+pnpm e2e                                   # run Playwright (headless)
+pnpm e2e:headed                            # run with browser visible
+pnpm e2e:report                            # open last HTML report
+```
+
+On first run, install Playwright's browser binaries:
+
+```bash
+npx playwright install --with-deps chromium
 ```
 
 ---
