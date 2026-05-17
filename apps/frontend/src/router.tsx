@@ -18,6 +18,7 @@ import {
 import { AccountDetailPage } from '@/pages/accounts/AccountDetailPage'
 import { BudgetDetailPage } from '@/pages/budgets/BudgetDetailPage'
 import { DebtPlanPage } from '@/pages/debts/DebtPlanPage'
+import { GoalDetailPage } from '@/pages/goals/GoalDetailPage'
 import { ClassificationPage } from '@/pages/classification/ClassificationPage'
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
@@ -100,6 +101,14 @@ export const router = createBrowserRouter([
     element: (
       <AuthedShell>
         <GoalsPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/goals/:goalId',
+    element: (
+      <AuthedShell>
+        <GoalDetailPage />
       </AuthedShell>
     ),
   },
