@@ -27,10 +27,12 @@ export interface FormatAmountOptions {
   currency?: string
   /** Active privacy mode. Defaults to 'off'. */
   privacyMode?: PrivacyMode
+  /** Use compact notation (1.2k, 5.3M) — for chart axis labels only. */
+  compact?: boolean
 }
 
 export function formatAmount(amount: number | string, options: FormatAmountOptions = {}): string {
-  const { locale = 'en-US', currency = 'USD', privacyMode = 'off' } = options
+  const { locale = 'en-US', currency = 'USD', privacyMode = 'off', compact = false } = options
 
   if (privacyMode === 'full_blur') {
     return '••••'
@@ -38,7 +40,11 @@ export function formatAmount(amount: number | string, options: FormatAmountOptio
 
   const numeric = typeof amount === 'string' ? parseFloat(amount) : amount
 
-  const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency })
+  const formatter = new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    ...(compact ? { notation: 'compact', maximumSignificantDigits: 3 } : {}),
+  })
 
   if (privacyMode === 'partial_blur') {
     return formatter

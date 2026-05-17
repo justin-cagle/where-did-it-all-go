@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { to: '/goals', label: 'Goals', icon: GoalsIcon },
   { to: '/debts', label: 'Debts', icon: DebtsIcon },
   { to: '/calendar', label: 'Calendar', icon: CalendarIcon },
+  { to: '/projections', label: 'Projections', icon: ProjectionsIcon },
+  { to: '/insights', label: 'Insights', icon: InsightsIcon },
 ]
 
 export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
@@ -315,6 +317,41 @@ function SettingsIcon() {
     >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
+
+function ProjectionsIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </svg>
+  )
+}
+
+function InsightsIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2a7 7 0 0 1 7 7c0 3.87-3 7-7 9-4-2-7-5.13-7-9a7 7 0 0 1 7-7z" />
+      <path d="M12 18v4M8 22h8" />
     </svg>
   )
 }

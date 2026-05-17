@@ -12,6 +12,8 @@ const PRIMARY_ITEMS = [
 const MORE_ITEMS = [
   { to: '/debts', label: 'Debts', icon: DebtsIcon },
   { to: '/calendar', label: 'Calendar', icon: CalendarIcon },
+  { to: '/projections', label: 'Projections', icon: ProjectionsIcon },
+  { to: '/insights', label: 'Insights', icon: InsightsIcon },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ]
 
@@ -270,6 +272,39 @@ function CalendarIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+}
+function ProjectionsIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </svg>
+  )
+}
+function InsightsIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2a7 7 0 0 1 7 7c0 3.87-3 7-7 9-4-2-7-5.13-7-9a7 7 0 0 1 7-7z" />
+      <path d="M12 18v4M8 22h8" />
     </svg>
   )
 }
