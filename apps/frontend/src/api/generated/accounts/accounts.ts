@@ -28,6 +28,7 @@ import type {
   AccountGroupUpdate,
   AccountOut,
   AccountUpdate,
+  BalanceHistoryPoint,
   DebtAnnotationCreate,
   DebtAnnotationOut,
   DebtAnnotationUpdate,
@@ -1730,6 +1731,247 @@ export const useRemoveAccountFromGroupApiV1HouseholdsHouseholdIdAccountsGroupsGr
 
     return useMutation(mutationOptions, queryClient)
   }
+/**
+ * Return one balance reading per day for the last 90 days from the audit log.
+
+Returns an empty list if no reconciliation entries exist for this account.
+ * @summary Get Balance History
+ */
+export const getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet = (
+  householdId: string,
+  accountId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<BalanceHistoryPoint[]>({
+    url: `/api/v1/households/${householdId}/accounts/${accountId}/balance-history`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryKey =
+  (householdId?: string, accountId?: string) => {
+    return [`/api/v1/households/${householdId}/accounts/${accountId}/balance-history`] as const
+  }
+
+export const getGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<
+        typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+      >
+    >,
+    TError = HTTPValidationError,
+  >(
+    householdId: string,
+    accountId: string,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {}
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryKey(
+        householdId,
+        accountId
+      )
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+        >
+      >
+    > = ({ signal }) =>
+      getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet(
+        householdId,
+        accountId,
+        signal
+      )
+
+    return {
+      queryKey,
+      queryFn,
+      enabled: !!(householdId && accountId),
+      ...queryOptions,
+    } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> }
+  }
+
+export type GetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+      >
+    >
+  >
+export type GetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryError =
+  HTTPValidationError
+
+export function useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet<
+  TData = Awaited<
+    ReturnType<typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  accountId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet<
+  TData = Awaited<
+    ReturnType<typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  accountId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet<
+  TData = Awaited<
+    ReturnType<typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  accountId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Balance History
+ */
+
+export function useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet<
+  TData = Awaited<
+    ReturnType<typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  accountId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGetQueryOptions(
+      householdId,
+      accountId,
+      options
+    )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
 /**
  * Return the debt annotation for an account.
  * @summary Get Debt Annotation

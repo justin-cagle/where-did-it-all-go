@@ -36,12 +36,14 @@ from app.households import schemas, service
 from app.households.deps import CurrentUser, StepUpUser
 from app.households.schemas import (
     AddMemberRequest,
+    ChangePasswordRequest,
     HouseholdCreate,
     HouseholdOut,
     HouseholdUpdate,
     LoginRequest,
     MembershipOut,
     RegisterRequest,
+    SessionOut,
     StepUpRequest,
     TokenResponse,
     TotpSetupOut,
@@ -252,6 +254,36 @@ async def totp_confirm(
         await service.confirm_totp(session, user=current_user, code=body.totp_code)
     except service.AuthenticationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get("/auth/sessions", response_model=list[SessionOut])
+async def list_sessions(
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> list[SessionOut]:
+    """Return all active refresh tokens (sessions) for the current user."""
+    tokens = await service.list_user_sessions(session, user_id=current_user.id)
+    return [SessionOut.model_validate(t) for t in tokens]
+
+
+@router.post("/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")  # type: ignore[misc]
+async def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Change the current user's password. Revokes all active sessions."""
+    try:
+        await service.change_password(
+            session,
+            user=current_user,
+            current_password=body.current_password,
+            new_password=body.new_password,
+        )
+    except service.AuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------

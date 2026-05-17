@@ -1109,11 +1109,14 @@ async def test_rule(
     rule_id: uuid.UUID,
     household_id: uuid.UUID,
     limit: int = 50,
-) -> tuple[list[uuid.UUID], int]:
-    """Dry-run a rule against recent transactions. Returns (matching_ids, sample_count).
+) -> tuple[list[uuid.UUID], int, list[Transaction]]:
+    """Dry-run a rule against recent transactions.
 
-    No writes. Loads the last `limit` transactions for the household, evaluates
-    rule conditions, returns IDs of those that would match.
+    Returns (matching_ids, sample_count, matching_txs) where matching_txs
+    is capped at 5 for sample display. No writes. Loads the last `limit`
+    transactions for the household, evaluates
+    rule conditions, returns IDs of those that would match plus the full
+    Transaction objects for sample display (first 5 matches).
     """
     rule = await get_rule(session, rule_id=rule_id, household_id=household_id)
 
@@ -1130,6 +1133,7 @@ async def test_rule(
     transactions = list(tx_rows.scalars().all())
 
     matching_ids: list[uuid.UUID] = []
+    matching_txs: list[Transaction] = []
     for tx in transactions:
         ctx = TransactionContext(
             transaction_id=tx.id,
@@ -1144,8 +1148,10 @@ async def test_rule(
         )
         if evaluate_all_conditions(rule.conditions, ctx):
             matching_ids.append(tx.id)
+            if len(matching_txs) < 5:
+                matching_txs.append(tx)
 
-    return matching_ids, len(transactions)
+    return matching_ids, len(transactions), matching_txs
 
 
 # ---------------------------------------------------------------------------

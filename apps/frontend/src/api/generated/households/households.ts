@@ -23,6 +23,7 @@ import type {
 
 import type {
   AddMemberRequest,
+  ChangePasswordRequest,
   HTTPValidationError,
   HouseholdCreate,
   HouseholdOut,
@@ -30,6 +31,7 @@ import type {
   LoginRequest,
   MembershipOut,
   RegisterRequest,
+  SessionOut,
   StepUpRequest,
   TokenResponse,
   TotpSetupOut,
@@ -668,6 +670,205 @@ export const useTotpConfirmApiV1AuthTotpConfirmPost = <
   TContext
 > => {
   const mutationOptions = getTotpConfirmApiV1AuthTotpConfirmPostMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Return all active refresh tokens (sessions) for the current user.
+ * @summary List Sessions
+ */
+export const listSessionsApiV1AuthSessionsGet = (signal?: AbortSignal) => {
+  return customInstance<SessionOut[]>({ url: `/api/v1/auth/sessions`, method: 'GET', signal })
+}
+
+export const getListSessionsApiV1AuthSessionsGetQueryKey = () => {
+  return [`/api/v1/auth/sessions`] as const
+}
+
+export const getListSessionsApiV1AuthSessionsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>, TError, TData>
+  >
+}) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getListSessionsApiV1AuthSessionsGetQueryKey()
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>> = ({
+    signal,
+  }) => listSessionsApiV1AuthSessionsGet(signal)
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSessionsApiV1AuthSessionsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>
+>
+export type ListSessionsApiV1AuthSessionsGetQueryError = unknown
+
+export function useListSessionsApiV1AuthSessionsGet<
+  TData = Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiV1AuthSessionsGet<
+  TData = Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiV1AuthSessionsGet<
+  TData = Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>, TError, TData>
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Sessions
+ */
+
+export function useListSessionsApiV1AuthSessionsGet<
+  TData = Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiV1AuthSessionsGet>>, TError, TData>
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListSessionsApiV1AuthSessionsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Change the current user's password. Revokes all active sessions.
+ * @summary Change Password
+ */
+export const changePasswordApiV1AuthChangePasswordPost = (
+  changePasswordRequest: ChangePasswordRequest,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>({
+    url: `/api/v1/auth/change-password`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: changePasswordRequest,
+    signal,
+  })
+}
+
+export const getChangePasswordApiV1AuthChangePasswordPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>,
+    TError,
+    { data: ChangePasswordRequest },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>,
+  TError,
+  { data: ChangePasswordRequest },
+  TContext
+> => {
+  const mutationKey = ['changePasswordApiV1AuthChangePasswordPost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>,
+    { data: ChangePasswordRequest }
+  > = (props) => {
+    const { data } = props ?? {}
+
+    return changePasswordApiV1AuthChangePasswordPost(data)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type ChangePasswordApiV1AuthChangePasswordPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>
+>
+export type ChangePasswordApiV1AuthChangePasswordPostMutationBody = ChangePasswordRequest
+export type ChangePasswordApiV1AuthChangePasswordPostMutationError = HTTPValidationError
+
+/**
+ * @summary Change Password
+ */
+export const useChangePasswordApiV1AuthChangePasswordPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>,
+      TError,
+      { data: ChangePasswordRequest },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof changePasswordApiV1AuthChangePasswordPost>>,
+  TError,
+  { data: ChangePasswordRequest },
+  TContext
+> => {
+  const mutationOptions = getChangePasswordApiV1AuthChangePasswordPostMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
 }

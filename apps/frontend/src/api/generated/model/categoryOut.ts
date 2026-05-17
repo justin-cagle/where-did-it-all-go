@@ -19,6 +19,7 @@ export interface CategoryOut {
   renameable: boolean
   color: CategoryOutColor
   sort_order: number
+  budget_role: string
   created_at: string
   updated_at: string
 }

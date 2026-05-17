@@ -84,6 +84,22 @@ class TotpSetupOut(BaseModel):
     provisioning_uri: str
 
 
+class SessionOut(_Base):
+    """Active refresh token (session) info returned in responses."""
+
+    id: uuid.UUID
+    created_at: datetime
+    last_used_at: datetime
+    user_agent: str | None
+
+
+class ChangePasswordRequest(BaseModel):
+    """Change the current user's local auth password."""
+
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 # ---------------------------------------------------------------------------
 # Household schemas
 # ---------------------------------------------------------------------------

@@ -8,9 +8,11 @@
 import type { RuleActionSchemaType } from './ruleActionSchemaType'
 import type { RuleActionSchemaCategoryId } from './ruleActionSchemaCategoryId'
 import type { RuleActionSchemaTagId } from './ruleActionSchemaTagId'
+import type { RuleActionSchemaValue } from './ruleActionSchemaValue'
 
 export interface RuleActionSchema {
   type: RuleActionSchemaType
   category_id?: RuleActionSchemaCategoryId
   tag_id?: RuleActionSchemaTagId
+  value?: RuleActionSchemaValue
 }

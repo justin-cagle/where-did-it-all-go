@@ -1,7 +1,7 @@
 """Pydantic schemas for the classification domain API."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -41,6 +41,7 @@ class CategoryOut(BaseModel):
     renameable: bool
     color: str | None
     sort_order: int
+    budget_role: str
     created_at: datetime
     updated_at: datetime
 
@@ -99,9 +100,10 @@ class RuleConditionSchema(BaseModel):
 
 
 class RuleActionSchema(BaseModel):
-    type: Literal["set_category", "add_tag"]
+    type: Literal["set_category", "add_tag", "set_merchant_name", "set_transaction_type"]
     category_id: uuid.UUID | None = None
     tag_id: uuid.UUID | None = None
+    value: str | None = None
 
 
 class RuleCreate(BaseModel):
@@ -146,10 +148,21 @@ class RuleOut(BaseModel):
     updated_at: datetime
 
 
+class TransactionSummary(BaseModel):
+    id: uuid.UUID
+    posted_date: date
+    description: str
+    merchant_name: str | None
+    amount: Decimal
+    currency: str
+    direction: str
+
+
 class RuleTestResult(BaseModel):
     matching_transaction_ids: list[uuid.UUID]
     match_count: int
     sample_count: int
+    sample_transactions: list[TransactionSummary] = []
 
 
 # ---------------------------------------------------------------------------

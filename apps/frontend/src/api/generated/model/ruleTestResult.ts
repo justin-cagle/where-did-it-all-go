@@ -5,9 +5,11 @@
  * Personal finance budgeting and intelligence
  * OpenAPI spec version: 0.1.0
  */
+import type { TransactionSummary } from './transactionSummary'
 
 export interface RuleTestResult {
   matching_transaction_ids: string[]
   match_count: number
   sample_count: number
+  sample_transactions?: TransactionSummary[]
 }

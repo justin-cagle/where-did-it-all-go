@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,7 @@ from app.accounts.enums import ASSET_ACCOUNT_TYPES, AccountType, MinimumPaymentS
 from app.accounts.models import Account, AccountGroup, DebtAccount, DebtBalance, ManualAccount
 from app.audit import ActorType, AuditOperation
 from app.audit import service as audit_service
+from app.audit.models import AuditEvent
 
 
 class NotFoundError(Exception):
@@ -732,6 +733,60 @@ async def _get_debt_account_by_account_id(
         sa.select(DebtAccount).where(DebtAccount.account_id == account_id)
     )
     return result.scalar_one_or_none()
+
+
+@dataclass
+class BalancePoint:
+    date: date
+    balance: Decimal
+
+
+async def get_balance_history(
+    session: AsyncSession,
+    *,
+    account_id: uuid.UUID,
+    household_id: uuid.UUID,
+) -> list[BalancePoint]:
+    """Return one balance reading per day for the last 90 days.
+
+    Reads from the audit log — only days where a balance-reconciliation event
+    occurred appear in the result. If no such events exist, returns empty list.
+    """
+    account = await session.get(Account, account_id)
+    if account is None or account.archived_at is not None or account.household_id != household_id:
+        raise NotFoundError(f"account {account_id} not found")
+
+    cutoff = datetime.now(tz=UTC) - timedelta(days=90)
+    stmt = (
+        sa.select(AuditEvent)
+        .where(
+            AuditEvent.entity_type == "account",
+            AuditEvent.entity_id == account_id,
+            AuditEvent.occurred_at >= cutoff,
+        )
+        .order_by(AuditEvent.occurred_at.asc())
+    )
+    rows = await session.execute(stmt)
+    events = list(rows.scalars().all())
+
+    by_day: dict[date, Decimal] = {}
+    for event in events:
+        for raw_op in event.delta:
+            if not isinstance(raw_op, dict):
+                continue
+            op = cast(dict[str, Any], raw_op)
+            if op.get("path") != "/current_balance":
+                continue
+            if op.get("op") not in ("replace", "add"):
+                continue
+            try:
+                balance = Decimal(str(op["value"]))
+                day = event.occurred_at.date()
+                by_day[day] = balance
+            except (ValueError, KeyError, TypeError):
+                pass
+
+    return [BalancePoint(date=d, balance=b) for d, b in sorted(by_day.items())]
 
 
 async def _write_audit(
