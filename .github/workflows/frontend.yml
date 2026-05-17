@@ -109,3 +109,58 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           skip_step: install
         continue-on-error: true
+
+  e2e:
+    name: Playwright E2E tests
+    runs-on: [self-hosted, linux]
+    needs: [build]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Start backend (docker compose)
+        run: docker compose up -d app db redis caddy
+        working-directory: ../..
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/v1/health && break
+            sleep 2
+          done
+        working-directory: ../..
+
+      - name: Run Playwright E2E tests
+        run: pnpm e2e
+        env:
+          CI: "true"
+          PLAYWRIGHT_BASE_URL: "http://localhost:5173"
+          PLAYWRIGHT_API_URL: "http://localhost:8000"
+
+      - name: Stop backend
+        if: always()
+        run: docker compose down
+        working-directory: ../..
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report/
+          retention-days: 7

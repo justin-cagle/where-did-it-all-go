@@ -69,6 +69,7 @@ from app.classification.schemas import (
     TagCreate,
     TagOut,
     TagUpdate,
+    TransactionSummary,
 )
 from app.config import get_settings
 from app.database import get_db
@@ -420,7 +421,7 @@ async def test_rule(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> RuleTestResult:
     try:
-        matching_ids, sample_count = await service.test_rule(
+        matching_ids, sample_count, matching_txs = await service.test_rule(
             session, rule_id=rule_id, household_id=household_id
         )
     except service.NotFoundError as exc:
@@ -429,6 +430,18 @@ async def test_rule(
         matching_transaction_ids=matching_ids,
         match_count=len(matching_ids),
         sample_count=sample_count,
+        sample_transactions=[
+            TransactionSummary(
+                id=tx.id,
+                posted_date=tx.posted_date,
+                description=tx.description,
+                merchant_name=tx.merchant_name,
+                amount=tx.amount,
+                currency=tx.currency,
+                direction=tx.direction,
+            )
+            for tx in matching_txs
+        ],
     )
 
 

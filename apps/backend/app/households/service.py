@@ -625,6 +625,69 @@ async def _write_audit(
 
 
 # ---------------------------------------------------------------------------
+# Sessions management
+# ---------------------------------------------------------------------------
+
+
+async def list_user_sessions(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+) -> list[RefreshToken]:
+    """Return all active (non-revoked, non-expired) refresh tokens for a user."""
+    now = datetime.now(tz=UTC)
+    stmt = (
+        sa.select(RefreshToken)
+        .where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked_at.is_(None),
+            RefreshToken.expires_at > now,
+        )
+        .order_by(RefreshToken.issued_at.desc())
+    )
+    rows = await session.execute(stmt)
+    return list(rows.scalars().all())
+
+
+# ---------------------------------------------------------------------------
+# Password management
+# ---------------------------------------------------------------------------
+
+
+async def change_password(
+    session: AsyncSession,
+    *,
+    user: User,
+    current_password: str,
+    new_password: str,
+) -> None:
+    """Verify current password then update to new password hash.
+
+    Revokes all existing refresh tokens — user must re-login on all devices.
+    Raises AuthenticationError if current_password is wrong.
+    """
+    if user.password_hash is None:
+        raise AuthenticationError("no local auth configured for this user")
+    if not pwd_service.verify_password(current_password, user.password_hash):
+        raise AuthenticationError("invalid credentials")
+
+    user.password_hash = pwd_service.hash_password(new_password)
+    await session.flush()
+    await revoke_all_tokens(session, user_id=user.id)
+
+    await _write_audit(
+        session,
+        actor_type=ActorType.USER,
+        actor_id=user.id,
+        household_id=None,
+        entity_type="user",
+        entity_id=user.id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/password_hash", "value": "[redacted]"}],
+    )
+
+
+# ---------------------------------------------------------------------------
 # get_user_by_id is a public helper used by deps.py
 # ---------------------------------------------------------------------------
 

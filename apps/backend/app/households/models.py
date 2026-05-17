@@ -193,6 +193,11 @@ class RefreshToken(Base, UUIDPrimaryKeyMixin):
         default=1800,
         comment="Sliding window idle timeout in seconds (default: 30 min)",
     )
+    user_agent: Mapped[str | None] = mapped_column(
+        sa.Text,
+        nullable=True,
+        comment="User-Agent header from the session that issued this token",
+    )
 
     user: Mapped[User] = relationship("User", back_populates="refresh_tokens", lazy="select")
 

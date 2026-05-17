@@ -12,4 +12,6 @@ export type RuleActionSchemaType = (typeof RuleActionSchemaType)[keyof typeof Ru
 export const RuleActionSchemaType = {
   set_category: 'set_category',
   add_tag: 'add_tag',
+  set_merchant_name: 'set_merchant_name',
+  set_transaction_type: 'set_transaction_type',
 } as const

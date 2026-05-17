@@ -45,6 +45,7 @@ from app.accounts.schemas import (
     AccountGroupUpdate,
     AccountOut,
     AccountUpdate,
+    BalanceHistoryPoint,
     DebtAnnotationCreate,
     DebtAnnotationOut,
     DebtAnnotationUpdate,
@@ -370,6 +371,33 @@ async def remove_account_from_group(
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Balance history route — registered before /{account_id}/debt to avoid collision
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/households/{household_id}/accounts/{account_id}/balance-history",
+    response_model=list[BalanceHistoryPoint],
+)
+async def get_balance_history(
+    household_id: HouseholdMember,
+    account_id: uuid.UUID,
+    session: _DbSession,
+) -> list[BalanceHistoryPoint]:
+    """Return one balance reading per day for the last 90 days from the audit log.
+
+    Returns an empty list if no reconciliation entries exist for this account.
+    """
+    try:
+        points = await service.get_balance_history(
+            session, account_id=account_id, household_id=household_id
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return [BalanceHistoryPoint(date=p.date, balance=p.balance) for p in points]
 
 
 # ---------------------------------------------------------------------------

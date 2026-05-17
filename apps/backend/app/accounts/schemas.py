@@ -176,3 +176,15 @@ class DebtBalanceOut(_Base):
     effective_from: date
     effective_to: date | None
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Balance history
+# ---------------------------------------------------------------------------
+
+
+class BalanceHistoryPoint(BaseModel):
+    """One balance reading per day, derived from audit log reconciliation entries."""
+
+    date: date
+    balance: Decimal
