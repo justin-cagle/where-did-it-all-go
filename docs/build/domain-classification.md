@@ -54,6 +54,15 @@ System categories are visible in the UI but locked.
 IF (conditions) THEN (actions) WITH (priority)
 ```
 
+### Actions
+
+| Type | Fields | Notes |
+|------|--------|-------|
+| `set_category` | `category_id` | Assigns the transaction/allocation to a category |
+| `add_tag` | `tag_id` | Attaches a tag to the transaction |
+| `set_merchant_name` | `value: str` | Normalizes the merchant name |
+| `set_transaction_type` | `value: str` | Overrides the type-detected `transaction_type` |
+
 ### Conditions
 
 | Field | Operators available |
@@ -92,6 +101,17 @@ Governs behavior across rules, recurrence matching, dedup, and transfer detectio
 - Rule provenance is recorded on every auto-categorized allocation: which rule fired, and when.
 - Users can disable any standard (shipped) rule and define new ones.
 - Rules run on ingest. Re-running rules on historical transactions is a separate, explicit user-triggered action.
+
+### Rule Test Result
+
+`POST .../rules/{rule_id}/test` returns:
+
+| Field | Notes |
+|-------|-------|
+| `matching_transaction_ids` | UUIDs of all matching transactions |
+| `match_count` | Total matches |
+| `sample_count` | Total transactions evaluated |
+| `sample_transactions` | First 5 matching transactions as `TransactionSummary` (id, posted_date, description, merchant_name, amount, currency, direction) |
 
 ---
 

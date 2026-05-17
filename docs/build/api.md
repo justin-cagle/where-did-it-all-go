@@ -45,6 +45,13 @@ Rate limiting on the auth-receive endpoint.
 
 **Idle timeout:** 30 minutes (default), configurable by App Admin. Implemented as a sliding window on the JWT refresh — if no API activity within the window, the refresh token is invalidated server-side and the next request forces re-auth.
 
+### Auth Endpoints
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/auth/sessions` | List active refresh tokens for the current user. Returns `id`, `created_at`, `last_used_at`, `user_agent`. |
+| `POST` | `/api/v1/auth/change-password` | Verify current password, hash new password, revoke all refresh tokens. Rate-limited (5/min). Body: `{ current_password, new_password }`. Returns 204. |
+
 ---
 
 ## Real-Time Updates (SSE)

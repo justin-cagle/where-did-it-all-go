@@ -58,9 +58,20 @@ Run in CI on every PR that touches `alembic/versions/`.
 OpenAPI spec (generated from FastAPI) → orval client regeneration → diff check. If the generated frontend client would change, the PR fails until the client is regenerated and committed. Backend and frontend are never silently out of sync.
 
 ### E2E Tests (Playwright)
-A small set of critical user flows:
-- Login → ingest → categorize → budget → recommendation accept
-- Goal creation and contribution tracking
-- Debt plan creation and payoff schedule view
 
-Run nightly and on release branches. **Not run on every PR** (too slow).
+Six spec files covering critical user flows:
+
+| File | Flows covered |
+|------|--------------|
+| `auth.spec.ts` | Register, login valid/invalid, unauthenticated redirect, logout |
+| `accounts.spec.ts` | Add account, view balance, debt summary panel |
+| `transactions.spec.ts` | List, filter, add transaction, split |
+| `budgets.spec.ts` | Create budget, add lines, view period actuals |
+| `goals.spec.ts` | Create goal, log contribution, burn-up chart |
+| `classification.spec.ts` | Add category, create rule, test rule |
+
+**Isolation:** a shared test household is created once in `global-setup.ts` and stored as auth state. Each individual test creates its own data and never depends on state from other tests.
+
+**Runner:** Chromium only, 2 parallel workers in CI (headless). Run locally headed via `pnpm e2e:headed`.
+
+**Trigger:** runs on merge to `main` and on `workflow_dispatch`. Not run on every PR.

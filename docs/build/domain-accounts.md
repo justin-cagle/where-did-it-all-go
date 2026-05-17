@@ -56,3 +56,15 @@ type ∈ { credit_card, loan, line_of_credit, ... }
 | `payoff_target_date` | Optional user-defined payoff goal date |
 
 See [domain-debts.md](domain-debts.md) for the DebtPlan that operates over DebtAccounts.
+
+---
+
+## Balance History
+
+`GET /api/v1/households/{household_id}/accounts/{account_id}/balance-history`
+
+Returns the last 90 days of balance snapshots, one entry per day a reconciliation or balance-update audit event was recorded.
+
+Response: `list[BalanceHistoryPoint]` where each point is `{ date: str (ISO), balance: str (decimal) }`.
+
+Returns `[]` (empty list) — never 404 — when no reconciliation events exist for the account within the window.

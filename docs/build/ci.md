@@ -34,10 +34,23 @@
 |------|---------|
 | Lint | `eslint` |
 | Format check | `prettier --check` |
-| Type check | `tsc --noEmit` (strict) |
+| Type check | `tsc -b` (strict) |
 | Unit tests | `vitest` |
 | Build check | `vite build` |
 | Bundle size | Regression alert on size increase beyond threshold |
+
+### E2E (main branch + manual trigger only)
+
+Runs after the build job succeeds. Uses a self-hosted runner that has Docker Compose available.
+
+| Step | Notes |
+|------|-------|
+| Install Playwright browsers | `playwright install --with-deps chromium` |
+| Start full stack | `docker compose up -d`, wait for health |
+| Run E2E suite | `playwright test` (chromium, 2 workers) |
+| Upload HTML report | Uploaded as artifact on failure |
+
+Trigger: `github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'`. Not run on feature-branch PRs.
 
 ### Cross-Cutting
 

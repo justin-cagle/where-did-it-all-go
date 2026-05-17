@@ -71,3 +71,25 @@ Standard Owner financial actions remain session-authenticated (no step-up).
 - Idle timeout: **30 minutes** (configurable, App Admin settable). Implemented as a sliding window on the JWT refresh mechanism — if no API activity within the window, the refresh token is invalidated server-side and the next request forces re-auth.
 - Logout invalidates server-side.
 - Rate limiting on the auth-receive endpoint.
+
+### RefreshToken Schema
+
+Each active session is a `RefreshToken` row. Fields:
+
+| Field | Notes |
+|-------|-------|
+| `id` | UUIDv7 |
+| `user_id` | Owner |
+| `token_hash` | SHA-256 of raw token; raw token never stored |
+| `issued_at` | When the session was created |
+| `last_used_at` | Updated on each successful refresh |
+| `expires_at` | Absolute expiry |
+| `revoked_at` | Set on logout or password change |
+| `user_agent` | HTTP `User-Agent` header from the session that issued the token (nullable) |
+
+### Session API Endpoints
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/auth/sessions` | List non-revoked, non-expired refresh tokens for current user. Returns `id`, `created_at`, `last_used_at`, `user_agent`. |
+| `POST` | `/api/v1/auth/change-password` | Verify current password, hash new password, revoke all active sessions. Rate-limited (5/min). |
