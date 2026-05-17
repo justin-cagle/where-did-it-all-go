@@ -7,15 +7,11 @@ export { TransactionsPage } from './transactions/TransactionsPage'
 
 export { BudgetsPage as BudgetPage } from './budgets/BudgetsPage'
 
-export function GoalsPage() {
-  return <PlaceholderPage title="Goals" />
-}
+export { GoalsPage } from './goals/GoalsPage'
 
 export { DebtsPage } from './debts/DebtsPage'
 
-export function CalendarPage() {
-  return <PlaceholderPage title="Calendar" />
-}
+export { CalendarPage } from './calendar/CalendarPage'
 
 export function SettingsPage() {
   return (
