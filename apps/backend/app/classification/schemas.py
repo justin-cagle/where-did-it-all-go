@@ -27,6 +27,7 @@ class CategoryUpdate(BaseModel):
     parent_id: uuid.UUID | None = None
     color: str | None = None
     sort_order: int | None = None
+    budget_role: str | None = None
 
 
 class CategoryOut(BaseModel):

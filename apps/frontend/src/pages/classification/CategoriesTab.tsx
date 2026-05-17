@@ -18,9 +18,53 @@ interface Props {
   qc: QueryClient
 }
 
+const BUDGET_ROLE_OPTIONS = ['needs', 'wants', 'savings', 'uncategorized'] as const
+type BudgetRole = (typeof BUDGET_ROLE_OPTIONS)[number]
+
+function BudgetRoleBadge({ role, onClick }: { role: string; onClick?: () => void }) {
+  if (role === 'uncategorized') return null
+  const styles: Record<string, { bg: string; color: string }> = {
+    needs: {
+      bg: 'color-mix(in oklch, var(--info, #3b82f6) 15%, transparent)',
+      color: 'var(--info, #3b82f6)',
+    },
+    wants: {
+      bg: 'color-mix(in oklch, #8b5cf6 15%, transparent)',
+      color: '#8b5cf6',
+    },
+    savings: {
+      bg: 'color-mix(in oklch, var(--success) 15%, transparent)',
+      color: 'var(--success)',
+    },
+  }
+  const s = styles[role]
+  if (!s) return null
+  return (
+    <span
+      onClick={onClick}
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        padding: '1px 7px',
+        borderRadius: 99,
+        background: s.bg,
+        color: s.color,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase' as const,
+        cursor: onClick ? 'pointer' : 'default',
+        flexShrink: 0,
+      }}
+    >
+      {role}
+    </span>
+  )
+}
+
 interface EditState {
   id: string
   value: string
+  budgetRole: BudgetRole
+  showRolePicker: boolean
 }
 
 interface ColorPickerProps {
@@ -282,7 +326,12 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
 
   function startEdit(cat: CategoryOut) {
     if (!cat.renameable) return
-    setEditing({ id: cat.id, value: cat.name })
+    setEditing({
+      id: cat.id,
+      value: cat.name,
+      budgetRole: (cat.budget_role as BudgetRole) ?? 'uncategorized',
+      showRolePicker: false,
+    })
   }
 
   function handleNameChange(val: string) {
@@ -294,6 +343,13 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
         update.mutate({ householdId, categoryId: editing.id, data: { name: val.trim() } })
       }
     }, 400)
+  }
+
+  function handleBudgetRoleChange(catId: string, role: BudgetRole) {
+    update.mutate({ householdId, categoryId: catId, data: { budget_role: role } })
+    if (editing?.id === catId) {
+      setEditing({ ...editing, budgetRole: role, showRolePicker: false })
+    }
   }
 
   function commitEdit() {
@@ -405,6 +461,76 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
           >
             {cat.name}
           </span>
+        )}
+
+        {/* Budget role badge / picker */}
+        {isEditing ? (
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <BudgetRoleBadge
+              role={editing.budgetRole}
+              onClick={() => setEditing({ ...editing, showRolePicker: !editing.showRolePicker })}
+            />
+            {editing.budgetRole === 'uncategorized' && (
+              <button
+                type="button"
+                onClick={() => setEditing({ ...editing, showRolePicker: !editing.showRolePicker })}
+                style={{
+                  fontSize: 10,
+                  color: 'var(--fg-muted)',
+                  background: 'none',
+                  border: '1px dashed var(--border)',
+                  borderRadius: 99,
+                  padding: '1px 7px',
+                  cursor: 'pointer',
+                }}
+              >
+                set role
+              </button>
+            )}
+            {editing.showRolePicker && (
+              <div
+                style={{
+                  position: 'absolute',
+                  zIndex: 50,
+                  top: '100%',
+                  left: 0,
+                  marginTop: 4,
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                  overflow: 'hidden',
+                  minWidth: 130,
+                }}
+              >
+                {BUDGET_ROLE_OPTIONS.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => handleBudgetRoleChange(cat.id, role)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '6px 12px',
+                      textAlign: 'left' as const,
+                      fontSize: 12,
+                      background:
+                        editing.budgetRole === role
+                          ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
+                          : 'none',
+                      border: 'none',
+                      color: 'var(--fg-primary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <BudgetRoleBadge role={cat.budget_role ?? 'uncategorized'} />
         )}
 
         {/* System badge */}

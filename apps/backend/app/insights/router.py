@@ -20,7 +20,7 @@ from typing import Annotated
 
 import arq
 from arq.connections import RedisSettings
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -39,9 +39,11 @@ from app.insights.schemas import (
     TokenBudgetOut,
     TokenBudgetUpdate,
 )
+from app.security.ratelimit import get_household_id, get_limiter
 from app.worker.settings import get_redis_settings
 
 router = APIRouter(tags=["insights"])
+limiter = get_limiter()
 
 _DbSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -232,7 +234,9 @@ async def list_audit(
     "/households/{household_id}/insights/ask",
     response_model=AskResponse,
 )
+@limiter.limit("10/minute", key_func=get_household_id)  # type: ignore[misc]
 async def ask(
+    request: Request,
     household_id: HouseholdMember,
     body: AskRequest,
     session: _DbSession,

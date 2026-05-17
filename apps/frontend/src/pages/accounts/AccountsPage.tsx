@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useHousehold } from '@/hooks/use-household'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   useListAccountsApiV1HouseholdsHouseholdIdAccountsGet,
   useFindGroupCandidatesApiV1HouseholdsHouseholdIdAccountsGroupsCandidatesGet,
+  getGetAccountApiV1HouseholdsHouseholdIdAccountsAccountIdGetQueryOptions,
 } from '@/api/generated/accounts/accounts'
 import type { AccountOut } from '@/api/generated/model/accountOut'
 import { useAuthStore } from '@/store'
@@ -45,11 +47,28 @@ function TypeBadge({ type }: { type: string }) {
   )
 }
 
-function AccountCard({ account }: { account: AccountOut }) {
+function AccountCard({ account, householdId }: { account: AccountOut; householdId: string }) {
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const privacyMode = useAuthStore((s) => s.privacyMode)
   const balance = parseFloat(account.current_balance)
   const isLiab = isLiabilityType(account.account_type)
+
+  function handleMouseEnter() {
+    hoverTimer.current = setTimeout(() => {
+      void qc.prefetchQuery(
+        getGetAccountApiV1HouseholdsHouseholdIdAccountsAccountIdGetQueryOptions(
+          householdId,
+          account.id
+        )
+      )
+    }, 300)
+  }
+
+  function handleMouseLeave() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+  }
 
   return (
     <div
@@ -59,6 +78,8 @@ function AccountCard({ account }: { account: AccountOut }) {
       onKeyDown={(e) => {
         if (e.key === 'Enter') void navigate(`/accounts/${account.id}`)
       }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{
         background: 'var(--bg-elevated)',
         border: '1px solid var(--border)',
@@ -126,10 +147,12 @@ function AccountGroupSection({
   config,
   accounts,
   privacyMode,
+  householdId,
 }: {
   config: AccountGroupConfig
   accounts: AccountOut[]
   privacyMode: PrivacyMode
+  householdId: string
 }) {
   const total = groupTotal(accounts)
   const isLiab = config.types.some((t) => isLiabilityType(t))
@@ -174,7 +197,7 @@ function AccountGroupSection({
         }}
       >
         {accounts.map((a) => (
-          <AccountCard key={a.id} account={a} />
+          <AccountCard key={a.id} account={a} householdId={householdId} />
         ))}
       </div>
     </div>
@@ -415,6 +438,7 @@ export function AccountsPage() {
           config={config}
           accounts={groupAccs}
           privacyMode={privacyMode}
+          householdId={householdId ?? ''}
         />
       ))}
 

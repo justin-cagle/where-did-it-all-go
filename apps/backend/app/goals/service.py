@@ -863,13 +863,37 @@ async def get_all_status(
     household_id: uuid.UUID,
     as_of_date: date | None = None,
 ) -> list[GoalSnapshot]:
-    """Compute burn-up for all active goals and return snapshots."""
+    """Compute burn-up for all active goals and return snapshots.
+
+    Batch-loads all GoalContributions in one query to avoid N+1.
+    """
     goals = await list_goals(session, household_id=household_id, status=GoalStatus.ACTIVE)
+    if not goals:
+        return []
+
+    as_of = as_of_date or date.today()
+    goal_ids = [g.id for g in goals]
+
+    contrib_result = await session.execute(
+        sa.select(GoalContribution).where(
+            GoalContribution.goal_id.in_(goal_ids),
+            GoalContribution.contributed_at <= as_of,
+        )
+    )
+    all_contribs = list(contrib_result.scalars().all())
+    contribs_by_goal: dict[uuid.UUID, list[GoalContribution]] = {g.id: [] for g in goals}
+    for c in all_contribs:
+        contribs_by_goal[c.goal_id].append(c)
+
     snapshots: list[GoalSnapshot] = []
     for goal in goals:
         try:
-            snap = await compute_burn_up(
-                session, goal_id=goal.id, household_id=household_id, as_of_date=as_of_date
+            snap = await _compute_burn_up_with_contribs(
+                session,
+                goal=goal,
+                household_id=household_id,
+                as_of_date=as_of,
+                preloaded_contribs=contribs_by_goal[goal.id],
             )
             snapshots.append(snap)
         except Exception as exc:
@@ -879,6 +903,71 @@ async def get_all_status(
                 error=str(exc),
             )
     return snapshots
+
+
+async def _compute_burn_up_with_contribs(
+    session: AsyncSession,
+    *,
+    goal: Goal,
+    household_id: uuid.UUID,
+    as_of_date: date,
+    preloaded_contribs: list[GoalContribution],
+) -> GoalSnapshot:
+    """Compute burn-up using pre-loaded contributions (avoids per-goal DB round trip)."""
+    from app.debts.service import get_summary as debts_get_summary
+
+    target = goal.target_amount or Decimal("0")
+
+    if (
+        goal.goal_type == str(GoalType.DEBT_PAYOFF)
+        and goal.linked_debt_plan_id is not None
+        and goal.target_amount is None
+    ):
+        try:
+            debt_summary = await debts_get_summary(
+                session,
+                plan_group_id=goal.linked_debt_plan_id,
+                household_id=household_id,
+            )
+            target = debt_summary.total_paid
+        except Exception:
+            target = Decimal("0")
+
+    start_date = await _get_goal_start_date(goal)
+    cutoff_30d = as_of_date - timedelta(days=_DAYS_TRAILING)
+
+    cumulative_actual = sum((c.amount for c in preloaded_contribs), Decimal("0")).quantize(
+        _CENT, ROUND_HALF_UP
+    )
+
+    trailing_30d = sum(
+        (c.amount for c in preloaded_contribs if c.contributed_at >= cutoff_30d),
+        Decimal("0"),
+    ).quantize(_CENT, ROUND_HALF_UP)
+
+    fields = compute_burn_up_pure(
+        target_amount=target,
+        start_date=start_date,
+        target_date=goal.target_date,
+        as_of_date=as_of_date,
+        cumulative_actual=cumulative_actual,
+        trailing_30d_actual=trailing_30d,
+        thresholds=goal.metadata_.get("thresholds"),
+    )
+
+    from app.platform.time import utcnow as _utcnow
+
+    snap = GoalSnapshot(
+        goal_id=goal.id,
+        snapshot_date=as_of_date,
+        cumulative_actual=cumulative_actual,
+        currency=goal.currency,
+        **fields,
+        computed_at=_utcnow(),
+    )
+    session.add(snap)
+    await session.flush()
+    return snap
 
 
 # ---------------------------------------------------------------------------

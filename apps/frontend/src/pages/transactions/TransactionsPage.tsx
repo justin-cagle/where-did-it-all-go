@@ -81,7 +81,7 @@ export function TransactionsPage() {
   } = useListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGet(
     householdId ?? '',
     apiParams,
-    { query: { enabled: !!householdId } }
+    { query: { enabled: !!householdId, staleTime: 0 } }
   )
 
   const { data: accounts = [] } = useListAccountsApiV1HouseholdsHouseholdIdAccountsGet(

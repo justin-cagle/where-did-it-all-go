@@ -157,6 +157,7 @@ async def update_category(
             parent_id=body.parent_id,
             color=body.color,
             sort_order=body.sort_order,
+            budget_role=body.budget_role,
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

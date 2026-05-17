@@ -13,6 +13,7 @@ Then decorate auth endpoints:
     async def login(request: Request, ...): ...
 """
 
+from fastapi import Request
 from slowapi import Limiter, _rate_limit_exceeded_handler  # type: ignore[import-untyped]
 from slowapi.util import get_remote_address  # type: ignore[import-untyped]
 
@@ -25,6 +26,14 @@ def get_limiter() -> Limiter:
     if _limiter is None:
         _limiter = Limiter(key_func=get_remote_address)
     return _limiter
+
+
+def get_household_id(request: Request) -> str:
+    """Rate limit key: household_id from path params, fallback to IP."""
+    hid = request.path_params.get("household_id")
+    if hid:
+        return str(hid)
+    return get_remote_address(request)
 
 
 rate_limit_exceeded_handler = _rate_limit_exceeded_handler

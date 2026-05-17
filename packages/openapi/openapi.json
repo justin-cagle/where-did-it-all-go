@@ -11688,6 +11688,17 @@
               }
             ],
             "title": "Sort Order"
+          },
+          "budget_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Role"
           }
         },
         "type": "object",

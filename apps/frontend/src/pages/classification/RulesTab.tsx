@@ -66,10 +66,21 @@ interface LocalCondition {
   max: string
 }
 
+const SET_TX_TYPE_OPTIONS = [
+  'payroll',
+  'refund',
+  'transfer',
+  'fee',
+  'interest',
+  'dividend',
+  'regular',
+] as const
+
 interface LocalAction {
   type: RuleActionSchemaType
   category_id: string | null
   tag_id: string | null
+  value: string
 }
 
 interface RuleFormState {
@@ -91,7 +102,7 @@ function defaultCondition(): LocalCondition {
 }
 
 function defaultAction(): LocalAction {
-  return { type: 'set_category', category_id: null, tag_id: null }
+  return { type: 'set_category', category_id: null, tag_id: null, value: '' }
 }
 
 function conditionSummary(cond: unknown): string {
@@ -113,6 +124,12 @@ function actionSummary(action: unknown, categories: CategoryOut[], tags: TagOut[
   if (a.type === 'add_tag') {
     const tag = tags.find((t) => t.id === a.tag_id)
     return `Add tag: ${tag?.name ?? 'None'}`
+  }
+  if (a.type === 'set_merchant_name') {
+    return `Set merchant: ${a.value || '(empty)'}`
+  }
+  if (a.type === 'set_transaction_type') {
+    return `Set type: ${a.value || '(none)'}`
   }
   return a.type
 }
@@ -308,12 +325,15 @@ function ActionRow({ action, index, onChange, onRemove, categories, tags }: Acti
               type: e.target.value as RuleActionSchemaType,
               category_id: null,
               tag_id: null,
+              value: '',
             })
           }
           style={selectStyle}
         >
           <option value="set_category">Set category</option>
           <option value="add_tag">Add tag</option>
+          <option value="set_merchant_name">Set merchant name</option>
+          <option value="set_transaction_type">Set transaction type</option>
         </select>
 
         {action.type === 'set_category' && (
@@ -337,6 +357,31 @@ function ActionRow({ action, index, onChange, onRemove, categories, tags }: Acti
             {tags.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {action.type === 'set_merchant_name' && (
+          <input
+            type="text"
+            placeholder="Merchant name"
+            value={action.value}
+            onChange={(e) => onChange({ ...action, value: e.target.value })}
+            style={{ ...inputStyle, width: 200 }}
+          />
+        )}
+
+        {action.type === 'set_transaction_type' && (
+          <select
+            value={action.value}
+            onChange={(e) => onChange({ ...action, value: e.target.value })}
+            style={selectStyle}
+          >
+            <option value="">Choose type...</option>
+            {SET_TX_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
               </option>
             ))}
           </select>
@@ -382,6 +427,7 @@ function RuleEditor({ householdId, editRule, categories, tags, qc, onClose }: Ru
             type: (act.type ?? 'set_category') as RuleActionSchemaType,
             category_id: (act.category_id as string | null | undefined) ?? null,
             tag_id: (act.tag_id as string | null | undefined) ?? null,
+            value: String(act.value ?? ''),
           }
         }),
       }
@@ -440,6 +486,7 @@ function RuleEditor({ householdId, editRule, categories, tags, qc, onClose }: Ru
       type: a.type,
       category_id: a.category_id ?? undefined,
       tag_id: a.tag_id ?? undefined,
+      value: a.value || undefined,
     }))
   }
 
