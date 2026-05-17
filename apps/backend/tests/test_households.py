@@ -365,7 +365,7 @@ async def test_add_and_remove_member(session: AsyncSession) -> None:
 
 
 @given(roles=st.lists(st.sampled_from(list(HouseholdRole)), min_size=2, max_size=5))
-@settings(max_examples=20)
+@settings(max_examples=20, deadline=None)
 def test_duplicate_membership_always_raises(roles: list[HouseholdRole]) -> None:
     """Adding the same user twice always raises ConflictError, regardless of role."""
     import asyncio

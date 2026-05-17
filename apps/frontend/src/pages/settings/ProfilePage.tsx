@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { useMeApiV1AuthMeGet } from '@/api/generated/households/households'
+import {
+  useMeApiV1AuthMeGet,
+  useUpdateMeApiV1AuthMePatch,
+  getMeApiV1AuthMeGetQueryKey,
+} from '@/api/generated/households/households'
+import { useQueryClient } from '@tanstack/react-query'
 
 function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
   const [editing, setEditing] = useState(false)
@@ -134,7 +139,9 @@ function SettingRow({
 }
 
 export function ProfilePage() {
+  const qc = useQueryClient()
   const { data: me, isLoading } = useMeApiV1AuthMeGet()
+  const updateMe = useUpdateMeApiV1AuthMePatch()
 
   if (isLoading) {
     return <div style={{ color: 'var(--fg-muted)', fontSize: 13 }}>Loading...</div>
@@ -142,8 +149,9 @@ export function ProfilePage() {
 
   if (!me) return null
 
-  const handleSaveName = async (_: string) => {
-    await Promise.resolve()
+  const handleSaveName = async (display_name: string) => {
+    await updateMe.mutateAsync({ data: { display_name } })
+    await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
   }
 
   return (

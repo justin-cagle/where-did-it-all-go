@@ -49,7 +49,17 @@ Rate limiting on the auth-receive endpoint.
 
 | Method | Path | Notes |
 |--------|------|-------|
+| `POST` | `/api/v1/auth/register` | Register a new user. Returns `TokenResponse` + sets auth cookies. |
+| `POST` | `/api/v1/auth/login` | Authenticate. Rate-limited (10/min). Returns `TokenResponse` + sets auth cookies. |
+| `POST` | `/api/v1/auth/refresh` | Rotate refresh token (sliding-window idle timeout). |
+| `POST` | `/api/v1/auth/logout` | Revoke all refresh tokens for current user. Clears cookies. Returns 204. |
+| `POST` | `/api/v1/auth/step-up` | Elevate to step-up auth (5-min window). Rate-limited (5/min). |
+| `GET` | `/api/v1/auth/me` | Return authenticated user's profile. |
+| `PATCH` | `/api/v1/auth/me` | Update `display_name`. Body: `{ display_name }`. Returns `UserOut`. |
+| `POST` | `/api/v1/auth/totp/setup` | Begin TOTP enrollment. Returns provisioning URI. |
+| `POST` | `/api/v1/auth/totp/confirm` | Confirm TOTP enrollment with first generated code. Returns 204. |
 | `GET` | `/api/v1/auth/sessions` | List active refresh tokens for the current user. Returns `id`, `created_at`, `last_used_at`, `user_agent`. |
+| `DELETE` | `/api/v1/auth/sessions/{token_id}` | Revoke a specific session. Verifies ownership. Returns 204. |
 | `POST` | `/api/v1/auth/change-password` | Verify current password, hash new password, revoke all refresh tokens. Rate-limited (5/min). Body: `{ current_password, new_password }`. Returns 204. |
 
 ---

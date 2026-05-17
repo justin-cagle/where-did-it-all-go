@@ -2,24 +2,29 @@
 
 Routes:
   Auth:
-    POST /api/v1/auth/register
-    POST /api/v1/auth/login
-    POST /api/v1/auth/refresh
-    POST /api/v1/auth/logout
-    POST /api/v1/auth/step-up
-    GET  /api/v1/auth/me
-    POST /api/v1/auth/totp/setup
-    POST /api/v1/auth/totp/confirm
+    POST   /api/v1/auth/register
+    POST   /api/v1/auth/login
+    POST   /api/v1/auth/refresh
+    POST   /api/v1/auth/logout
+    POST   /api/v1/auth/step-up
+    GET    /api/v1/auth/me
+    PATCH  /api/v1/auth/me
+    POST   /api/v1/auth/totp/setup
+    POST   /api/v1/auth/totp/confirm
+    GET    /api/v1/auth/sessions
+    DELETE /api/v1/auth/sessions/{token_id}
+    POST   /api/v1/auth/change-password
 
   Households:
-    GET  /api/v1/households
-    POST /api/v1/households
-    GET  /api/v1/households/{household_id}
-    PATCH /api/v1/households/{household_id}
+    GET    /api/v1/households
+    POST   /api/v1/households
+    GET    /api/v1/households/{household_id}
+    PATCH  /api/v1/households/{household_id}
     DELETE /api/v1/households/{household_id}
-    GET  /api/v1/households/{household_id}/members
-    POST /api/v1/households/{household_id}/members     (step-up required)
+    GET    /api/v1/households/{household_id}/members
+    POST   /api/v1/households/{household_id}/members     (step-up required)
     DELETE /api/v1/households/{household_id}/members/{user_id} (step-up required)
+    POST   /api/v1/households/{household_id}/invitations (stub — not yet implemented)
 
 No business logic in this file — all logic is in service.py.
 """
@@ -47,6 +52,7 @@ from app.households.schemas import (
     StepUpRequest,
     TokenResponse,
     TotpSetupOut,
+    UpdateProfileRequest,
     UserOut,
 )
 from app.security import cookies as cookie_service
@@ -228,6 +234,21 @@ async def me(current_user: CurrentUser) -> UserOut:
     return UserOut.model_validate(current_user)
 
 
+@router.patch("/auth/me", response_model=UserOut)
+async def update_me(
+    body: UpdateProfileRequest,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> UserOut:
+    """Update the authenticated user's display_name."""
+    user = await service.update_user_profile(
+        session,
+        user=current_user,
+        display_name=body.display_name,
+    )
+    return UserOut.model_validate(user)
+
+
 @router.post("/auth/totp/setup", response_model=TotpSetupOut)
 async def totp_setup(
     current_user: CurrentUser,
@@ -264,6 +285,23 @@ async def list_sessions(
     """Return all active refresh tokens (sessions) for the current user."""
     tokens = await service.list_user_sessions(session, user_id=current_user.id)
     return [SessionOut.model_validate(t) for t in tokens]
+
+
+@router.delete("/auth/sessions/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_session(
+    token_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Revoke a specific refresh token (session) for the current user."""
+    try:
+        await service.revoke_user_session(
+            session,
+            user_id=current_user.id,
+            token_id=token_id,
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.post("/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
@@ -466,3 +504,15 @@ async def remove_member(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post(
+    "/households/{household_id}/invitations",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def create_invitation(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+) -> dict[str, str]:
+    # TODO: implement email-based invitation flow
+    return {"detail": "invitations not yet implemented"}

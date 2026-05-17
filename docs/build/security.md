@@ -78,7 +78,9 @@ Implemented via **slowapi** (`SlowAPI` middleware, `Limiter` from `slowapi`). Ke
 
 | Endpoint | Limit |
 |----------|-------|
-| `POST /auth/*` | 5/minute (existing) |
+| `POST /auth/login` | 10/minute |
+| `POST /auth/step-up` | 5/minute |
+| `POST /auth/change-password` | 5/minute |
 | `POST /insights/{household_id}/ask` | 10/minute per household |
 | `POST /ingest/{household_id}/upload` | 5/minute per household |
 | `POST /projections/{household_id}/scenarios/{id}/run` | 10/minute per household |

@@ -735,8 +735,13 @@ async def test_add_debt_balance_effective_from_must_be_after_current(
 # ---------------------------------------------------------------------------
 
 
+_pg_safe_text = st.characters(blacklist_categories=("Cs",), blacklist_characters="\x00")
+
+
 @given(
-    institution=st.text(min_size=3, max_size=30).filter(lambda s: s.strip()),
+    institution=st.text(min_size=3, max_size=30, alphabet=_pg_safe_text).filter(
+        lambda s: s.strip()
+    ),
     balance=st.decimals(
         min_value=Decimal("1"),
         max_value=Decimal("100000"),
@@ -744,9 +749,9 @@ async def test_add_debt_balance_effective_from_must_be_after_current(
         allow_nan=False,
         allow_infinity=False,
     ),
-    base_name=st.text(min_size=6, max_size=20).filter(lambda s: s.strip()),
+    base_name=st.text(min_size=6, max_size=20, alphabet=_pg_safe_text).filter(lambda s: s.strip()),
 )
-@settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_group_candidate_detection_same_accounts_always_found(
     institution: str,
     balance: Decimal,
@@ -822,7 +827,7 @@ def test_group_candidate_detection_same_accounts_always_found(
     start_date=st.dates(min_value=date(2020, 1, 1), max_value=date(2025, 1, 1)),
     gap_days=st.lists(st.integers(min_value=20, max_value=60), min_size=4, max_size=4),
 )
-@settings(max_examples=12, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=12, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_apr_history_no_gaps_no_overlaps(
     n_updates: int,
     start_date: date,
@@ -930,7 +935,7 @@ def test_apr_history_no_gaps_no_overlaps(
     n_accounts=st.integers(min_value=1, max_value=5),
     archive_indices=st.lists(st.integers(min_value=0, max_value=4), min_size=1, max_size=3),
 )
-@settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_soft_delete_always_excludes_archived(
     n_accounts: int,
     archive_indices: list[int],

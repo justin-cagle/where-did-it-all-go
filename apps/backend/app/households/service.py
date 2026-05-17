@@ -688,6 +688,48 @@ async def change_password(
 
 
 # ---------------------------------------------------------------------------
+# Profile management
+# ---------------------------------------------------------------------------
+
+
+async def update_user_profile(
+    session: AsyncSession,
+    *,
+    user: User,
+    display_name: str,
+) -> User:
+    """Update the user's display_name."""
+    user.display_name = display_name
+    await session.flush()
+
+    await _write_audit(
+        session,
+        actor_type=ActorType.USER,
+        actor_id=user.id,
+        household_id=None,
+        entity_type="user",
+        entity_id=user.id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/display_name", "value": display_name}],
+    )
+    return user
+
+
+async def revoke_user_session(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    token_id: uuid.UUID,
+) -> None:
+    """Revoke a specific refresh token. Verifies ownership before revoking."""
+    rt = await session.get(RefreshToken, token_id)
+    if rt is None or rt.user_id != user_id or rt.revoked_at is not None:
+        raise NotFoundError("session not found")
+    rt.revoked_at = datetime.now(tz=UTC)
+    await session.flush()
+
+
+# ---------------------------------------------------------------------------
 # get_user_by_id is a public helper used by deps.py
 # ---------------------------------------------------------------------------
 
