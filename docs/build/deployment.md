@@ -41,6 +41,18 @@ When disabled (compose profile excludes `bundled-proxy`), the app exposes a plai
 
 Documentation includes per-proxy config snippets for: nginx, Traefik, Caddy external, with explicit notes on SSE requirements (e.g., `proxy_buffering off` for nginx — required for SSE to function).
 
+**Security headers set by Caddyfile:**
+
+| Header | Value |
+|--------|-------|
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | geolocation, microphone, camera all `()` |
+| `Content-Security-Policy` | `default-src 'self'`; scripts/styles allow `'unsafe-inline'`; fonts allow Google Fonts |
+| `Server` | Removed (hidden) |
+
 ---
 
 ## Secrets

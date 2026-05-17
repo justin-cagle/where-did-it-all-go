@@ -72,6 +72,21 @@ Standard Owner financial actions (viewing transactions, editing budgets, managin
 
 ---
 
+## Rate Limiting
+
+Implemented via **slowapi** (`SlowAPI` middleware, `Limiter` from `slowapi`). Key function is `get_household_id` — extracts `household_id` from path params, falls back to client IP.
+
+| Endpoint | Limit |
+|----------|-------|
+| `POST /auth/*` | 5/minute (existing) |
+| `POST /insights/{household_id}/ask` | 10/minute per household |
+| `POST /ingest/{household_id}/upload` | 5/minute per household |
+| `POST /projections/{household_id}/scenarios/{id}/run` | 10/minute per household |
+
+429 responses include `Retry-After` header. Limits are per-household (not per-user) to prevent one user from being locked out by another household member.
+
+---
+
 ## Read-Only Panic Switch
 
 A toggle that disables all writes including aggregator sync, without taking the app down. Used when the user suspects a sync issue or wants to freeze state for investigation.

@@ -97,6 +97,41 @@ React Hook Form + Zod. shadcn's `Form` component is built on this combination. Z
 
 ---
 
+## Code Splitting
+
+Heavy pages are lazy-loaded via `React.lazy` + `Suspense` to keep the initial bundle tight.
+
+| Lazy page | Reason |
+|-----------|--------|
+| `ProjectionsPage` | Recharts-heavy, computation-heavy |
+| `InsightsPage` | react-markdown + chart components |
+
+Pattern in `router.tsx`:
+```tsx
+const ProjectionsPage = lazy(() =>
+  import('@/pages/projections/ProjectionsPage').then((m) => ({ default: m.ProjectionsPage }))
+)
+// Wrap in <Suspense fallback={<PageSkeleton />}>
+```
+
+All other pages are statically imported.
+
+---
+
+## TanStack Query Caching Conventions
+
+| Data | staleTime | gcTime | Notes |
+|------|-----------|--------|-------|
+| Transactions | `0` | default | Always fresh — new ingest can arrive any time |
+| Balance history | `30_000` | default | Semi-stable; changes only on reconciliation |
+| Projections | default | `5 * 60 * 1000` | Expensive to compute; keep in cache longer |
+| Sessions | `0` | default | Security-sensitive; never serve stale |
+| Everything else | `60_000` (orval default) | default | Standard 60s stale window |
+
+**Hover prefetch:** `AccountCard` prefetches the account detail query on `mouseenter` with a 300ms debounce via `qc.prefetchQuery()`. This masks navigation latency without burning requests for quick cursor passes.
+
+---
+
 ## PWA
 
 `vite-plugin-pwa` from day one, generating manifest + service worker via Workbox.
@@ -106,6 +141,8 @@ Configured for:
 - API GET response caching (stale-while-revalidate)
 - No precaching of authenticated content
 - Opt-in install prompt
+
+**Icons:** `apps/frontend/public/icon-192.png` and `icon-512.png` are required for the PWA manifest. Regenerate them if the brand color changes. Both are committed — do not add to `.gitignore`.
 
 ---
 
