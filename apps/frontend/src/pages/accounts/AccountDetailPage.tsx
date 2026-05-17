@@ -10,6 +10,7 @@ import {
   useArchiveAccountApiV1HouseholdsHouseholdIdAccountsAccountIdDelete,
   useGetDebtAnnotationApiV1HouseholdsHouseholdIdAccountsAccountIdDebtGet,
   useListDebtBalancesApiV1HouseholdsHouseholdIdAccountsAccountIdDebtBalancesGet,
+  useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet,
   getListAccountsApiV1HouseholdsHouseholdIdAccountsGetQueryKey,
   getGetAccountApiV1HouseholdsHouseholdIdAccountsAccountIdGetQueryKey,
 } from '@/api/generated/accounts/accounts'
@@ -202,7 +203,25 @@ function StatItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function BalanceHistoryPlaceholder() {
+function BalanceHistoryChart({
+  householdId,
+  accountId,
+  currency,
+  privacyMode,
+}: {
+  householdId: string
+  accountId: string
+  currency: string
+  privacyMode: PrivacyMode
+}) {
+  const { data } = useGetBalanceHistoryApiV1HouseholdsHouseholdIdAccountsAccountIdBalanceHistoryGet(
+    householdId,
+    accountId,
+    { query: { staleTime: 30_000 } }
+  )
+
+  const points = data ?? []
+
   return (
     <div
       style={{
@@ -227,27 +246,48 @@ function BalanceHistoryPlaceholder() {
         Balance history — 90 days
       </span>
       <div style={{ height: 140, position: 'relative' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={[]}>
-            <XAxis dataKey="date" hide />
-            <YAxis hide />
-            <Tooltip />
-            <Line type="monotone" dataKey="balance" stroke="var(--accent)" dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span style={{ fontSize: 13, color: 'var(--fg-muted)' }}>
-            Balance history unavailable
-          </span>
-        </div>
+        {points.length === 0 ? (
+          <div
+            style={{
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span style={{ fontSize: 13, color: 'var(--fg-muted)' }}>No balance history yet</span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={points}>
+              <XAxis
+                dataKey="date"
+                hide={points.length < 2}
+                tick={{ fontSize: 10, fill: 'var(--fg-muted)' }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis hide />
+              <Tooltip
+                formatter={(val: unknown) => fmt(parseFloat(String(val)), privacyMode, currency)}
+                labelStyle={{ fontSize: 11, color: 'var(--fg-muted)' }}
+                contentStyle={{
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke="var(--accent)"
+                dot={false}
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   )
@@ -861,7 +901,12 @@ export function AccountDetailPage() {
         />
       )}
 
-      <BalanceHistoryPlaceholder />
+      <BalanceHistoryChart
+        householdId={safeHouseholdId}
+        accountId={safeAccountId}
+        currency={account.currency}
+        privacyMode={privacyMode}
+      />
 
       {isDebt && householdId && (
         <DebtSummaryPanel householdId={householdId} accountId={safeAccountId} />

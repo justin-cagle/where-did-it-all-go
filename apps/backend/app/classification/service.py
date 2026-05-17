@@ -743,6 +743,7 @@ async def update_category(
     parent_id: uuid.UUID | None = None,
     color: str | None = None,
     sort_order: int | None = None,
+    budget_role: str | None = None,
 ) -> Category:
     """Update a household-scoped category. System categories block rename."""
     cat = await get_category(session, category_id=category_id, household_id=household_id)
@@ -777,6 +778,10 @@ async def update_category(
     if sort_order is not None:
         delta.append({"op": "replace", "path": "/sort_order", "value": sort_order})
         cat.sort_order = sort_order
+
+    if budget_role is not None:
+        delta.append({"op": "replace", "path": "/budget_role", "value": budget_role})
+        cat.budget_role = budget_role
 
     await session.flush()
     if delta:

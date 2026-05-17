@@ -15,4 +15,5 @@ export interface CategoryUpdate {
   parent_id?: CategoryUpdateParentId
   color?: CategoryUpdateColor
   sort_order?: CategoryUpdateSortOrder
+  budget_role?: string | null
 }

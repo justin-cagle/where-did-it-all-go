@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { AuthGuard } from '@/components/AuthGuard'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -19,13 +20,44 @@ import { BudgetDetailPage } from '@/pages/budgets/BudgetDetailPage'
 import { DebtPlanPage } from '@/pages/debts/DebtPlanPage'
 import { GoalDetailPage } from '@/pages/goals/GoalDetailPage'
 import { ClassificationPage } from '@/pages/classification/ClassificationPage'
-import { ProjectionsPage } from '@/pages/projections/ProjectionsPage'
-import { InsightsPage } from '@/pages/insights/InsightsPage'
 import { SettingsLayout } from '@/pages/settings/SettingsPage'
 import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { HouseholdPage } from '@/pages/settings/HouseholdPage'
 import { InsightsSettingsPage } from '@/pages/settings/InsightsSettingsPage'
 import { SecurityPage } from '@/pages/settings/SecurityPage'
+
+const ProjectionsPage = lazy(() =>
+  import('@/pages/projections/ProjectionsPage').then((m) => ({ default: m.ProjectionsPage }))
+)
+const InsightsPage = lazy(() =>
+  import('@/pages/insights/InsightsPage').then((m) => ({ default: m.InsightsPage }))
+)
+
+function PageSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        minHeight: 200,
+      }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          border: '3px solid var(--border)',
+          borderTopColor: 'var(--accent)',
+          animation: 'spin 0.7s linear infinite',
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
 
 function AuthedShell({ children }: { children: React.ReactNode }) {
   return (
@@ -146,7 +178,9 @@ export const router = createBrowserRouter([
     path: '/projections',
     element: (
       <AuthedShell>
-        <ProjectionsPage />
+        <Suspense fallback={<PageSkeleton />}>
+          <ProjectionsPage />
+        </Suspense>
       </AuthedShell>
     ),
   },
@@ -154,7 +188,9 @@ export const router = createBrowserRouter([
     path: '/insights',
     element: (
       <AuthedShell>
-        <InsightsPage />
+        <Suspense fallback={<PageSkeleton />}>
+          <InsightsPage />
+        </Suspense>
       </AuthedShell>
     ),
   },

@@ -1,6 +1,13 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import {
+  useListSessionsApiV1AuthSessionsGet,
+  useChangePasswordApiV1AuthChangePasswordPost,
+  getListSessionsApiV1AuthSessionsGetQueryKey,
+} from '@/api/generated/households/households'
+import { useQueryClient } from '@tanstack/react-query'
+import { customInstance, ApiError } from '@/api/client'
 
 const passwordSchema = z
   .object({
@@ -20,7 +27,142 @@ function FieldError({ message }: { message?: string }) {
   return <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 3 }}>{message}</div>
 }
 
+function relativeTime(iso: string): string {
+  try {
+    const diffMs = Date.now() - new Date(iso).getTime()
+    const diffSec = Math.floor(diffMs / 1000)
+    if (diffSec < 60) return 'just now'
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`
+    const diffHr = Math.floor(diffMin / 60)
+    if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`
+    const diffDay = Math.floor(diffHr / 24)
+    if (diffDay < 30) return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`
+    const diffMo = Math.floor(diffDay / 30)
+    return `${diffMo} month${diffMo !== 1 ? 's' : ''} ago`
+  } catch {
+    return iso
+  }
+}
+
+function truncate(s: string | null | undefined, max: number): string {
+  if (!s) return 'Unknown device'
+  return s.length > max ? s.slice(0, max) + '...' : s
+}
+
+function SessionsList() {
+  const qc = useQueryClient()
+  const { data: sessions, isLoading } = useListSessionsApiV1AuthSessionsGet({
+    query: { staleTime: 0 },
+  })
+
+  const sorted = sessions
+    ? [...sessions].sort(
+        (a, b) => new Date(b.last_used_at).getTime() - new Date(a.last_used_at).getTime()
+      )
+    : []
+
+  async function revokeSession(id: string) {
+    await customInstance({ url: `/api/v1/auth/sessions/${id}`, method: 'DELETE' })
+    await qc.invalidateQueries({ queryKey: getListSessionsApiV1AuthSessionsGetQueryKey() })
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: '16px 0', fontSize: 13, color: 'var(--fg-muted)' }}>
+        Loading sessions...
+      </div>
+    )
+  }
+
+  if (!sorted.length) {
+    return <div style={{ fontSize: 13, color: 'var(--fg-muted)' }}>No active sessions found.</div>
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {sorted.map((session, idx) => {
+        const isCurrent = idx === 0
+        return (
+          <div
+            key={session.id}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: isCurrent
+                ? 'color-mix(in oklch, var(--accent) 6%, transparent)'
+                : 'var(--bg-secondary)',
+              border: isCurrent
+                ? '1px solid color-mix(in oklch, var(--accent) 30%, transparent)'
+                : '1px solid var(--border)',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--fg-primary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {truncate(session.user_agent, 60)}
+                {isCurrent && (
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: 'var(--accent)',
+                      background: 'color-mix(in oklch, var(--accent) 12%, transparent)',
+                      borderRadius: 4,
+                      padding: '1px 5px',
+                    }}
+                  >
+                    current
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
+                Created {relativeTime(session.created_at)} &middot; Last used{' '}
+                {relativeTime(session.last_used_at)}
+              </div>
+            </div>
+            {!isCurrent && (
+              <button
+                type="button"
+                onClick={() => void revokeSession(session.id)}
+                style={{
+                  flexShrink: 0,
+                  fontSize: 12,
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: '1px solid color-mix(in oklch, var(--danger) 40%, transparent)',
+                  background: 'transparent',
+                  color: 'var(--danger)',
+                  cursor: 'pointer',
+                }}
+              >
+                Revoke
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function SecurityPage() {
+  const qc = useQueryClient()
+  const changePassword = useChangePasswordApiV1AuthChangePasswordPost()
+
   const {
     register,
     handleSubmit,
@@ -31,12 +173,22 @@ export function SecurityPage() {
     resolver: zodResolver(passwordSchema),
   })
 
-  const onSubmit = async (_: PasswordForm) => {
+  const onSubmit = async (data: PasswordForm) => {
     try {
-      await Promise.resolve()
+      await changePassword.mutateAsync({
+        data: {
+          current_password: data.current_password,
+          new_password: data.new_password,
+        },
+      })
       reset()
-    } catch {
-      setError('current_password', { message: 'Incorrect current password' })
+      await qc.invalidateQueries({ queryKey: getListSessionsApiV1AuthSessionsGetQueryKey() })
+    } catch (err: unknown) {
+      if (err instanceof ApiError && (err.status === 400 || err.status === 401)) {
+        setError('current_password', { message: 'Current password is incorrect' })
+      } else {
+        setError('current_password', { message: 'Update failed. Try again.' })
+      }
     }
   }
 
@@ -122,7 +274,7 @@ export function SecurityPage() {
           <div style={{ paddingTop: 4 }}>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || changePassword.isPending}
               style={{
                 padding: '8px 18px',
                 background: 'var(--accent)',
@@ -131,12 +283,12 @@ export function SecurityPage() {
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 500,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1,
+                cursor: isSubmitting || changePassword.isPending ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting || changePassword.isPending ? 0.7 : 1,
                 fontFamily: 'var(--font-sans)',
               }}
             >
-              {isSubmitting ? 'Updating...' : 'Update password'}
+              {isSubmitting || changePassword.isPending ? 'Updating...' : 'Update password'}
             </button>
           </div>
         </form>
@@ -150,35 +302,13 @@ export function SecurityPage() {
           padding: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
+          gap: 16,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>
-            Active sessions
-          </div>
-          <span
-            style={{
-              fontSize: 11,
-              padding: '2px 8px',
-              borderRadius: 99,
-              background: 'var(--bg-secondary)',
-              color: 'var(--fg-muted)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Coming soon
-          </span>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>
+          Active sessions
         </div>
-        <div style={{ fontSize: 13, color: 'var(--fg-muted)' }}>
-          Session management will show all active login sessions and let you revoke them.
-        </div>
+        <SessionsList />
       </div>
     </div>
   )

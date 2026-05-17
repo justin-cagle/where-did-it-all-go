@@ -20,7 +20,7 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -40,8 +40,10 @@ from app.projections.schemas import (
     ScenarioOut,
     ScenarioUpdate,
 )
+from app.security.ratelimit import get_household_id, get_limiter
 
 router = APIRouter()
+limiter = get_limiter()
 
 _base = "/households/{household_id}/projections"
 
@@ -380,7 +382,9 @@ async def archive_scenario(
 
 
 @router.post(_base + "/scenarios/{scenario_id}/run", response_model=ProjectionResponse)
+@limiter.limit("10/minute", key_func=get_household_id)  # type: ignore[misc]
 async def run_scenario(
+    request: Request,
     household_id: HouseholdMember,
     scenario_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],

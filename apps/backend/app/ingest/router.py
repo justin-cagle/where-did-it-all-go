@@ -18,7 +18,7 @@ from typing import Annotated
 
 import arq
 from arq.connections import RedisSettings
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -34,9 +34,11 @@ from app.ingest.schemas import (
     TriggerResponse,
     UploadResponse,
 )
+from app.security.ratelimit import get_household_id, get_limiter
 from app.worker.settings import get_redis_settings
 
 router = APIRouter(tags=["ingest"])
+limiter = get_limiter()
 
 _DbSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -177,7 +179,9 @@ async def delete_sync_config(
     response_model=UploadResponse,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("5/minute", key_func=get_household_id)  # type: ignore[misc]
 async def upload_file(
+    request: Request,
     household_id: HouseholdMember,
     session: _DbSession,
     current_user: CurrentUser,
