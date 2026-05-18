@@ -23,6 +23,7 @@ import sqlalchemy as sa
 import structlog
 
 from app.admin.enums import BackupStatus, NotificationType
+from app.config import get_settings
 from app.database import get_session_factory
 
 logger = structlog.get_logger(__name__)
@@ -86,7 +87,6 @@ async def run_backup_job(
     _ = ctx
     from app.admin.models import BackupRun
     from app.admin.service import get_backup_config
-    from app.config import get_settings
     from app.security.encryption import decrypt_dict
 
     run_id = uuid.UUID(backup_run_id)
@@ -208,8 +208,6 @@ def _apply_local_retention(retention_days: int) -> None:
 async def check_worker_health_job(ctx: dict[str, Any]) -> dict[str, Any]:
     """Ping ARQ queues; notify once per outage window."""
     _ = ctx
-    from app.config import get_settings
-
     settings = get_settings()
     try:
         import redis.asyncio as aioredis

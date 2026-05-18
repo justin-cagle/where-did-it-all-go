@@ -23,7 +23,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-import app.admin.models  # noqa: F401
+import app.accounts.models
+import app.admin.models
+import app.transactions.models  # noqa: F401
 from app.database import Base
 
 _MASTER_KEY = "test-master-key-not-for-production"  # pragma: allowlist secret
@@ -241,26 +243,6 @@ class TestReadOnlyMiddleware:
 
         mw = ReadOnlyMiddleware(MagicMock())
 
-        redis_data = {"system:read_only_state": json.dumps({"enabled": True, "reason": "test"})}
-
-        class FakeRedis:
-            async def get(self, key: str) -> str | None:
-                return redis_data.get(key)
-
-            async def aclose(self) -> None:
-                pass
-
-        with patch("redis.asyncio.from_url", return_value=FakeRedis()):
-            from app.config import get_settings as _get_settings
-
-            with patch(
-                "app.admin.middleware.get_settings",
-                return_value=_get_settings().__class__.model_construct(
-                    redis_url="redis://localhost"
-                ),
-            ):
-                pass
-
         with patch.object(mw, "_check_read_only", return_value=(True, "test reason")):
             response = await mw.dispatch(FakeRequest(), fake_call_next)  # type: ignore[arg-type]
 
@@ -375,18 +357,39 @@ class TestUserManagement:
         user = await _make_user(session)
         hh = await _make_household(session, admin)
 
-        # Insert a fake split allocation referencing user
+        # Create account and transaction to satisfy FK constraints
+        acct_id = uuid.uuid4()
+        await session.execute(
+            sa.text(
+                "INSERT INTO accounts_account "
+                "(id, household_id, name, account_type, currency, current_balance, is_manual) "
+                "VALUES (:id, :hh_id, 'Test', 'checking', 'USD', 0, false)"
+            ),
+            {"id": acct_id, "hh_id": hh.id},
+        )
+        txn_id = uuid.uuid4()
+        await session.execute(
+            sa.text(
+                "INSERT INTO transactions_transaction "
+                "(id, household_id, account_id, amount, currency, direction, state, "
+                "posted_date, occurred_at, description) "
+                "VALUES (:id, :hh_id, :acct_id, 10, 'USD', 'debit', 'posted', "
+                "'2024-01-01', '2024-01-01', 'Test')"
+            ),
+            {"id": txn_id, "hh_id": hh.id, "acct_id": acct_id},
+        )
         await session.execute(
             sa.text(
                 "INSERT INTO transactions_split_allocation "
-                "(id, split_id, household_id, amount, currency, attributed_to_user_id) "
-                "VALUES (:id, :split_id, :hh_id, 10, 'USD', :user_id)"
+                "(id, transaction_id, household_id, amount, currency, "
+                "attributed_to_user_id, tag_ids, manually_categorized) "
+                "VALUES (:id, :txn_id, :hh_id, 10, 'USD', :user_id, '[]', false)"
             ),
             {
-                "id": str(uuid.uuid4()),
-                "split_id": str(uuid.uuid4()),
-                "hh_id": str(hh.id),
-                "user_id": str(user.id),
+                "id": uuid.uuid4(),
+                "txn_id": txn_id,
+                "hh_id": hh.id,
+                "user_id": user.id,
             },
         )
         await session.flush()

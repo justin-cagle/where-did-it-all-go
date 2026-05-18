@@ -13,6 +13,8 @@ from typing import Any
 
 import sqlalchemy as sa
 import structlog
+from arq import create_pool
+from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin.enums import BackupStatus, BackupTrigger, NotificationType
@@ -24,6 +26,8 @@ from app.admin.models import (
     ReadOnlyState,
     SMTPConfig,
 )
+from app.config import get_settings
+from app.households.sse import get_sse_manager
 from app.platform.time import utcnow
 
 logger = structlog.get_logger(__name__)
@@ -62,7 +66,6 @@ async def check_read_only(redis_url: str | None = None) -> bool:
     Checks Redis first (fast path). Falls back to DB only when Redis unavailable.
     This function is safe to call from any ARQ job.
     """
-    from app.config import get_settings
     from app.database import get_session_factory
 
     settings = get_settings()
@@ -98,9 +101,6 @@ async def set_read_only(
     enabled_by_id: uuid.UUID | None,
 ) -> ReadOnlyState:
     """Toggle read-only mode, update Redis, broadcast SSE."""
-    from app.config import get_settings
-    from app.households.sse import get_sse_manager
-
     row = await get_read_only_state(session)
     row.enabled = enabled
     row.reason = reason
@@ -234,8 +234,6 @@ async def upsert_smtp_config(
     use_tls: bool,
     configured_by_id: uuid.UUID,
 ) -> SMTPConfig:
-    from app.config import get_settings
-
     master_key = get_settings().master_key
     existing = await get_smtp_config(session)
     if existing is None:
@@ -282,8 +280,6 @@ async def send_email(
     body_html: str | None = None,
 ) -> tuple[bool, str | None]:
     """Send an email via configured SMTP. Returns (success, error_detail)."""
-    from app.config import get_settings
-
     cfg = await get_smtp_config(session)
     if cfg is None:
         return False, "SMTP not configured"
@@ -367,8 +363,6 @@ async def upsert_backup_config(
     s3_enabled: bool,
     configured_by_id: uuid.UUID,
 ) -> BackupConfig:
-    from app.config import get_settings
-
     master_key = get_settings().master_key
     existing = await get_backup_config(session)
 
@@ -418,8 +412,6 @@ async def delete_s3_config(session: AsyncSession) -> BackupConfig:
 
 async def test_s3(session: AsyncSession) -> tuple[bool, str | None]:
     """Attempt to list the configured S3 bucket."""
-    from app.config import get_settings
-
     cfg = await get_backup_config(session)
     if cfg is None or not cfg.s3_bucket:
         return False, "S3 not configured"
@@ -457,11 +449,6 @@ async def test_s3(session: AsyncSession) -> tuple[bool, str | None]:
 
 async def trigger_backup(session: AsyncSession, triggered_by_id: uuid.UUID) -> BackupRun:
     """Create BackupRun row, enqueue run_backup_job."""
-    from arq import create_pool
-    from arq.connections import RedisSettings
-
-    from app.config import get_settings
-
     run = BackupRun(
         triggered_by=BackupTrigger.MANUAL,
         triggered_by_id=triggered_by_id,
@@ -512,8 +499,6 @@ _SETTING_UNASSIGNED_TTL = "unassigned_account_ttl_days"
 
 
 async def get_registration_settings(session: AsyncSession) -> dict[str, Any]:
-    from app.config import get_settings
-
     base = get_settings()
     result = await session.execute(
         sa.select(AdminSetting).where(
@@ -765,7 +750,6 @@ async def assign_household(
     from app.audit import ActorType, AuditOperation
     from app.audit import service as audit_service
     from app.households.models import Household, HouseholdMembership
-    from app.households.sse import get_sse_manager
 
     hh_result = await session.execute(
         sa.select(Household).where(Household.id == household_id, Household.archived_at.is_(None))
@@ -993,8 +977,6 @@ async def get_system_overview(
     session: AsyncSession,
     app_started_at: datetime,
 ) -> dict[str, Any]:
-    from app.config import get_settings
-
     settings = get_settings()
 
     # User counts
@@ -1167,8 +1149,6 @@ async def get_system_detail(
         import time
 
         import redis.asyncio as aioredis
-
-        from app.config import get_settings
 
         settings = get_settings()
         r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
