@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import { AuthGuard } from '@/components/AuthGuard'
 import { AppShell } from '@/components/layout/AppShell'
+import { AdminGuard } from '@/components/admin/AdminGuard'
+import { AdminShell } from '@/components/admin/AdminShell'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { TotpSetupPage } from '@/pages/auth/TotpSetupPage'
@@ -26,6 +28,15 @@ import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { HouseholdPage } from '@/pages/settings/HouseholdPage'
 import { InsightsSettingsPage } from '@/pages/settings/InsightsSettingsPage'
 import { SecurityPage } from '@/pages/settings/SecurityPage'
+import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
+import { AdminHouseholdsPage } from '@/pages/admin/AdminHouseholdsPage'
+import { AdminHouseholdDetailPage } from '@/pages/admin/AdminHouseholdDetailPage'
+import { AdminSystemPage } from '@/pages/admin/AdminSystemPage'
+import { AdminSMTPPage } from '@/pages/admin/AdminSMTPPage'
+import { AdminBackupPage } from '@/pages/admin/AdminBackupPage'
+import { AdminEmergencyPage } from '@/pages/admin/AdminEmergencyPage'
 
 const ProjectionsPage = lazy(() =>
   import('@/pages/projections/ProjectionsPage').then((m) => ({ default: m.ProjectionsPage }))
@@ -217,5 +228,115 @@ export const router = createBrowserRouter([
       { path: 'insights', element: <InsightsSettingsPage /> },
       { path: 'security', element: <SecurityPage /> },
     ],
+  },
+
+  /* Admin — wrapped in AdminGuard + AdminShell */
+  {
+    path: '/admin',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminOverviewPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/users',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminUsersPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/users/:id',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminUserDetailPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/households',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminHouseholdsPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/households/:id',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminHouseholdDetailPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/system',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminSystemPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/smtp',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminSMTPPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/backup',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminBackupPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/admin/emergency',
+    element: (
+      <AuthGuard>
+        <AdminGuard>
+          <AdminShell>
+            <AdminEmergencyPage />
+          </AdminShell>
+        </AdminGuard>
+      </AuthGuard>
+    ),
   },
 ])

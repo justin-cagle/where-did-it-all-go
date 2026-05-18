@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom'
+import { useAuthStore } from '@/store'
+import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
 
 interface SidebarProps {
   compact: boolean
@@ -18,6 +20,13 @@ const NAV_ITEMS = [
 ]
 
 export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
+  const currentUser = useAuthStore((s) => s.currentUser)
+  const isAdmin = currentUser?.is_app_admin ?? false
+  const { data: overview } = useGetOverviewApiV1AdminOverviewGet({
+    query: { staleTime: 60_000, enabled: isAdmin },
+  })
+  const unassigned = isAdmin ? (overview?.unassigned_user_count ?? 0) : 0
+
   const w = compact ? 52 : 200
 
   return (
@@ -115,8 +124,73 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
         ))}
       </div>
 
-      {/* Bottom: settings + compact toggle */}
+      {/* Bottom: admin (if admin) + settings + compact toggle */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 10px',
+              borderRadius: 6,
+              background: isActive
+                ? 'color-mix(in oklch, var(--danger) 12%, transparent)'
+                : 'transparent',
+              color: 'var(--danger)',
+              textDecoration: 'none',
+              fontSize: 13,
+              fontWeight: isActive ? 500 : 400,
+              whiteSpace: 'nowrap',
+              position: 'relative',
+            })}
+          >
+            <AdminIcon />
+            {!compact && <span>Admin</span>}
+            {!compact && unassigned > 0 && (
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 99,
+                  minWidth: 16,
+                  height: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                }}
+              >
+                {unassigned}
+              </span>
+            )}
+            {compact && unassigned > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  borderRadius: 99,
+                  width: 14,
+                  height: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {unassigned > 9 ? '9+' : unassigned}
+              </span>
+            )}
+          </NavLink>
+        )}
         <NavLink
           to="/settings"
           style={({ isActive }) => ({
@@ -352,6 +426,25 @@ function InsightsIcon() {
     >
       <path d="M12 2a7 7 0 0 1 7 7c0 3.87-3 7-7 9-4-2-7-5.13-7-9a7 7 0 0 1 7-7z" />
       <path d="M12 18v4M8 22h8" />
+    </svg>
+  )
+}
+
+function AdminIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   )
 }
