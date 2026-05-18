@@ -717,7 +717,7 @@ class TestRegistrationSettings:
             )
             await session.commit()
 
-        with patch("app.households.service.get_settings", return_value=mock_settings):
+        with patch("app.config.get_settings", return_value=mock_settings):
             user = await hh_service.register_user(
                 session,
                 email="new@example.com",
@@ -749,7 +749,7 @@ class TestRegistrationSettings:
             )
             await session.commit()
 
-        with patch("app.households.service.get_settings", return_value=mock_settings):
+        with patch("app.config.get_settings", return_value=mock_settings):
             with pytest.raises(hh_service.RegistrationClosedError):
                 await hh_service.register_user(
                     session,

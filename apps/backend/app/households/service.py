@@ -19,7 +19,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit import ActorType, AuditOperation
 from app.audit import service as audit_service
-from app.config import get_settings
 from app.households import models
 from app.households.enums import HouseholdRole, VisibilityMode
 from app.households.models import Household, HouseholdMembership, RefreshToken, User
@@ -78,6 +77,8 @@ async def register_user(
     Raises RegistrationClosedError or RegistrationLimitReachedError when blocked.
     """
     if invite_token is None:
+        from app.config import get_settings
+
         allow_reg, reg_limit = await _get_effective_registration_settings(session, get_settings())
         if not allow_reg:
             raise RegistrationClosedError("registration is closed")
