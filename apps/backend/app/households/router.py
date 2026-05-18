@@ -72,7 +72,7 @@ _DbSession = Annotated[AsyncSession, Depends(get_db)]
 # ---------------------------------------------------------------------------
 
 
-@router.post("/auth/register", status_code=status.HTTP_201_CREATED)
+@router.post("/auth/register", status_code=status.HTTP_201_CREATED, response_model=RegisterResponse)
 async def register(
     body: RegisterRequest,
     response: Response,
