@@ -372,9 +372,9 @@ class TestUserManagement:
             sa.text(
                 "INSERT INTO transactions_transaction "
                 "(id, household_id, account_id, amount, currency, direction, state, "
-                "posted_date, occurred_at, description) "
+                "posted_date, occurred_at, description, manually_categorized) "
                 "VALUES (:id, :hh_id, :acct_id, 10, 'USD', 'debit', 'posted', "
-                "'2024-01-01', '2024-01-01', 'Test')"
+                "'2024-01-01', '2024-01-01', 'Test', false)"
             ),
             {"id": txn_id, "hh_id": hh.id, "acct_id": acct_id},
         )
@@ -584,7 +584,7 @@ class TestBackup:
         with (
             patch("app.admin.jobs._BACKUP_DIR", tmp_path),
             patch("app.admin.jobs.subprocess.run") as mock_run,
-            patch("app.database.get_session_factory", return_value=fake_factory()),
+            patch("app.admin.jobs.get_session_factory", return_value=fake_factory()),
             patch(
                 "app.admin.jobs.get_settings",
                 return_value=MagicMock(
@@ -642,7 +642,7 @@ class TestBackup:
         with (
             patch("app.admin.jobs._BACKUP_DIR", tmp_path),
             patch("app.admin.jobs.subprocess.run", side_effect=Exception("pg_dump not found")),
-            patch("app.database.get_session_factory", return_value=fake_factory()),
+            patch("app.admin.jobs.get_session_factory", return_value=fake_factory()),
             patch(
                 "app.admin.jobs.get_settings",
                 return_value=MagicMock(
