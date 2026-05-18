@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -5,6 +6,19 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { customInstance, ApiError } from '@/api/client'
 import { AuthLayout } from './LoginPage'
+
+interface RegistrationSettings {
+  allow_registration: boolean
+  registration_limit: number | null
+  unassigned_account_ttl_days: number
+}
+
+interface RegisterApiResponse {
+  user_id: string
+  is_app_admin: boolean
+  has_household: boolean
+  redirect: string
+}
 
 const schema = z
   .object({
@@ -20,17 +34,29 @@ const schema = z
 
 type Fields = z.infer<typeof schema>
 
-interface RegisterResponse {
-  id: string
-  email: string
-  display_name: string
-  is_app_admin: boolean
-  totp_required: boolean
-}
-
 export function RegisterPage() {
   const { setUser } = useAuthStore()
   const navigate = useNavigate()
+  const [settings, setSettings] = useState<RegistrationSettings | null>(null)
+
+  const urlParams = new URLSearchParams(window.location.search)
+  const inviteToken = urlParams.get('invite')
+
+  useEffect(() => {
+    customInstance<RegistrationSettings>({
+      url: '/api/v1/settings/registration',
+      method: 'GET',
+    })
+      .then(setSettings)
+      .catch(() => {
+        // non-critical — default to showing the form
+        setSettings({
+          allow_registration: true,
+          registration_limit: null,
+          unassigned_account_ttl_days: 7,
+        })
+      })
+  }, [])
 
   const {
     register,
@@ -41,7 +67,7 @@ export function RegisterPage() {
 
   const onSubmit = async (data: Fields) => {
     try {
-      const result = await customInstance<RegisterResponse>({
+      const result = await customInstance<RegisterApiResponse>({
         url: '/api/v1/auth/register',
         method: 'POST',
         data: {
@@ -51,21 +77,49 @@ export function RegisterPage() {
         },
       })
 
-      if (result.totp_required) {
-        navigate('/register/totp-setup', { replace: true })
-      } else {
-        setUser(result)
-        navigate('/onboarding', { replace: true })
-      }
+      setUser({
+        id: result.user_id,
+        email: data.email,
+        display_name: data.display_name,
+        is_app_admin: result.is_app_admin,
+      })
+      navigate(result.redirect, { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setError('email', { message: 'Email already registered' })
+      } else if (err instanceof ApiError && err.status === 403) {
+        const type = (err.problem['type'] as string | undefined) ?? ''
+        if (type === 'registration_limit_reached') {
+          setError('root', { message: 'Registration is full. Contact your administrator.' })
+        } else {
+          setError('root', { message: 'Registration is closed. Contact your administrator.' })
+        }
       } else if (err instanceof ApiError && err.status === 422) {
         setError('root', { message: 'Check your inputs and try again.' })
       } else {
         setError('root', { message: 'Something went wrong. Try again.' })
       }
     }
+  }
+
+  // Show closed state when: settings loaded, registration closed, and no invite token in URL
+  const registrationClosed = settings !== null && !settings.allow_registration && !inviteToken
+
+  if (registrationClosed) {
+    return (
+      <AuthLayout>
+        <h1 style={heading}>Registration closed</h1>
+        <p style={{ fontSize: 14, color: 'var(--fg-secondary)', lineHeight: 1.6, margin: 0 }}>
+          Registration is closed. Contact your administrator or use an invitation link to create an
+          account.
+        </p>
+        <p style={footer}>
+          <Link to="/login" style={link}>
+            Back to login
+          </Link>
+        </p>
+      </AuthLayout>
+    )
   }
 
   return (
@@ -112,6 +166,10 @@ export function RegisterPage() {
             placeholder="••••••••"
           />
         </Field>
+
+        {settings?.allow_registration && settings.registration_limit !== null && (
+          <p style={{ fontSize: 12, color: 'var(--fg-muted)', margin: 0 }}>Registration is open.</p>
+        )}
 
         {errors.root && (
           <p style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>{errors.root.message}</p>

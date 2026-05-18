@@ -6,6 +6,7 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { TotpSetupPage } from '@/pages/auth/TotpSetupPage'
 import { OnboardingPage } from '@/pages/onboarding/OnboardingPage'
+import { WaitingPage } from '@/pages/WaitingPage'
 import {
   DashboardPage,
   AccountsPage,
@@ -75,12 +76,20 @@ export const router = createBrowserRouter([
   { path: '/register', element: <RegisterPage /> },
   { path: '/register/totp-setup', element: <TotpSetupPage /> },
 
-  /* Authed — no AppShell */
+  /* Authed — no AppShell, no household required */
   {
     path: '/onboarding',
     element: (
-      <AuthGuard>
+      <AuthGuard requireHousehold={false}>
         <OnboardingPage />
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/waiting',
+    element: (
+      <AuthGuard requireHousehold={false}>
+        <WaitingPage />
       </AuthGuard>
     ),
   },

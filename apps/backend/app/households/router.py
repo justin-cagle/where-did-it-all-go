@@ -30,9 +30,11 @@ No business logic in this file — all logic is in service.py.
 """
 
 import uuid
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -48,6 +50,7 @@ from app.households.schemas import (
     LoginRequest,
     MembershipOut,
     RegisterRequest,
+    RegisterResponse,
     SessionOut,
     StepUpRequest,
     TokenResponse,
@@ -69,19 +72,46 @@ _DbSession = Annotated[AsyncSession, Depends(get_db)]
 # ---------------------------------------------------------------------------
 
 
-@router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/auth/register", status_code=status.HTTP_201_CREATED, response_model=RegisterResponse)
 async def register(
     body: RegisterRequest,
     response: Response,
     session: _DbSession,
-) -> TokenResponse:
-    """Register a new user with local credentials."""
+) -> RegisterResponse | JSONResponse:
+    """Register a new user with local credentials.
+
+    Returns a RegisterResponse with has_household and redirect routing hints.
+    Returns RFC 9457 Problem Details (403) if registration is blocked.
+    """
     try:
-        user = await service.create_user(
+        user = await service.register_user(
             session,
             email=body.email,
             display_name=body.display_name,
             password=body.password,
+            invite_token=None,
+        )
+    except service.RegistrationClosedError:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "type": "registration_closed",
+                "title": "Registration is closed",
+                "detail": ("New accounts are not accepted. Contact your administrator."),
+                "status": 403,
+            },
+        )
+    except service.RegistrationLimitReachedError:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "type": "registration_limit_reached",
+                "title": "Registration limit reached",
+                "detail": (
+                    "The maximum number of accounts has been reached. Contact your administrator."
+                ),
+                "status": 403,
+            },
         )
     except service.ConflictError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
@@ -99,7 +129,15 @@ async def register(
         refresh_token=refresh_token,
         secure=not settings.debug,
     )
-    return TokenResponse(user_id=user.id, is_app_admin=user.is_app_admin)
+    memberships = await service.list_households(session, actor=user)
+    has_household = len(memberships) > 0
+    redirect = "/onboarding" if has_household else "/waiting"
+    return RegisterResponse(
+        user_id=user.id,
+        is_app_admin=user.is_app_admin,
+        has_household=has_household,
+        redirect=redirect,
+    )
 
 
 @router.post("/auth/login", response_model=TokenResponse)
@@ -516,3 +554,57 @@ async def create_invitation(
 ) -> dict[str, str]:
     # TODO: implement email-based invitation flow
     return {"detail": "invitations not yet implemented"}
+
+
+# ---------------------------------------------------------------------------
+# Public settings
+# ---------------------------------------------------------------------------
+
+
+@router.get("/settings/registration", include_in_schema=True)
+async def get_registration_settings() -> dict[str, object]:
+    """Return public registration configuration.
+
+    No authentication required — used by RegisterPage and WaitingPage.
+    """
+    settings = get_settings()
+    return {
+        "allow_registration": settings.allow_registration,
+        "registration_limit": settings.registration_limit,
+        "unassigned_account_ttl_days": settings.unassigned_account_ttl_days,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Household SSE event stream
+# ---------------------------------------------------------------------------
+
+
+async def _sse_keepalive() -> AsyncGenerator[str, None]:
+    """Minimal SSE stream — yields keepalive comments every 30 s.
+
+    Full event emission (household_assigned, etc.) is wired in Session 2
+    when the admin assignment endpoint is added.
+    """
+    import asyncio
+
+    while True:
+        yield ": keepalive\n\n"
+        await asyncio.sleep(30)
+
+
+@router.get("/households/events")
+async def household_events(current_user: CurrentUser) -> StreamingResponse:
+    """Server-Sent Events stream for household-level notifications.
+
+    Clients connect here to receive real-time events (e.g., household_assigned).
+    """
+    _ = current_user
+    return StreamingResponse(
+        _sse_keepalive(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

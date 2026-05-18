@@ -25,6 +25,7 @@ import type {
   AddMemberRequest,
   ChangePasswordRequest,
   CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost202,
+  GetRegistrationSettingsApiV1SettingsRegistrationGet200,
   HTTPValidationError,
   HouseholdCreate,
   HouseholdOut,
@@ -32,6 +33,7 @@ import type {
   LoginRequest,
   MembershipOut,
   RegisterRequest,
+  RegisterResponse,
   SessionOut,
   StepUpRequest,
   TokenResponse,
@@ -44,13 +46,16 @@ import { customInstance } from '../../client'
 
 /**
  * Register a new user with local credentials.
+
+Returns a RegisterResponse with has_household and redirect routing hints.
+Returns RFC 9457 Problem Details (403) if registration is blocked.
  * @summary Register
  */
 export const registerApiV1AuthRegisterPost = (
   registerRequest: RegisterRequest,
   signal?: AbortSignal
 ) => {
-  return customInstance<TokenResponse>({
+  return customInstance<RegisterResponse>({
     url: `/api/v1/auth/register`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1943,4 +1948,282 @@ export const useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost = <
     getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Return public registration configuration.
+
+No authentication required — used by RegisterPage and WaitingPage.
+ * @summary Get Registration Settings
+ */
+export const getRegistrationSettingsApiV1SettingsRegistrationGet = (signal?: AbortSignal) => {
+  return customInstance<GetRegistrationSettingsApiV1SettingsRegistrationGet200>({
+    url: `/api/v1/settings/registration`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getGetRegistrationSettingsApiV1SettingsRegistrationGetQueryKey = () => {
+  return [`/api/v1/settings/registration`] as const
+}
+
+export const getGetRegistrationSettingsApiV1SettingsRegistrationGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+      TError,
+      TData
+    >
+  >
+}) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRegistrationSettingsApiV1SettingsRegistrationGetQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>
+  > = ({ signal }) => getRegistrationSettingsApiV1SettingsRegistrationGet(signal)
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRegistrationSettingsApiV1SettingsRegistrationGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>
+>
+export type GetRegistrationSettingsApiV1SettingsRegistrationGetQueryError = unknown
+
+export function useGetRegistrationSettingsApiV1SettingsRegistrationGet<
+  TData = Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRegistrationSettingsApiV1SettingsRegistrationGet<
+  TData = Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRegistrationSettingsApiV1SettingsRegistrationGet<
+  TData = Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Registration Settings
+ */
+
+export function useGetRegistrationSettingsApiV1SettingsRegistrationGet<
+  TData = Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRegistrationSettingsApiV1SettingsRegistrationGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetRegistrationSettingsApiV1SettingsRegistrationGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Server-Sent Events stream for household-level notifications.
+
+Clients connect here to receive real-time events (e.g., household_assigned).
+ * @summary Household Events
+ */
+export const householdEventsApiV1HouseholdsEventsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/households/events`, method: 'GET', signal })
+}
+
+export const getHouseholdEventsApiV1HouseholdsEventsGetQueryKey = () => {
+  return [`/api/v1/households/events`] as const
+}
+
+export const getHouseholdEventsApiV1HouseholdsEventsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+      TError,
+      TData
+    >
+  >
+}) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getHouseholdEventsApiV1HouseholdsEventsGetQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>
+  > = ({ signal }) => householdEventsApiV1HouseholdsEventsGet(signal)
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type HouseholdEventsApiV1HouseholdsEventsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>
+>
+export type HouseholdEventsApiV1HouseholdsEventsGetQueryError = unknown
+
+export function useHouseholdEventsApiV1HouseholdsEventsGet<
+  TData = Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+          TError,
+          Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHouseholdEventsApiV1HouseholdsEventsGet<
+  TData = Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+          TError,
+          Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHouseholdEventsApiV1HouseholdsEventsGet<
+  TData = Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Household Events
+ */
+
+export function useHouseholdEventsApiV1HouseholdsEventsGet<
+  TData = Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof householdEventsApiV1HouseholdsEventsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getHouseholdEventsApiV1HouseholdsEventsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
 }

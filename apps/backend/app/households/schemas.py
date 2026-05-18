@@ -62,6 +62,16 @@ class TokenResponse(BaseModel):
     message: str = "authenticated"
 
 
+class RegisterResponse(TokenResponse):
+    """Response body for POST /auth/register.
+
+    Extends TokenResponse with post-registration routing hints.
+    """
+
+    has_household: bool = False
+    redirect: str = "/onboarding"
+
+
 # ---------------------------------------------------------------------------
 # User schemas
 # ---------------------------------------------------------------------------

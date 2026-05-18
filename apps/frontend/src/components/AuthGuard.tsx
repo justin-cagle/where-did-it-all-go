@@ -11,7 +11,16 @@ interface MeResponse {
   is_app_admin: boolean
 }
 
-export function AuthGuard({ children }: { children: ReactNode }) {
+interface HouseholdOut {
+  id: string
+}
+
+interface AuthGuardProps {
+  children: ReactNode
+  requireHousehold?: boolean
+}
+
+export function AuthGuard({ children, requireHousehold = true }: AuthGuardProps) {
   const { isLoading, isAuthenticated, setUser, clearUser, setLoading } = useAuthStore()
   const navigate = useNavigate()
 
@@ -20,8 +29,20 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     setLoading(true)
 
     customInstance<MeResponse>({ url: '/api/v1/auth/me', method: 'GET' })
-      .then((user) => {
-        if (!cancelled) setUser(user)
+      .then(async (user) => {
+        if (cancelled) return
+        setUser(user)
+
+        if (!requireHousehold) return
+
+        const households = await customInstance<HouseholdOut[]>({
+          url: '/api/v1/households',
+          method: 'GET',
+        })
+
+        if (!cancelled && households.length === 0) {
+          navigate('/waiting', { replace: true })
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return
@@ -34,7 +55,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [setUser, clearUser, setLoading, navigate])
+  }, [setUser, clearUser, setLoading, navigate, requireHousehold])
 
   if (isLoading) {
     return (

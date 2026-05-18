@@ -10,7 +10,7 @@
       "post": {
         "tags": ["households", "auth"],
         "summary": "Register",
-        "description": "Register a new user with local credentials.",
+        "description": "Register a new user with local credentials.\n\nReturns a RegisterResponse with has_household and redirect routing hints.\nReturns RFC 9457 Problem Details (403) if registration is blocked.",
         "operationId": "register_api_v1_auth_register_post",
         "requestBody": {
           "content": {
@@ -28,7 +28,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
+                  "$ref": "#/components/schemas/RegisterResponse"
                 }
               }
             }
@@ -729,6 +729,46 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/registration": {
+      "get": {
+        "tags": ["households", "auth"],
+        "summary": "Get Registration Settings",
+        "description": "Return public registration configuration.\n\nNo authentication required \u2014 used by RegisterPage and WaitingPage.",
+        "operationId": "get_registration_settings_api_v1_settings_registration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Registration Settings Api V1 Settings Registration Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/events": {
+      "get": {
+        "tags": ["households", "auth"],
+        "summary": "Household Events",
+        "description": "Server-Sent Events stream for household-level notifications.\n\nClients connect here to receive real-time events (e.g., household_assigned).",
+        "operationId": "household_events_api_v1_households_events_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -16117,6 +16157,38 @@
         "required": ["email", "display_name", "password"],
         "title": "RegisterRequest",
         "description": "Register a new user with local auth credentials."
+      },
+      "RegisterResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "is_app_admin": {
+            "type": "boolean",
+            "title": "Is App Admin"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "authenticated"
+          },
+          "has_household": {
+            "type": "boolean",
+            "title": "Has Household",
+            "default": false
+          },
+          "redirect": {
+            "type": "string",
+            "title": "Redirect",
+            "default": "/onboarding"
+          }
+        },
+        "type": "object",
+        "required": ["user_id", "is_app_admin"],
+        "title": "RegisterResponse",
+        "description": "Response body for POST /auth/register.\n\nExtends TokenResponse with post-registration routing hints."
       },
       "RolloverPolicy": {
         "type": "string",
