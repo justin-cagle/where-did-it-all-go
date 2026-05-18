@@ -136,20 +136,20 @@ async def run_backup_job(
                     if cfg.s3_secret_key_enc:
                         secret_key = decrypt_dict(cfg.s3_secret_key_enc, settings.master_key)["v"]
 
-                    import boto3
-                    from botocore.config import Config
+                    import boto3  # type: ignore[import-untyped]
+                    from botocore.config import Config  # type: ignore[import-untyped]
 
                     kwargs: dict[str, Any] = {
                         "aws_access_key_id": access_key,
                         "aws_secret_access_key": secret_key,
-                        "config": Config(signature_version="s3v4"),
+                        "config": Config(signature_version="s3v4"),  # type: ignore[misc]
                     }
                     if endpoint:
                         kwargs["endpoint_url"] = endpoint
 
-                    s3 = boto3.client("s3", **kwargs)
+                    s3 = boto3.client("s3", **kwargs)  # type: ignore[misc]
                     key = f"{cfg.s3_path_prefix}/{filename}"
-                    s3.upload_file(str(local_path), cfg.s3_bucket, key)
+                    s3.upload_file(str(local_path), cfg.s3_bucket, key)  # type: ignore[misc]
                     s3_path = f"s3://{cfg.s3_bucket}/{key}"
                     run.s3_path = s3_path
                 except Exception as s3_exc:
@@ -214,8 +214,8 @@ async def check_worker_health_job(ctx: dict[str, Any]) -> dict[str, Any]:
     try:
         import redis.asyncio as aioredis
 
-        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)
-        healthy = await r.ping()
+        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
+        healthy = await r.ping()  # type: ignore[misc]
 
         if not healthy:
             last_notified = await r.get(_WORKER_HEALTH_REDIS_KEY)

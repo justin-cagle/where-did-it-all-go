@@ -64,7 +64,7 @@ class ReadOnlyMiddleware(BaseHTTPMiddleware):
         try:
             import redis.asyncio as aioredis
 
-            r = aioredis.from_url(str(settings.redis_url), decode_responses=True)
+            r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
             raw = await r.get(_READ_ONLY_KEY)
             await r.aclose()
             if raw is not None:

@@ -71,7 +71,7 @@ async def check_read_only(redis_url: str | None = None) -> bool:
     try:
         import redis.asyncio as aioredis
 
-        r = aioredis.from_url(redis_dsn, decode_responses=True)
+        r = aioredis.from_url(redis_dsn, decode_responses=True)  # type: ignore[misc]
         raw = await r.get(_READ_ONLY_REDIS_KEY)
         await r.aclose()
         if raw is not None:
@@ -113,7 +113,7 @@ async def set_read_only(
         import redis.asyncio as aioredis
 
         settings = get_settings()
-        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)
+        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
         if enabled:
             await r.set(_READ_ONLY_REDIS_KEY, cache_data)
         else:
@@ -206,13 +206,13 @@ async def mark_all_read(session: AsyncSession) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _encrypt_field(value: str, master_key: str) -> str:
+def encrypt_field(value: str, master_key: str) -> str:
     from app.security.encryption import encrypt_dict
 
     return encrypt_dict({"v": value}, master_key)
 
 
-def _decrypt_field(token: str, master_key: str) -> str:
+def decrypt_field(token: str, master_key: str) -> str:
     from app.security.encryption import decrypt_dict
 
     return decrypt_dict(token, master_key)["v"]
@@ -240,10 +240,10 @@ async def upsert_smtp_config(
     existing = await get_smtp_config(session)
     if existing is None:
         cfg = SMTPConfig(
-            host_enc=_encrypt_field(host, master_key),
+            host_enc=encrypt_field(host, master_key),
             port=port,
-            username_enc=_encrypt_field(username, master_key),
-            password_enc=_encrypt_field(password, master_key),
+            username_enc=encrypt_field(username, master_key),
+            password_enc=encrypt_field(password, master_key),
             from_address=from_address,
             use_tls=use_tls,
             configured_by_id=configured_by_id,
@@ -251,10 +251,10 @@ async def upsert_smtp_config(
         session.add(cfg)
     else:
         cfg = existing
-        cfg.host_enc = _encrypt_field(host, master_key)
+        cfg.host_enc = encrypt_field(host, master_key)
         cfg.port = port
-        cfg.username_enc = _encrypt_field(username, master_key)
-        cfg.password_enc = _encrypt_field(password, master_key)
+        cfg.username_enc = encrypt_field(username, master_key)
+        cfg.password_enc = encrypt_field(password, master_key)
         cfg.from_address = from_address
         cfg.use_tls = use_tls
         cfg.configured_at = utcnow()
@@ -290,9 +290,9 @@ async def send_email(
 
     master_key = get_settings().master_key
     try:
-        host = _decrypt_field(cfg.host_enc, master_key)
-        username = _decrypt_field(cfg.username_enc, master_key)
-        password = _decrypt_field(cfg.password_enc, master_key)
+        host = decrypt_field(cfg.host_enc, master_key)
+        username = decrypt_field(cfg.username_enc, master_key)
+        password = decrypt_field(cfg.password_enc, master_key)
     except Exception as exc:
         return False, f"credential decryption failed: {exc}"
 
@@ -300,7 +300,7 @@ async def send_email(
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
 
-        import aiosmtplib
+        import aiosmtplib  # type: ignore[import-untyped]
 
         msg: MIMEMultipart | MIMEText
         if body_html:
@@ -314,7 +314,7 @@ async def send_email(
         msg["From"] = cfg.from_address
         msg["To"] = to
 
-        await aiosmtplib.send(
+        await aiosmtplib.send(  # type: ignore[misc]
             msg,
             hostname=host,
             port=cfg.port,
@@ -373,7 +373,7 @@ async def upsert_backup_config(
     existing = await get_backup_config(session)
 
     def _enc(val: str | None) -> str | None:
-        return _encrypt_field(val, master_key) if val else None
+        return encrypt_field(val, master_key) if val else None
 
     if existing is None:
         cfg = BackupConfig(
@@ -426,19 +426,19 @@ async def test_s3(session: AsyncSession) -> tuple[bool, str | None]:
 
     master_key = get_settings().master_key
     try:
-        endpoint = _decrypt_field(cfg.s3_endpoint_enc, master_key) if cfg.s3_endpoint_enc else None
+        endpoint = decrypt_field(cfg.s3_endpoint_enc, master_key) if cfg.s3_endpoint_enc else None
         access_key = (
-            _decrypt_field(cfg.s3_access_key_enc, master_key) if cfg.s3_access_key_enc else None
+            decrypt_field(cfg.s3_access_key_enc, master_key) if cfg.s3_access_key_enc else None
         )
         secret_key = (
-            _decrypt_field(cfg.s3_secret_key_enc, master_key) if cfg.s3_secret_key_enc else None
+            decrypt_field(cfg.s3_secret_key_enc, master_key) if cfg.s3_secret_key_enc else None
         )
     except Exception as exc:
         return False, f"credential decryption failed: {exc}"
 
     try:
-        import boto3
-        from botocore.config import Config
+        import boto3  # type: ignore[import-untyped]
+        from botocore.config import Config  # type: ignore[import-untyped]
 
         kwargs: dict[str, Any] = {
             "aws_access_key_id": access_key,
@@ -448,8 +448,8 @@ async def test_s3(session: AsyncSession) -> tuple[bool, str | None]:
         if endpoint:
             kwargs["endpoint_url"] = endpoint
 
-        s3 = boto3.client("s3", **kwargs)
-        s3.list_objects_v2(Bucket=cfg.s3_bucket, MaxKeys=1)
+        s3 = boto3.client("s3", **kwargs)  # type: ignore[misc]
+        s3.list_objects_v2(Bucket=cfg.s3_bucket, MaxKeys=1)  # type: ignore[misc]
         return True, None
     except Exception as exc:
         return False, str(exc)
@@ -904,7 +904,7 @@ async def list_households_admin(session: AsyncSession) -> list[dict[str, Any]]:
         .order_by(Household.created_at.desc())
     )
     result = await session.execute(stmt)
-    out = []
+    out: list[dict[str, Any]] = []
     for row in result.all():
         hh = row[0]
         member_count = row[1]
@@ -916,7 +916,7 @@ async def list_households_admin(session: AsyncSession) -> list[dict[str, Any]]:
             {"hid": hh.id},
         )
         account_count = account_count_result.scalar_one()
-        out.append(
+        out.append(  # type: ignore[misc]
             {
                 "id": hh.id,
                 "name": hh.name,
@@ -955,14 +955,14 @@ async def get_household_admin(session: AsyncSession, household_id: uuid.UUID) ->
     )
     account_count = account_count_result.scalar_one()
 
-    members = []
+    members: list[dict[str, Any]] = []
     for user, _membership in member_rows:
         hh_count_r = await session.execute(
             sa.select(sa.func.count(HouseholdMembership.id)).where(
                 HouseholdMembership.user_id == user.id
             )
         )
-        members.append(
+        members.append(  # type: ignore[misc]
             {
                 "id": user.id,
                 "email": user.email,
@@ -976,7 +976,7 @@ async def get_household_admin(session: AsyncSession, household_id: uuid.UUID) ->
     return {
         "id": hh.id,
         "name": hh.name,
-        "member_count": len(members),
+        "member_count": len(members),  # type: ignore[arg-type]
         "account_count": account_count,
         "created_at": hh.created_at,
         "visibility_mode": hh.visibility_mode,
@@ -1040,23 +1040,23 @@ async def get_system_overview(
     try:
         import redis.asyncio as aioredis
 
-        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)
-        info = await r.info("memory")
-        redis_memory_bytes = int(info.get("used_memory", 0))
+        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
+        info = await r.info("memory")  # type: ignore[misc]
+        redis_memory_bytes = int(info.get("used_memory", 0))  # type: ignore[misc]
 
         # Worker health: check for recent heartbeat keys
-        fast_ping = await r.ping()
+        fast_ping = await r.ping()  # type: ignore[misc]
         worker_fast_healthy = bool(fast_ping)
         worker_slow_healthy = bool(fast_ping)
 
         # Pending jobs
-        pending_job_count = await r.llen("arq:queue:default") or 0
+        pending_job_count = await r.llen("arq:queue:default") or 0  # type: ignore[misc]
 
         # Failed jobs in last 24h
         import time
 
         cutoff = time.time() - 86400
-        failed_keys = await r.zrangebyscore("arq:results", cutoff, "+inf")
+        failed_keys = await r.zrangebyscore("arq:results", cutoff, "+inf")  # type: ignore[misc]
         failed_count = 0
         for key in failed_keys:
             raw = await r.get(key)
@@ -1086,7 +1086,7 @@ async def get_system_overview(
                 revs = ctx.get_current_heads()
                 return revs[0] if revs else "base"
 
-            alembic_current = await conn.run_sync(_get_current)
+            alembic_current = await conn.run_sync(_get_current)  # type: ignore
     except Exception as exc:
         logger.debug("get_system_overview.alembic_check_failed", error=str(exc))
 
@@ -1171,22 +1171,22 @@ async def get_system_detail(
         from app.config import get_settings
 
         settings = get_settings()
-        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)
+        r = aioredis.from_url(str(settings.redis_url), decode_responses=True)  # type: ignore[misc]
         cutoff = time.time() - 86400
-        result_keys = await r.zrangebyscore("arq:results", cutoff, "+inf", withscores=True)
-        for key, score in result_keys[:50]:
+        result_keys = await r.zrangebyscore("arq:results", cutoff, "+inf", withscores=True)  # type: ignore[misc]
+        for key, score in result_keys[:50]:  # type: ignore[misc]
             raw = await r.get(key)
             if raw and '"success": false' in raw:
                 failed_jobs.append(
                     {"job_id": key, "function": "", "enqueue_time": "", "score": score}
                 )
 
-        clients_info = await r.info("clients")
-        redis_connected_clients = int(clients_info.get("connected_clients", 0))
-        keyspace_info = await r.info("keyspace")
-        for db_info in keyspace_info.values():
+        clients_info = await r.info("clients")  # type: ignore[misc]
+        redis_connected_clients = int(clients_info.get("connected_clients", 0))  # type: ignore[misc]
+        keyspace_info = await r.info("keyspace")  # type: ignore[misc]
+        for db_info in keyspace_info.values():  # type: ignore[misc]
             if isinstance(db_info, dict):
-                redis_db_keys += int(db_info.get("keys", 0))
+                redis_db_keys += int(db_info.get("keys", 0))  # type: ignore[misc]
         await r.aclose()
     except Exception as exc:
         logger.debug("get_system_detail.redis_unavailable", error=str(exc))

@@ -157,7 +157,7 @@ def upgrade() -> None:
 
     import uuid as _uuid
 
-    seed_id = str(_uuid.uuid4())
+    seed_id = _uuid.uuid4()
     op.execute(
         sa.text("INSERT INTO admin_read_only_state (id, enabled) VALUES (:id, false)").bindparams(
             id=seed_id

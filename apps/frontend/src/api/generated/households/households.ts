@@ -2094,7 +2094,8 @@ export function useGetRegistrationSettingsApiV1SettingsRegistrationGet<
 /**
  * Server-Sent Events stream for household-level notifications.
 
-Clients connect here to receive real-time events (e.g., household_assigned).
+Emits events: household_assigned, read_only_changed.
+Keepalive comment every 30s to prevent proxy timeouts.
  * @summary Household Events
  */
 export const householdEventsApiV1HouseholdsEventsGet = (signal?: AbortSignal) => {

@@ -85,14 +85,6 @@ class SMTPConfig(Base):
     last_test_error: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     last_test_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
-    __table_args__ = (
-        sa.Index(
-            "uq_admin_smtp_config_singleton",
-            sa.true(),
-            unique=True,
-        ),
-    )
-
     def __repr__(self) -> str:
         return f"SMTPConfig(id={self.id})"
 
@@ -129,14 +121,6 @@ class BackupConfig(Base):
         sa.Uuid(as_uuid=True),
         sa.ForeignKey("households_user.id", ondelete="SET NULL"),
         nullable=True,
-    )
-
-    __table_args__ = (
-        sa.Index(
-            "uq_admin_backup_config_singleton",
-            sa.true(),
-            unique=True,
-        ),
     )
 
     def __repr__(self) -> str:
@@ -191,14 +175,6 @@ class ReadOnlyState(Base):
         sa.Uuid(as_uuid=True),
         sa.ForeignKey("households_user.id", ondelete="SET NULL"),
         nullable=True,
-    )
-
-    __table_args__ = (
-        sa.Index(
-            "uq_admin_read_only_state_singleton",
-            sa.true(),
-            unique=True,
-        ),
     )
 
     def __repr__(self) -> str:

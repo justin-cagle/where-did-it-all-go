@@ -60,12 +60,9 @@ async def get_overview(
     current_admin: _Admin,
     session: _DbSession,
 ) -> dict[str, Any]:
-    from datetime import UTC, datetime
+    from app.platform.app_state import get_started_at
 
-    from app.main import app as _app
-
-    app_started_at: datetime = getattr(_app.state, "started_at", datetime.now(tz=UTC))
-    return await service.get_system_overview(session, app_started_at)
+    return await service.get_system_overview(session, get_started_at())
 
 
 @router.get("/admin/system", response_model=SystemDetailOut)
@@ -73,12 +70,9 @@ async def get_system(
     current_admin: _Admin,
     session: _DbSession,
 ) -> dict[str, Any]:
-    from datetime import UTC, datetime
+    from app.platform.app_state import get_started_at
 
-    from app.main import app as _app
-
-    app_started_at: datetime = getattr(_app.state, "started_at", datetime.now(tz=UTC))
-    return await service.get_system_detail(session, app_started_at)
+    return await service.get_system_detail(session, get_started_at())
 
 
 # ---------------------------------------------------------------------------
@@ -296,9 +290,9 @@ async def get_smtp(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SMTP not configured")
     return SMTPConfigOut(
         id=cfg.id,
-        host=service._decrypt_field(cfg.host_enc, master_key),
+        host=service.decrypt_field(cfg.host_enc, master_key),
         port=cfg.port,
-        username=service._decrypt_field(cfg.username_enc, master_key),
+        username=service.decrypt_field(cfg.username_enc, master_key),
         from_address=cfg.from_address,
         use_tls=cfg.use_tls,
         configured_at=cfg.configured_at,
@@ -380,7 +374,7 @@ async def get_backup_config(
     master_key = get_settings().master_key
 
     def _dec_opt(val: str | None) -> str | None:
-        return service._decrypt_field(val, master_key) if val else None
+        return service.decrypt_field(val, master_key) if val else None
 
     return BackupConfigOut(
         id=cfg.id,

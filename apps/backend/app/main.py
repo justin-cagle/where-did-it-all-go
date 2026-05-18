@@ -45,6 +45,9 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         await run_bootstrap(session)
 
     _app.state.started_at = datetime.now(tz=UTC)
+    from app.platform.app_state import set_started_at
+
+    set_started_at(_app.state.started_at)
     yield
 
 

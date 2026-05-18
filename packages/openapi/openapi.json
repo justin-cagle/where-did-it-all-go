@@ -761,7 +761,7 @@
       "get": {
         "tags": ["households", "auth"],
         "summary": "Household Events",
-        "description": "Server-Sent Events stream for household-level notifications.\n\nClients connect here to receive real-time events (e.g., household_assigned).",
+        "description": "Server-Sent Events stream for household-level notifications.\n\nEmits events: household_assigned, read_only_changed.\nKeepalive comment every 30s to prevent proxy timeouts.",
         "operationId": "household_events_api_v1_households_events_get",
         "responses": {
           "200": {
@@ -9907,6 +9907,942 @@
           }
         }
       }
+    },
+    "/api/v1/admin/overview": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Overview",
+        "operationId": "get_overview_api_v1_admin_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOverviewOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get System",
+        "operationId": "get_system_api_v1_admin_system_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemDetailOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List Users",
+        "operationId": "list_users_api_v1_admin_users_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "unassigned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unassigned"
+            }
+          },
+          {
+            "name": "is_admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Admin"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get User",
+        "operationId": "get_user_api_v1_admin_users__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["admin"],
+        "summary": "Delete User",
+        "operationId": "delete_user_api_v1_admin_users__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}/promote": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Promote User",
+        "operationId": "promote_user_api_v1_admin_users__user_id__promote_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}/demote": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Demote User",
+        "operationId": "demote_user_api_v1_admin_users__user_id__demote_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}/assign-household": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Assign Household",
+        "operationId": "assign_household_api_v1_admin_users__user_id__assign_household_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignHouseholdIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}/force-logout": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Force Logout",
+        "operationId": "force_logout_api_v1_admin_users__user_id__force_logout_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/households": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List Households",
+        "operationId": "list_households_api_v1_admin_households_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHouseholdListOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/households/{household_id}": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Household",
+        "operationId": "get_household_api_v1_admin_households__household_id__get",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHouseholdDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List Notifications",
+        "operationId": "list_notifications_api_v1_admin_notifications_get",
+        "parameters": [
+          {
+            "name": "read",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Read"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/{notification_id}/read": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Mark Read",
+        "operationId": "mark_read_api_v1_admin_notifications__notification_id__read_post",
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/read-all": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Mark All Read",
+        "operationId": "mark_all_read_api_v1_admin_notifications_read_all_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/smtp": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Smtp",
+        "operationId": "get_smtp_api_v1_admin_smtp_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SMTPConfigOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "summary": "Upsert Smtp",
+        "operationId": "upsert_smtp_api_v1_admin_smtp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SMTPConfigIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SMTPConfigOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["admin"],
+        "summary": "Delete Smtp",
+        "operationId": "delete_smtp_api_v1_admin_smtp_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/smtp/test": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Test Smtp",
+        "operationId": "test_smtp_api_v1_admin_smtp_test_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SMTPTestResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup/config": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Backup Config",
+        "operationId": "get_backup_config_api_v1_admin_backup_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupConfigOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "summary": "Upsert Backup Config",
+        "operationId": "upsert_backup_config_api_v1_admin_backup_config_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupConfigIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupConfigOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup/config/test-s3": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Test S3",
+        "operationId": "test_s3_api_v1_admin_backup_config_test_s3_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/S3TestResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup/config/s3": {
+      "delete": {
+        "tags": ["admin"],
+        "summary": "Delete S3",
+        "operationId": "delete_s3_api_v1_admin_backup_config_s3_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup/runs": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List Backup Runs",
+        "operationId": "list_backup_runs_api_v1_admin_backup_runs_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupRunListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup/trigger": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Trigger Backup",
+        "operationId": "trigger_backup_api_v1_admin_backup_trigger_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupTriggerOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/registration": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Registration",
+        "operationId": "get_registration_api_v1_admin_registration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationSettingsOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "summary": "Update Registration",
+        "operationId": "update_registration_api_v1_admin_registration_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/emergency/read-only": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Get Read Only",
+        "operationId": "get_read_only_api_v1_admin_emergency_read_only_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadOnlyStateOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "summary": "Set Read Only",
+        "operationId": "set_read_only_api_v1_admin_emergency_read_only_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReadOnlyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadOnlyStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/force-logout-all": {
+      "post": {
+        "tags": ["admin"],
+        "summary": "Force Logout All",
+        "operationId": "force_logout_all_api_v1_admin_force_logout_all_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForceLogoutAllIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -10257,6 +11193,238 @@
         "title": "AddMemberRequest",
         "description": "Add an existing user to a household (requires step-up auth)."
       },
+      "AdminHouseholdDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          },
+          "account_count": {
+            "type": "integer",
+            "title": "Account Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "visibility_mode": {
+            "type": "string",
+            "title": "Visibility Mode"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserOut"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "member_count",
+          "account_count",
+          "created_at",
+          "visibility_mode",
+          "members"
+        ],
+        "title": "AdminHouseholdDetailOut"
+      },
+      "AdminHouseholdListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminHouseholdOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": ["items"],
+        "title": "AdminHouseholdListOut"
+      },
+      "AdminHouseholdOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          },
+          "account_count": {
+            "type": "integer",
+            "title": "Account Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "visibility_mode": {
+            "type": "string",
+            "title": "Visibility Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "member_count",
+          "account_count",
+          "created_at",
+          "visibility_mode"
+        ],
+        "title": "AdminHouseholdOut"
+      },
+      "AdminNotificationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "notification_type": {
+            "$ref": "#/components/schemas/NotificationType"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "read": {
+            "type": "boolean",
+            "title": "Read"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "notification_type",
+          "title",
+          "body",
+          "entity_id",
+          "read",
+          "read_at",
+          "created_at"
+        ],
+        "title": "AdminNotificationOut"
+      },
+      "AdminUserListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": ["items", "next_cursor"],
+        "title": "AdminUserListOut"
+      },
+      "AdminUserOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "is_app_admin": {
+            "type": "boolean",
+            "title": "Is App Admin"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "household_count": {
+            "type": "integer",
+            "title": "Household Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "is_app_admin",
+          "created_at",
+          "household_count"
+        ],
+        "title": "AdminUserOut"
+      },
       "AmountStrategy": {
         "type": "string",
         "enum": [
@@ -10320,6 +11488,22 @@
         "type": "object",
         "required": ["answer", "provider_used"],
         "title": "AskResponse"
+      },
+      "AssignHouseholdIn": {
+        "properties": {
+          "household_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Household Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole",
+            "default": "member"
+          }
+        },
+        "type": "object",
+        "required": ["household_id"],
+        "title": "AssignHouseholdIn"
       },
       "AuditEventOut": {
         "properties": {
@@ -10617,6 +11801,291 @@
         "type": "object",
         "required": ["enabled"],
         "title": "AutoApplyToggle"
+      },
+      "BackupConfigIn": {
+        "properties": {
+          "s3_endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Endpoint"
+          },
+          "s3_bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Bucket"
+          },
+          "s3_access_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Access Key"
+          },
+          "s3_secret_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Secret Key"
+          },
+          "s3_path_prefix": {
+            "type": "string",
+            "title": "S3 Path Prefix",
+            "default": "wdiag-backups"
+          },
+          "local_retention_days": {
+            "type": "integer",
+            "title": "Local Retention Days",
+            "default": 30
+          },
+          "s3_enabled": {
+            "type": "boolean",
+            "title": "S3 Enabled",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "BackupConfigIn"
+      },
+      "BackupConfigOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "s3_endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Endpoint"
+          },
+          "s3_bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Bucket"
+          },
+          "s3_access_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Access Key"
+          },
+          "s3_path_prefix": {
+            "type": "string",
+            "title": "S3 Path Prefix"
+          },
+          "local_retention_days": {
+            "type": "integer",
+            "title": "Local Retention Days"
+          },
+          "s3_enabled": {
+            "type": "boolean",
+            "title": "S3 Enabled"
+          },
+          "configured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Configured At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "s3_endpoint",
+          "s3_bucket",
+          "s3_access_key",
+          "s3_path_prefix",
+          "local_retention_days",
+          "s3_enabled",
+          "configured_at"
+        ],
+        "title": "BackupConfigOut"
+      },
+      "BackupRunListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BackupRunOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": ["items", "next_cursor"],
+        "title": "BackupRunListOut"
+      },
+      "BackupRunOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BackupStatus"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "local_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Path"
+          },
+          "s3_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Path"
+          },
+          "error_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Detail"
+          },
+          "triggered_by": {
+            "$ref": "#/components/schemas/BackupTrigger"
+          },
+          "triggered_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered By Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at",
+          "completed_at",
+          "status",
+          "size_bytes",
+          "local_path",
+          "s3_path",
+          "error_detail",
+          "triggered_by",
+          "triggered_by_id"
+        ],
+        "title": "BackupRunOut"
+      },
+      "BackupStatus": {
+        "type": "string",
+        "enum": ["running", "success", "failed"],
+        "title": "BackupStatus"
+      },
+      "BackupTrigger": {
+        "type": "string",
+        "enum": ["scheduled", "manual"],
+        "title": "BackupTrigger"
+      },
+      "BackupTriggerOut": {
+        "properties": {
+          "backup_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Backup Run Id"
+          }
+        },
+        "type": "object",
+        "required": ["backup_run_id"],
+        "title": "BackupTriggerOut"
       },
       "BalanceHistoryPoint": {
         "properties": {
@@ -13347,6 +14816,40 @@
         ],
         "title": "ExpectedIncomeStrategy"
       },
+      "FailedJobOut": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "function": {
+            "type": "string",
+            "title": "Function"
+          },
+          "enqueue_time": {
+            "type": "string",
+            "title": "Enqueue Time"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": ["job_id", "function", "enqueue_time", "score"],
+        "title": "FailedJobOut"
+      },
+      "ForceLogoutAllIn": {
+        "properties": {
+          "confirm": {
+            "type": "string",
+            "title": "Confirm"
+          }
+        },
+        "type": "object",
+        "required": ["confirm"],
+        "title": "ForceLogoutAllIn"
+      },
       "FundingSourceCreate": {
         "properties": {
           "source_type": {
@@ -14840,6 +16343,41 @@
         "required": ["event_date", "net_worth", "currency"],
         "title": "NetWorthPoint"
       },
+      "NotificationListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminNotificationOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": ["items", "next_cursor"],
+        "title": "NotificationListOut"
+      },
+      "NotificationType": {
+        "type": "string",
+        "enum": [
+          "unassigned_registration",
+          "system_error",
+          "backup_failed",
+          "registration_limit_reached"
+        ],
+        "title": "NotificationType"
+      },
       "OverrideType": {
         "type": "string",
         "enum": [
@@ -15488,6 +17026,57 @@
         },
         "type": "object",
         "title": "ProviderConfigUpdate"
+      },
+      "ReadOnlyStateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "enabled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled At"
+          },
+          "enabled_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled By Id"
+          }
+        },
+        "type": "object",
+        "required": ["id", "enabled", "reason", "enabled_at", "enabled_by_id"],
+        "title": "ReadOnlyStateOut"
       },
       "ReclassifyAllOut": {
         "properties": {
@@ -16190,6 +17779,63 @@
         "title": "RegisterResponse",
         "description": "Response body for POST /auth/register.\n\nExtends TokenResponse with post-registration routing hints."
       },
+      "RegistrationSettingsIn": {
+        "properties": {
+          "allow_registration": {
+            "type": "boolean",
+            "title": "Allow Registration"
+          },
+          "registration_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Limit"
+          },
+          "unassigned_account_ttl_days": {
+            "type": "integer",
+            "title": "Unassigned Account Ttl Days",
+            "default": 7
+          }
+        },
+        "type": "object",
+        "required": ["allow_registration"],
+        "title": "RegistrationSettingsIn"
+      },
+      "RegistrationSettingsOut": {
+        "properties": {
+          "allow_registration": {
+            "type": "boolean",
+            "title": "Allow Registration"
+          },
+          "registration_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Limit"
+          },
+          "unassigned_account_ttl_days": {
+            "type": "integer",
+            "title": "Unassigned Account Ttl Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allow_registration",
+          "registration_limit",
+          "unassigned_account_ttl_days"
+        ],
+        "title": "RegistrationSettingsOut"
+      },
       "RolloverPolicy": {
         "type": "string",
         "enum": [
@@ -16590,6 +18236,170 @@
         "type": "object",
         "title": "RunProjectionRequest"
       },
+      "S3TestResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "error_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Detail"
+          }
+        },
+        "type": "object",
+        "required": ["success", "error_detail"],
+        "title": "S3TestResult"
+      },
+      "SMTPConfigIn": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "title": "Port",
+            "default": 587
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "from_address": {
+            "type": "string",
+            "title": "From Address"
+          },
+          "use_tls": {
+            "type": "boolean",
+            "title": "Use Tls",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": ["host", "username", "password", "from_address"],
+        "title": "SMTPConfigIn"
+      },
+      "SMTPConfigOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "title": "Port"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "from_address": {
+            "type": "string",
+            "title": "From Address"
+          },
+          "use_tls": {
+            "type": "boolean",
+            "title": "Use Tls"
+          },
+          "configured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Configured At"
+          },
+          "smtp_configured": {
+            "type": "boolean",
+            "title": "Smtp Configured"
+          },
+          "last_test_success": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Test Success"
+          },
+          "last_test_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Test Error"
+          },
+          "last_test_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Test At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "host",
+          "port",
+          "username",
+          "from_address",
+          "use_tls",
+          "configured_at",
+          "smtp_configured",
+          "last_test_success",
+          "last_test_error",
+          "last_test_at"
+        ],
+        "title": "SMTPConfigOut"
+      },
+      "SMTPTestResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "error_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Detail"
+          }
+        },
+        "type": "object",
+        "required": ["success", "error_detail"],
+        "title": "SMTPTestResult"
+      },
       "ScenarioCreate": {
         "properties": {
           "name": {
@@ -16921,6 +18731,28 @@
         "title": "SessionOut",
         "description": "Active refresh token (session) info returned in responses."
       },
+      "SetReadOnlyIn": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": ["enabled"],
+        "title": "SetReadOnlyIn"
+      },
       "SplitAllocationIn": {
         "properties": {
           "amount": {
@@ -17236,6 +19068,266 @@
           "updated_at"
         ],
         "title": "SyncConfigOut"
+      },
+      "SystemDetailOut": {
+        "properties": {
+          "active_user_count": {
+            "type": "integer",
+            "title": "Active User Count"
+          },
+          "unassigned_user_count": {
+            "type": "integer",
+            "title": "Unassigned User Count"
+          },
+          "household_count": {
+            "type": "integer",
+            "title": "Household Count"
+          },
+          "worker_fast_healthy": {
+            "type": "boolean",
+            "title": "Worker Fast Healthy"
+          },
+          "worker_slow_healthy": {
+            "type": "boolean",
+            "title": "Worker Slow Healthy"
+          },
+          "pending_job_count": {
+            "type": "integer",
+            "title": "Pending Job Count"
+          },
+          "failed_job_count_24h": {
+            "type": "integer",
+            "title": "Failed Job Count 24H"
+          },
+          "db_size_bytes": {
+            "type": "integer",
+            "title": "Db Size Bytes"
+          },
+          "redis_memory_bytes": {
+            "type": "integer",
+            "title": "Redis Memory Bytes"
+          },
+          "last_backup": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BackupRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "smtp_configured": {
+            "type": "boolean",
+            "title": "Smtp Configured"
+          },
+          "allow_registration": {
+            "type": "boolean",
+            "title": "Allow Registration"
+          },
+          "registration_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Limit"
+          },
+          "active_count_vs_limit": {
+            "type": "string",
+            "title": "Active Count Vs Limit"
+          },
+          "alembic_current": {
+            "type": "string",
+            "title": "Alembic Current"
+          },
+          "alembic_head": {
+            "type": "string",
+            "title": "Alembic Head"
+          },
+          "alembic_up_to_date": {
+            "type": "boolean",
+            "title": "Alembic Up To Date"
+          },
+          "active_session_count": {
+            "type": "integer",
+            "title": "Active Session Count"
+          },
+          "app_started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "App Started At"
+          },
+          "failed_jobs": {
+            "items": {
+              "$ref": "#/components/schemas/FailedJobOut"
+            },
+            "type": "array",
+            "title": "Failed Jobs"
+          },
+          "table_row_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Table Row Counts"
+          },
+          "redis_connected_clients": {
+            "type": "integer",
+            "title": "Redis Connected Clients"
+          },
+          "redis_db_keys": {
+            "type": "integer",
+            "title": "Redis Db Keys"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active_user_count",
+          "unassigned_user_count",
+          "household_count",
+          "worker_fast_healthy",
+          "worker_slow_healthy",
+          "pending_job_count",
+          "failed_job_count_24h",
+          "db_size_bytes",
+          "redis_memory_bytes",
+          "last_backup",
+          "smtp_configured",
+          "allow_registration",
+          "registration_limit",
+          "active_count_vs_limit",
+          "alembic_current",
+          "alembic_head",
+          "alembic_up_to_date",
+          "active_session_count",
+          "app_started_at",
+          "failed_jobs",
+          "table_row_counts",
+          "redis_connected_clients",
+          "redis_db_keys"
+        ],
+        "title": "SystemDetailOut"
+      },
+      "SystemOverviewOut": {
+        "properties": {
+          "active_user_count": {
+            "type": "integer",
+            "title": "Active User Count"
+          },
+          "unassigned_user_count": {
+            "type": "integer",
+            "title": "Unassigned User Count"
+          },
+          "household_count": {
+            "type": "integer",
+            "title": "Household Count"
+          },
+          "worker_fast_healthy": {
+            "type": "boolean",
+            "title": "Worker Fast Healthy"
+          },
+          "worker_slow_healthy": {
+            "type": "boolean",
+            "title": "Worker Slow Healthy"
+          },
+          "pending_job_count": {
+            "type": "integer",
+            "title": "Pending Job Count"
+          },
+          "failed_job_count_24h": {
+            "type": "integer",
+            "title": "Failed Job Count 24H"
+          },
+          "db_size_bytes": {
+            "type": "integer",
+            "title": "Db Size Bytes"
+          },
+          "redis_memory_bytes": {
+            "type": "integer",
+            "title": "Redis Memory Bytes"
+          },
+          "last_backup": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BackupRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "smtp_configured": {
+            "type": "boolean",
+            "title": "Smtp Configured"
+          },
+          "allow_registration": {
+            "type": "boolean",
+            "title": "Allow Registration"
+          },
+          "registration_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Limit"
+          },
+          "active_count_vs_limit": {
+            "type": "string",
+            "title": "Active Count Vs Limit"
+          },
+          "alembic_current": {
+            "type": "string",
+            "title": "Alembic Current"
+          },
+          "alembic_head": {
+            "type": "string",
+            "title": "Alembic Head"
+          },
+          "alembic_up_to_date": {
+            "type": "boolean",
+            "title": "Alembic Up To Date"
+          },
+          "active_session_count": {
+            "type": "integer",
+            "title": "Active Session Count"
+          },
+          "app_started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "App Started At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active_user_count",
+          "unassigned_user_count",
+          "household_count",
+          "worker_fast_healthy",
+          "worker_slow_healthy",
+          "pending_job_count",
+          "failed_job_count_24h",
+          "db_size_bytes",
+          "redis_memory_bytes",
+          "last_backup",
+          "smtp_configured",
+          "allow_registration",
+          "registration_limit",
+          "active_count_vs_limit",
+          "alembic_current",
+          "alembic_head",
+          "alembic_up_to_date",
+          "active_session_count",
+          "app_started_at"
+        ],
+        "title": "SystemOverviewOut"
       },
       "TagCreate": {
         "properties": {

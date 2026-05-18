@@ -144,7 +144,7 @@ class SetReadOnlyIn(BaseModel):
     @classmethod
     def reason_required_when_enabled(cls, v: str | None, info: object) -> str | None:
         data = info.data if hasattr(info, "data") else {}  # type: ignore[union-attr]
-        if data.get("enabled") and (v is None or len(v) < 10):
+        if data.get("enabled") and (v is None or len(v) < 10):  # type: ignore[misc]
             raise ValueError("reason must be at least 10 characters when enabling read-only mode")
         return v
 

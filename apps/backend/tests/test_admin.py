@@ -23,6 +23,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import app.admin.models  # noqa: F401
 from app.database import Base
 
 _MASTER_KEY = "test-master-key-not-for-production"  # pragma: allowlist secret
@@ -448,7 +449,7 @@ class TestUserManagement:
 
 class TestSMTP:
     async def test_upsert_encrypts_credentials(self, session: AsyncSession) -> None:
-        from app.admin.service import _decrypt_field, upsert_smtp_config
+        from app.admin.service import decrypt_field, upsert_smtp_config
 
         admin = await _make_admin(session)
 
@@ -469,7 +470,7 @@ class TestSMTP:
         assert cfg.host_enc != "smtp.example.com"
         assert cfg.password_enc != "secret123"  # pragma: allowlist secret
 
-        host = _decrypt_field(cfg.host_enc, _MASTER_KEY)
+        host = decrypt_field(cfg.host_enc, _MASTER_KEY)
         assert host == "smtp.example.com"
 
     async def test_get_smtp_config_none_when_not_configured(self, session: AsyncSession) -> None:
