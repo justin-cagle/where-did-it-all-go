@@ -24,6 +24,14 @@ from app.accounts.models import (  # noqa: E402, F401
     DebtBalance,
     ManualAccount,
 )
+from app.admin.models import (  # noqa: E402, F401
+    AdminNotification,
+    AdminSetting,
+    BackupConfig,
+    BackupRun,
+    ReadOnlyState,
+    SMTPConfig,
+)
 from app.audit.models import AuditEvent  # noqa: E402, F401
 from app.budgets.models import (  # noqa: E402, F401
     Budget,

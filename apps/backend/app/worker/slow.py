@@ -8,8 +8,10 @@ To run: arq app.worker.slow.WorkerSettings
 
 from typing import ClassVar
 
+from arq import cron
 from arq.connections import RedisSettings
 
+from app.admin.jobs import check_backup_health_job, run_backup_job
 from app.budgets import budget_period_close_job
 from app.classification import reclassify_all_job
 from app.debts import recompute_debt_schedule_job
@@ -36,6 +38,12 @@ class WorkerSettings:
         cleanup_transient_scenarios_job,
         generate_insights_job,
         cleanup_unassigned_accounts,
+        run_backup_job,
+        check_backup_health_job,
+    ]
+
+    cron_jobs: ClassVar[list[object]] = [
+        cron(check_backup_health_job, hour=2, minute=0),
     ]
 
     redis_settings: RedisSettings = get_redis_settings()

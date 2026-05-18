@@ -580,28 +580,35 @@ async def get_registration_settings() -> dict[str, object]:
 # ---------------------------------------------------------------------------
 
 
-async def _sse_keepalive() -> AsyncGenerator[str, None]:
-    """Minimal SSE stream — yields keepalive comments every 30 s.
-
-    Full event emission (household_assigned, etc.) is wired in Session 2
-    when the admin assignment endpoint is added.
-    """
+async def _sse_stream(user_id: object) -> AsyncGenerator[str, None]:
+    """Yield SSE events for this user. Keepalive comment every 30s."""
     import asyncio
+    import uuid as _uuid
 
-    while True:
-        yield ": keepalive\n\n"
-        await asyncio.sleep(30)
+    uid = user_id if isinstance(user_id, _uuid.UUID) else _uuid.UUID(str(user_id))
+    from app.households.sse import get_sse_manager
+
+    mgr = get_sse_manager()
+    async with mgr.connect(uid) as queue:
+        while True:
+            try:
+                chunk = await asyncio.wait_for(queue.get(), timeout=30.0)
+                if chunk is None:
+                    break
+                yield chunk
+            except TimeoutError:
+                yield ": keepalive\n\n"
 
 
 @router.get("/households/events")
 async def household_events(current_user: CurrentUser) -> StreamingResponse:
     """Server-Sent Events stream for household-level notifications.
 
-    Clients connect here to receive real-time events (e.g., household_assigned).
+    Emits events: household_assigned, read_only_changed.
+    Keepalive comment every 30s to prevent proxy timeouts.
     """
-    _ = current_user
     return StreamingResponse(
-        _sse_keepalive(),
+        _sse_stream(current_user.id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -9,7 +9,10 @@ app.audit (for audit logging), but never from other domain modules.
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.config import Settings
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,15 +76,15 @@ async def register_user(
     Invited users (invite_token is not None) bypass all checks.
     Raises RegistrationClosedError or RegistrationLimitReachedError when blocked.
     """
-    from app.config import get_settings
-
     if invite_token is None:
-        settings = get_settings()
-        if not settings.allow_registration:
+        from app.config import get_settings
+
+        allow_reg, reg_limit = await _get_effective_registration_settings(session, get_settings())
+        if not allow_reg:
             raise RegistrationClosedError("registration is closed")
-        if settings.registration_limit is not None:
+        if reg_limit is not None:
             active = await _count_active_users(session)
-            if active >= settings.registration_limit:
+            if active >= reg_limit:
                 raise RegistrationLimitReachedError("registration limit reached")
 
     return await create_user(
@@ -97,6 +100,35 @@ async def _count_active_users(session: AsyncSession) -> int:
         sa.select(sa.func.count()).select_from(User).where(User.archived_at.is_(None))
     )
     return result.scalar_one()
+
+
+async def _get_effective_registration_settings(
+    session: AsyncSession,
+    settings: "Settings",
+) -> tuple[bool, int | None]:
+    """Return (allow_registration, registration_limit) merging env + DB overrides.
+
+    Uses raw SQL to read admin_setting — avoids importing the admin module.
+    DB values take precedence over env vars.
+    """
+    result = await session.execute(
+        sa.text(
+            "SELECT key, value FROM admin_setting "
+            "WHERE key IN ('allow_registration', 'registration_limit')"
+        )
+    )
+    overrides = {row[0]: row[1] for row in result.fetchall()}
+
+    allow_reg: bool = settings.allow_registration
+    if "allow_registration" in overrides:
+        allow_reg = overrides["allow_registration"].lower() == "true"
+
+    reg_limit: int | None = settings.registration_limit
+    if "registration_limit" in overrides:
+        v = overrides["registration_limit"]
+        reg_limit = None if v == "null" else int(v)
+
+    return allow_reg, reg_limit
 
 
 async def create_user(

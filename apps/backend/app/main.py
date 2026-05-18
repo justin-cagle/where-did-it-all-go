@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import FastAPI
@@ -9,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
 
 from app.accounts.router import router as accounts_router
+from app.admin.middleware import ReadOnlyMiddleware
+from app.admin.router import router as admin_router
 from app.audit.router import router as audit_router
 from app.budgets.router import router as budgets_router
 from app.classification.router import router as classification_router
@@ -41,6 +44,10 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     async with factory() as session:
         await run_bootstrap(session)
 
+    _app.state.started_at = datetime.now(tz=UTC)
+    from app.platform.app_state import set_started_at
+
+    set_started_at(_app.state.started_at)
     yield
 
 
@@ -56,6 +63,9 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
         lifespan=_lifespan,
     )
+
+    # Read-only enforcement — checked before all other middleware
+    app.add_middleware(ReadOnlyMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
@@ -95,6 +105,7 @@ def create_app() -> FastAPI:
     app.include_router(goals_router, prefix="/api/v1")
     app.include_router(projections_router, prefix="/api/v1")
     app.include_router(insights_router, prefix="/api/v1")
+    app.include_router(admin_router, prefix="/api/v1")
 
     return app
 
