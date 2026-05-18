@@ -45,6 +45,9 @@ dependencies = [
     "httpx>=0.28",
     # Audit replay — RFC 6902 JSON Patch
     "jsonpatch>=1.32",
+    # Admin — backup and email
+    "boto3>=1.34",
+    "aiosmtplib>=3.0",
 ]
 
 [project.scripts]
@@ -203,6 +206,24 @@ forbidden_modules = [
 name = "Households module must not import other domain modules (except platform, audit, security)"
 type = "forbidden"
 source_modules = ["app.households"]
+forbidden_modules = [
+    "app.accounts",
+    "app.transactions",
+    "app.ingest",
+    "app.classification",
+    "app.recurrences",
+    "app.budgets",
+    "app.debts",
+    "app.goals",
+    "app.projections",
+    "app.recommendations",
+    "app.insights",
+]
+
+[[tool.importlinter.contracts]]
+name = "Admin module must not import feature domain modules (only households, platform, audit, security)"
+type = "forbidden"
+source_modules = ["app.admin"]
 forbidden_modules = [
     "app.accounts",
     "app.transactions",
