@@ -31,9 +31,16 @@ logger = structlog.get_logger(__name__)
 async def _lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Register cross-module lifecycle callbacks at startup."""
     from app.classification.service import seed_default_categories
+    from app.database import get_session_factory
+    from app.households.bootstrap import run_bootstrap
     from app.platform.events import register_on_household_created
 
     register_on_household_created(seed_default_categories)
+
+    factory = get_session_factory()
+    async with factory() as session:
+        await run_bootstrap(session)
+
     yield
 
 

@@ -47,9 +47,56 @@ class ConflictError(Exception):
     """Raised when an operation would violate a uniqueness constraint."""
 
 
+class RegistrationClosedError(Exception):
+    """Raised when ALLOW_REGISTRATION=False and no valid invite is present."""
+
+
+class RegistrationLimitReachedError(Exception):
+    """Raised when active user count >= REGISTRATION_LIMIT and no invite is present."""
+
+
 # ---------------------------------------------------------------------------
 # User management
 # ---------------------------------------------------------------------------
+
+
+async def register_user(
+    session: AsyncSession,
+    *,
+    email: str,
+    display_name: str,
+    password: str,
+    invite_token: str | None = None,
+) -> User:
+    """Register a new user, enforcing instance registration controls.
+
+    Invited users (invite_token is not None) bypass all checks.
+    Raises RegistrationClosedError or RegistrationLimitReachedError when blocked.
+    """
+    from app.config import get_settings
+
+    if invite_token is None:
+        settings = get_settings()
+        if not settings.allow_registration:
+            raise RegistrationClosedError("registration is closed")
+        if settings.registration_limit is not None:
+            active = await _count_active_users(session)
+            if active >= settings.registration_limit:
+                raise RegistrationLimitReachedError("registration limit reached")
+
+    return await create_user(
+        session,
+        email=email,
+        display_name=display_name,
+        password=password,
+    )
+
+
+async def _count_active_users(session: AsyncSession) -> int:
+    result = await session.execute(
+        sa.select(sa.func.count()).select_from(User).where(User.archived_at.is_(None))
+    )
+    return result.scalar_one()
 
 
 async def create_user(

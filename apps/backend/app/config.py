@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     # Observability — OpenTelemetry (optional; unset disables tracing)
     otel_exporter_otlp_endpoint: AnyUrl | None = None
 
+    # Bootstrap — read once at startup, never stored or logged
+    bootstrap_admin_email: str | None = None
+    bootstrap_admin_password: str | None = None
+
+    # Registration control
+    allow_registration: bool = False
+    registration_limit: int | None = None
+    unassigned_account_ttl_days: int = 7
+
     # Backup — local volume always; S3 is additional optional destination
     backup_s3_endpoint: str | None = None
     backup_s3_bucket: str | None = None

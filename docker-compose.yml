@@ -108,6 +108,26 @@ services:
       MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-frontend:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/frontend
+      target: serve
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # Bundled reverse proxy. Active when COMPOSE_PROFILES includes 'bundled-proxy'.
   # To use your own proxy, remove 'bundled-proxy' from COMPOSE_PROFILES and expose
   # app port 8000 directly (or use a docker-compose.override.yml).
