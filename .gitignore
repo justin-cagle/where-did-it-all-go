@@ -23,6 +23,10 @@ pip-wheel-metadata/
 coverage.xml
 htmlcov/
 .hypothesis/
+apps/frontend/coverage/
+
+# Claude Code local config (user-specific, not repo state)
+.claude/
 
 # Alembic (keep versions/ tracked, ignore __pycache__ inside)
 apps/backend/alembic/versions/__pycache__/
