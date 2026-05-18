@@ -42,7 +42,8 @@ def _patch_settings(monkeypatch: pytest.MonkeyPatch, **overrides: object) -> Non
     from app import config as cfg_module
     from app.config import Settings
 
-    cfg_module.get_settings.cache_clear()
+    if hasattr(cfg_module.get_settings, "cache_clear"):
+        cfg_module.get_settings.cache_clear()
     base = {
         "database_url": "postgresql+asyncpg://fake/fake",
         "master_key": "test-key",

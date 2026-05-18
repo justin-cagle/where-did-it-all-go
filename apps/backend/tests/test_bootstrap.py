@@ -36,7 +36,8 @@ def bootstrap_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch get_settings to return a Settings with bootstrap vars set."""
     from app import config as cfg_module
 
-    cfg_module.get_settings.cache_clear()
+    original = cfg_module.get_settings
+    original.cache_clear()
 
     settings = Settings(  # type: ignore[call-arg]
         database_url="postgresql+asyncpg://fake/fake",
@@ -47,7 +48,7 @@ def bootstrap_settings(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(cfg_module, "get_settings", lambda: settings)
     yield
-    cfg_module.get_settings.cache_clear()
+    original.cache_clear()
 
 
 @pytest.fixture()
@@ -55,7 +56,8 @@ def no_bootstrap_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch get_settings with no bootstrap vars set."""
     from app import config as cfg_module
 
-    cfg_module.get_settings.cache_clear()
+    original = cfg_module.get_settings
+    original.cache_clear()
 
     settings = Settings(  # type: ignore[call-arg]
         database_url="postgresql+asyncpg://fake/fake",
@@ -64,7 +66,7 @@ def no_bootstrap_settings(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(cfg_module, "get_settings", lambda: settings)
     yield
-    cfg_module.get_settings.cache_clear()
+    original.cache_clear()
 
 
 async def test_bootstrap_creates_admin(session: AsyncSession, bootstrap_settings: None) -> None:

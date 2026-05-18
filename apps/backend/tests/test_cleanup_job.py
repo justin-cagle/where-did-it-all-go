@@ -42,6 +42,7 @@ async def session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
 
 
 def _patch_settings(monkeypatch: pytest.MonkeyPatch, ttl_days: int = 7) -> None:
+    import app.households.jobs as jobs_module
     from app import config as cfg_module
     from app.config import Settings
 
@@ -54,6 +55,7 @@ def _patch_settings(monkeypatch: pytest.MonkeyPatch, ttl_days: int = 7) -> None:
         unassigned_account_ttl_days=ttl_days,
     )
     monkeypatch.setattr(cfg_module, "get_settings", lambda: settings)
+    monkeypatch.setattr(jobs_module, "get_settings", lambda: settings)
 
 
 async def _create_old_user(session: AsyncSession, email: str, days_ago: int) -> User:
