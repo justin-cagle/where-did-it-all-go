@@ -12,8 +12,15 @@ interface RegistrationSettings {
 
 export function WaitingPage() {
   const navigate = useNavigate()
-  const { clearUser } = useAuthStore()
+  const { clearUser, currentUser } = useAuthStore()
   const [ttlDays, setTtlDays] = useState<number | null>(null)
+
+  // Admins with no household go to /admin, not /waiting
+  useEffect(() => {
+    if (currentUser?.is_app_admin) {
+      navigate('/admin', { replace: true })
+    }
+  }, [currentUser, navigate])
 
   useEffect(() => {
     customInstance<RegistrationSettings>({

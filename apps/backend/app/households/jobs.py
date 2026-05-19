@@ -76,6 +76,7 @@ async def _find_candidates(session: AsyncSession, cutoff: datetime) -> list[uuid
         .where(
             ~has_membership,
             User.created_at < cutoff,
+            User.is_app_admin.is_(False),
         )
         .execution_options(include_archived=True)
     )
