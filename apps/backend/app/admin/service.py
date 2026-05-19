@@ -989,6 +989,7 @@ async def get_system_overview(
         sa.text(
             "SELECT COUNT(*) FROM households_user u "
             "WHERE u.archived_at IS NULL "
+            "AND u.is_app_admin = false "
             "AND NOT EXISTS (SELECT 1 FROM households_membership m WHERE m.user_id = u.id)"
         )
     )
