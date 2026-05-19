@@ -438,8 +438,12 @@ async def update_household(
     name: str | None = None,
     visibility_mode: VisibilityMode | None = None,
     home_currency: str | None = None,
-) -> Household:
-    """Update mutable household fields. Actor must be owner."""
+) -> tuple[Household, bool]:
+    """Update mutable household fields. Actor must be owner.
+
+    Returns (household, recompute_started) where recompute_started=True
+    when home_currency changed and the FX recompute job was enqueued.
+    """
     membership = await _get_membership(session, household_id, actor.id)
     if membership is None or membership.role != HouseholdRole.OWNER:
         raise PermissionError("must be household owner to update household settings")
@@ -449,6 +453,8 @@ async def update_household(
         raise NotFoundError("household not found")
 
     delta: list[dict[str, Any]] = []
+    currency_changed = False
+
     if name is not None:
         delta.append({"op": "replace", "path": "/name", "value": name})
         household.name = name
@@ -456,8 +462,20 @@ async def update_household(
         delta.append({"op": "replace", "path": "/visibility_mode", "value": str(visibility_mode)})
         household.visibility_mode = str(visibility_mode)
     if home_currency is not None:
-        delta.append({"op": "replace", "path": "/home_currency", "value": home_currency.upper()})
-        household.home_currency = home_currency.upper()
+        new_currency = home_currency.upper()
+        if new_currency != household.home_currency:
+            delta.append(
+                {
+                    "op": "replace",
+                    "path": "/home_currency",
+                    "old": household.home_currency,
+                    "value": new_currency,
+                }
+            )
+            household.home_currency = new_currency
+            currency_changed = True
+        else:
+            household.home_currency = new_currency
 
     await session.flush()
 
@@ -472,7 +490,29 @@ async def update_household(
             operation=AuditOperation.UPDATE,
             delta=delta,
         )
-    return household
+
+    recompute_started = False
+    if currency_changed:
+        try:
+            import arq  # type: ignore[import-untyped]
+
+            from app.worker.settings import get_redis_settings
+
+            pool = await arq.create_pool(get_redis_settings())
+            await pool.enqueue_job(
+                "recompute_fx_conversions_job",
+                household_id=str(household_id),
+            )
+            await pool.aclose()
+            recompute_started = True
+        except Exception as exc:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "update_household: failed to enqueue recompute job: %s", exc
+            )
+
+    return household, recompute_started
 
 
 async def archive_household(

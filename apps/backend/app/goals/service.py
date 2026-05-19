@@ -779,15 +779,38 @@ async def compute_burn_up(
         )
     )
     all_contribs = list(contribs.scalars().all())
-    cumulative_actual = sum((c.amount for c in all_contribs), Decimal("0")).quantize(
-        _CENT, ROUND_HALF_UP
-    )
 
+    # Sum contributions with FX conversion if needed
+    has_approx_fx = False
+    cumulative_actual = Decimal("0")
+    trailing_30d = Decimal("0")
     cutoff_30d = as_of - timedelta(days=_DAYS_TRAILING)
-    trailing_30d = sum(
-        (c.amount for c in all_contribs if c.contributed_at >= cutoff_30d),
-        Decimal("0"),
-    ).quantize(_CENT, ROUND_HALF_UP)
+
+    for contrib in all_contribs:
+        if contrib.currency == goal.currency:
+            contrib_amount = contrib.amount
+        else:
+            try:
+                from app.platform.fx import convert as fx_convert
+
+                contrib_amount, is_approx = await fx_convert(
+                    contrib.amount,
+                    contrib.currency,
+                    goal.currency,
+                    contrib.contributed_at,
+                    session,
+                )
+                if is_approx:
+                    has_approx_fx = True
+            except Exception:
+                contrib_amount = contrib.amount
+
+        cumulative_actual += contrib_amount
+        if contrib.contributed_at >= cutoff_30d:
+            trailing_30d += contrib_amount
+
+    cumulative_actual = cumulative_actual.quantize(_CENT, ROUND_HALF_UP)
+    trailing_30d = trailing_30d.quantize(_CENT, ROUND_HALF_UP)
 
     fields = compute_burn_up_pure(
         target_amount=target,
@@ -807,6 +830,7 @@ async def compute_burn_up(
         cumulative_actual=cumulative_actual,
         currency=goal.currency,
         computed_at=_utcnow(),
+        has_approximate_fx=has_approx_fx,
         **fields,
     )
     session.add(snap)

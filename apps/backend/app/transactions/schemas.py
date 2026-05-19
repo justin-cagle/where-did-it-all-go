@@ -67,6 +67,20 @@ class TransactionNoteUpdate(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class TransactionFXRateUpdate(BaseModel):
+    """Override the FX rate on a transaction."""
+
+    rate: MoneyDecimal = Field(gt=Decimal(0))
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("rate")
+    @classmethod
+    def positive_rate(cls, v: Decimal) -> Decimal:
+        if v <= Decimal(0):
+            raise ValueError("rate must be positive")
+        return v
+
+
 class TransactionOut(_Base):
     """Transaction info returned in list and detail responses."""
 
@@ -89,6 +103,12 @@ class TransactionOut(_Base):
     manually_categorized: bool
     transfer_peer_id: uuid.UUID | None
     refund_peer_id: uuid.UUID | None
+    # FX fields
+    fx_rate: Decimal | None
+    fx_rate_date: date | None
+    fx_rate_source: str
+    home_currency_amount: Decimal | None
+    home_currency: str | None
     created_at: datetime
     updated_at: datetime
 

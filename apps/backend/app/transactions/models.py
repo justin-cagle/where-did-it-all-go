@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.platform.db import SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
-from app.platform.money import CURRENCY_TYPE, MONEY_TYPE
+from app.platform.money import CURRENCY_TYPE, FX_RATE_TYPE, MONEY_TYPE
 from app.platform.time import utcnow
 
 
@@ -81,6 +81,27 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="SimpleFIN/OFX source ID used for exact-match dedup",
     )
+
+    # FX / multi-currency fields (null for home-currency transactions)
+    fx_rate: Mapped[Decimal | None] = mapped_column(
+        FX_RATE_TYPE,
+        nullable=True,
+        comment="Rate applied: 1 home_currency = fx_rate * currency",
+    )
+    fx_rate_date: Mapped[date | None] = mapped_column(sa.Date, nullable=True)
+    fx_rate_source: Mapped[str] = mapped_column(
+        sa.String(16),
+        nullable=False,
+        default="none",
+        server_default=sa.text("'none'"),
+        comment="frankfurter | manual | fallback | none",
+    )
+    home_currency_amount: Mapped[Decimal | None] = mapped_column(
+        sa.Numeric(precision=19, scale=4, asdecimal=True),
+        nullable=True,
+        comment="Pre-computed amount in household home_currency; derived, not authoritative",
+    )
+    home_currency: Mapped[str | None] = mapped_column(sa.String(3), nullable=True)
 
     # Cross-module refs stored as raw UUIDs (no FK — modules are not joined)
     recurrence_id: Mapped[uuid.UUID | None] = mapped_column(

@@ -61,6 +61,7 @@ from app.households.schemas import (
     HouseholdCreate,
     HouseholdOut,
     HouseholdUpdate,
+    HouseholdUpdateOut,
     InvitationOut,
     InviteMetadataOut,
     LoginRequest,
@@ -427,16 +428,21 @@ async def get_household(
     return HouseholdOut.model_validate(household)
 
 
-@router.patch("/households/{household_id}", response_model=HouseholdOut)
+@router.patch("/households/{household_id}", response_model=HouseholdUpdateOut)
 async def update_household(
     household_id: uuid.UUID,
     body: HouseholdUpdate,
     current_user: CurrentUser,
     session: _DbSession,
-) -> HouseholdOut:
-    """Update household settings (actor must be owner)."""
+) -> HouseholdUpdateOut:
+    """Update household settings (actor must be owner).
+
+    When home_currency changes, enqueues recompute_fx_conversions_job and
+    returns recompute_started=true. Clients should show a recalculating banner
+    until the fx_recompute_complete SSE event is received.
+    """
     try:
-        household = await service.update_household(
+        household, recompute_started = await service.update_household(
             session,
             household_id=household_id,
             actor=current_user,
@@ -448,7 +454,9 @@ async def update_household(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-    return HouseholdOut.model_validate(household)
+    out = HouseholdUpdateOut.model_validate(household)
+    out.recompute_started = recompute_started
+    return out
 
 
 @router.delete("/households/{household_id}", status_code=status.HTTP_204_NO_CONTENT)
