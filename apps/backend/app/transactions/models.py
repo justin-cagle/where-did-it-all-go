@@ -86,6 +86,11 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="Populated by recurrences module; no FK enforced across module boundary",
     )
+    import_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        nullable=True,
+        comment="Cross-module ref to ingest_import_job; no FK enforced",
+    )
 
     manually_categorized: Mapped[bool] = mapped_column(
         sa.Boolean,
@@ -110,6 +115,7 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         sa.Index("ix_transactions_transaction_account", "account_id"),
         sa.Index("ix_transactions_transaction_state", "state"),
         sa.Index("ix_transactions_transaction_posted_date", "posted_date"),
+        sa.Index("ix_transactions_transaction_import_job", "import_job_id"),
         # Partial unique index for external_id dedup (Stage 1)
         sa.Index(
             "uq_transactions_transaction_external_id",

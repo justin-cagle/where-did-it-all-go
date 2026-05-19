@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useMeApiV1AuthMeGet } from '@/api/generated/households/households'
-import { User, Home, Tag, Sparkles, Shield, AlertTriangle } from 'lucide-react'
+import { User, Home, Tag, Sparkles, Shield, AlertTriangle, Link2 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/settings/profile', label: 'Profile', icon: User, description: 'Display name and TOTP' },
@@ -9,6 +9,12 @@ const NAV_ITEMS = [
     label: 'Household',
     icon: Home,
     description: 'Name, visibility, members',
+  },
+  {
+    to: '/settings/ingest',
+    label: 'Connected Accounts',
+    icon: Link2,
+    description: 'SimpleFIN sync and file imports',
   },
   {
     to: '/settings/classification',

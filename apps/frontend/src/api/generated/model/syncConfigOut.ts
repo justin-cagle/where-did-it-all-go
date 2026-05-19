@@ -5,15 +5,25 @@
  * Personal finance budgeting and intelligence
  * OpenAPI spec version: 0.1.0
  */
+import type { SyncConfigOutLabel } from './syncConfigOutLabel'
 import type { SyncConfigOutLastSyncedAt } from './syncConfigOutLastSyncedAt'
+import type { SyncConfigOutRequestsTodayResetAt } from './syncConfigOutRequestsTodayResetAt'
+import type { SyncConfigOutNextSyncAt } from './syncConfigOutNextSyncAt'
+import type { SyncConfigOutLastError } from './syncConfigOutLastError'
 
 export interface SyncConfigOut {
   id: string
   household_id: string
-  account_id: string
   provider: string
+  label: SyncConfigOutLabel
   sync_enabled: boolean
   last_synced_at: SyncConfigOutLastSyncedAt
+  sync_interval_hours: number
+  requests_today: number
+  requests_today_reset_at: SyncConfigOutRequestsTodayResetAt
+  next_sync_at: SyncConfigOutNextSyncAt
+  last_error: SyncConfigOutLastError
+  status: string
   created_at: string
   updated_at: string
 }

@@ -15,4 +15,5 @@ export type ListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGe
   transaction_type?: TransactionType | null
   date_from?: string | null
   date_to?: string | null
+  import_job_id?: string | null
 }

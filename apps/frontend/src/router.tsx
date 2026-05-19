@@ -28,6 +28,11 @@ import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { HouseholdPage } from '@/pages/settings/HouseholdPage'
 import { InsightsSettingsPage } from '@/pages/settings/InsightsSettingsPage'
 import { SecurityPage } from '@/pages/settings/SecurityPage'
+import { IngestPage } from '@/pages/ingest/IngestPage'
+import { ConnectPage } from '@/pages/ingest/ConnectPage'
+import { AccountMappingPage } from '@/pages/ingest/AccountMappingPage'
+import { FileUploadPage } from '@/pages/ingest/FileUploadPage'
+import { ImportJobDetailPage } from '@/pages/ingest/ImportJobDetailPage'
 import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
@@ -224,10 +229,45 @@ export const router = createBrowserRouter([
     children: [
       { path: 'profile', element: <ProfilePage /> },
       { path: 'household', element: <HouseholdPage /> },
+      { path: 'ingest', element: <IngestPage /> },
       { path: 'classification', element: <ClassificationPage /> },
       { path: 'insights', element: <InsightsSettingsPage /> },
       { path: 'security', element: <SecurityPage /> },
     ],
+  },
+
+  /* Ingest wizard pages — standalone (no settings sidebar) */
+  {
+    path: '/settings/ingest/connect',
+    element: (
+      <AuthedShell>
+        <ConnectPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/settings/ingest/connect/:syncConfigId/map',
+    element: (
+      <AuthedShell>
+        <AccountMappingPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/settings/ingest/upload',
+    element: (
+      <AuthedShell>
+        <FileUploadPage />
+      </AuthedShell>
+    ),
+  },
+  {
+    path: '/settings/ingest/upload/:importJobId',
+    element: (
+      <AuthedShell>
+        <ImportJobDetailPage />
+      </AuthedShell>
+    ),
   },
 
   /* Admin — wrapped in AdminGuard + AdminShell */

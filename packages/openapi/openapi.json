@@ -2953,6 +2953,23 @@
               ],
               "title": "Date To"
             }
+          },
+          {
+            "name": "import_job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Import Job Id"
+            }
           }
         ],
         "responses": {
@@ -5004,6 +5021,109 @@
         }
       }
     },
+    "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}": {
+      "patch": {
+        "tags": ["ingest"],
+        "summary": "Update Sync Config",
+        "operationId": "update_sync_config_api_v1_households__household_id__ingest_sync_configs__config_id__patch",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncConfigOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["ingest"],
+        "summary": "Delete Sync Config",
+        "operationId": "delete_sync_config_api_v1_households__household_id__ingest_sync_configs__config_id__delete",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/trigger": {
       "post": {
         "tags": ["ingest"],
@@ -5056,11 +5176,12 @@
         }
       }
     },
-    "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}": {
-      "delete": {
+    "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/preview": {
+      "get": {
         "tags": ["ingest"],
-        "summary": "Delete Sync Config",
-        "operationId": "delete_sync_config_api_v1_households__household_id__ingest_sync_configs__config_id__delete",
+        "summary": "Preview Simplefin Accounts",
+        "description": "Fetch SimpleFIN accounts for a SyncConfig and return preview with suggested types.\n\nResult is cached in Redis for 5 minutes to avoid repeated SimpleFIN calls.\nDoes NOT create any system accounts.",
+        "operationId": "preview_simplefin_accounts_api_v1_households__household_id__ingest_sync_configs__config_id__preview_get",
         "parameters": [
           {
             "name": "config_id",
@@ -5084,8 +5205,186 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Successful Response"
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SimplefinAccountPreview"
+                  },
+                  "title": "Response Preview Simplefin Accounts Api V1 Households  Household Id  Ingest Sync Configs  Config Id  Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/mapping": {
+      "post": {
+        "tags": ["ingest"],
+        "summary": "Save Account Mapping",
+        "description": "Save account mapping decisions for a SimpleFIN SyncConfig.\n\nCreates new accounts, maps existing accounts, or ignores SimpleFIN accounts.\nSets authoritative_sync_config_id on mapped/created accounts.\nTriggers initial 90-day sync job on first mapping save.",
+        "operationId": "save_account_mapping_api_v1_households__household_id__ingest_sync_configs__config_id__mapping_post",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MappingDecision"
+                },
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/ingest/csv-mappings": {
+      "post": {
+        "tags": ["ingest"],
+        "summary": "Upsert Csv Mapping",
+        "operationId": "upsert_csv_mapping_api_v1_households__household_id__ingest_csv_mappings_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CSVMappingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CSVMappingOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/ingest/csv-mappings/{institution_name}": {
+      "get": {
+        "tags": ["ingest"],
+        "summary": "Get Csv Mapping",
+        "operationId": "get_csv_mapping_api_v1_households__household_id__ingest_csv_mappings__institution_name__get",
+        "parameters": [
+          {
+            "name": "institution_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Institution Name"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CSVMappingOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -5172,6 +5471,64 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/ingest/jobs/": {
+      "get": {
+        "tags": ["ingest"],
+        "summary": "List Import Jobs",
+        "description": "Return recent import jobs for the household.",
+        "operationId": "list_import_jobs_api_v1_households__household_id__ingest_jobs__get",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImportJobOut"
+                  },
+                  "title": "Response List Import Jobs Api V1 Households  Household Id  Ingest Jobs  Get"
                 }
               }
             }
@@ -11094,6 +11451,18 @@
             ],
             "title": "Account Group Id"
           },
+          "authoritative_sync_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authoritative Sync Config Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -11116,6 +11485,7 @@
           "current_balance",
           "is_manual",
           "account_group_id",
+          "authoritative_sync_config_id",
           "created_at",
           "updated_at"
         ],
@@ -12987,6 +13357,98 @@
         "type": "string",
         "enum": ["ahead", "on_track", "behind", "at_risk", "off_track"],
         "title": "BurnUpStatus"
+      },
+      "CSVMappingIn": {
+        "properties": {
+          "institution_name": {
+            "type": "string",
+            "title": "Institution Name"
+          },
+          "column_map": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Column Map"
+          },
+          "date_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Format"
+          },
+          "amount_convention": {
+            "type": "string",
+            "title": "Amount Convention",
+            "default": "positive_is_credit"
+          }
+        },
+        "type": "object",
+        "required": ["institution_name"],
+        "title": "CSVMappingIn"
+      },
+      "CSVMappingOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "household_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Household Id"
+          },
+          "institution_name": {
+            "type": "string",
+            "title": "Institution Name"
+          },
+          "column_map": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Column Map"
+          },
+          "date_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Format"
+          },
+          "amount_convention": {
+            "type": "string",
+            "title": "Amount Convention"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "household_id",
+          "institution_name",
+          "column_map",
+          "date_format",
+          "amount_convention",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CSVMappingOut"
       },
       "Cadence": {
         "type": "string",
@@ -15764,6 +16226,17 @@
             "type": "string",
             "title": "Status"
           },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -15833,6 +16306,7 @@
           "household_id",
           "source",
           "status",
+          "filename",
           "started_at",
           "completed_at",
           "row_count",
@@ -16182,6 +16656,70 @@
         "required": ["email", "password"],
         "title": "LoginRequest",
         "description": "Local auth login."
+      },
+      "MappingDecision": {
+        "properties": {
+          "simplefin_account_id": {
+            "type": "string",
+            "title": "Simplefin Account Id"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["create", "map", "ignore"],
+            "title": "Action"
+          },
+          "system_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Account Id"
+          },
+          "authoritative": {
+            "type": "boolean",
+            "title": "Authoritative",
+            "default": true
+          },
+          "new_account": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Account"
+          }
+        },
+        "type": "object",
+        "required": ["simplefin_account_id", "action"],
+        "title": "MappingDecision"
+      },
+      "MappingResult": {
+        "properties": {
+          "accounts_created": {
+            "type": "integer",
+            "title": "Accounts Created"
+          },
+          "accounts_mapped": {
+            "type": "integer",
+            "title": "Accounts Mapped"
+          },
+          "accounts_ignored": {
+            "type": "integer",
+            "title": "Accounts Ignored"
+          }
+        },
+        "type": "object",
+        "required": ["accounts_created", "accounts_mapped", "accounts_ignored"],
+        "title": "MappingResult"
       },
       "MatchOut": {
         "properties": {
@@ -18753,6 +19291,57 @@
         "required": ["enabled"],
         "title": "SetReadOnlyIn"
       },
+      "SimplefinAccountPreview": {
+        "properties": {
+          "simplefin_account_id": {
+            "type": "string",
+            "title": "Simplefin Account Id"
+          },
+          "institution_name": {
+            "type": "string",
+            "title": "Institution Name"
+          },
+          "account_name": {
+            "type": "string",
+            "title": "Account Name"
+          },
+          "account_number_last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Number Last4"
+          },
+          "balance": {
+            "type": "string",
+            "title": "Balance"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "suggested_type": {
+            "type": "string",
+            "title": "Suggested Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simplefin_account_id",
+          "institution_name",
+          "account_name",
+          "account_number_last4",
+          "balance",
+          "currency",
+          "suggested_type"
+        ],
+        "title": "SimplefinAccountPreview",
+        "description": "One SimpleFIN account returned by the preview endpoint."
+      },
       "SplitAllocationIn": {
         "properties": {
           "amount": {
@@ -18983,20 +19572,34 @@
       },
       "SyncConfigCreate": {
         "properties": {
-          "account_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Account Id"
-          },
           "provider": {
             "type": "string",
             "pattern": "^(simplefin|ofx|csv|manual)$",
             "title": "Provider"
           },
-          "credentials": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Credentials"
+          "setup_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Token",
+            "description": "SimpleFIN one-time setup token"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "User-assigned display name"
           },
           "sync_enabled": {
             "type": "boolean",
@@ -19005,8 +19608,9 @@
           }
         },
         "type": "object",
-        "required": ["account_id", "provider"],
-        "title": "SyncConfigCreate"
+        "required": ["provider"],
+        "title": "SyncConfigCreate",
+        "description": "Create a SimpleFIN sync configuration.\n\nFor SimpleFIN: supply setup_token (exchanged immediately for access_url) and label.\nsetup_token is one-time-use and never stored."
       },
       "SyncConfigOut": {
         "properties": {
@@ -19020,14 +19624,20 @@
             "format": "uuid",
             "title": "Household Id"
           },
-          "account_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Account Id"
-          },
           "provider": {
             "type": "string",
             "title": "Provider"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
           },
           "sync_enabled": {
             "type": "boolean",
@@ -19045,6 +19655,53 @@
             ],
             "title": "Last Synced At"
           },
+          "sync_interval_hours": {
+            "type": "integer",
+            "title": "Sync Interval Hours"
+          },
+          "requests_today": {
+            "type": "integer",
+            "title": "Requests Today"
+          },
+          "requests_today_reset_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Today Reset At"
+          },
+          "next_sync_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Sync At"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -19060,14 +19717,61 @@
         "required": [
           "id",
           "household_id",
-          "account_id",
           "provider",
+          "label",
           "sync_enabled",
           "last_synced_at",
+          "sync_interval_hours",
+          "requests_today",
+          "requests_today_reset_at",
+          "next_sync_at",
+          "last_error",
+          "status",
           "created_at",
           "updated_at"
         ],
         "title": "SyncConfigOut"
+      },
+      "SyncConfigUpdate": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "sync_interval_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 24.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Interval Hours"
+          },
+          "sync_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Enabled"
+          }
+        },
+        "type": "object",
+        "title": "SyncConfigUpdate"
       },
       "SystemDetailOut": {
         "properties": {

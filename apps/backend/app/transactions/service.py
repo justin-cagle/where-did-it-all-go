@@ -271,6 +271,7 @@ async def list_transactions(
     transaction_type: TransactionType | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    import_job_id: uuid.UUID | None = None,
 ) -> list[Transaction]:
     """Return transactions in the household, optionally filtered."""
     stmt = sa.select(Transaction).where(Transaction.household_id == household_id)
@@ -286,6 +287,8 @@ async def list_transactions(
         stmt = stmt.where(Transaction.posted_date >= date_from)
     if date_to is not None:
         stmt = stmt.where(Transaction.posted_date <= date_to)
+    if import_job_id is not None:
+        stmt = stmt.where(Transaction.import_job_id == import_job_id)
     stmt = stmt.order_by(Transaction.posted_date.desc(), Transaction.created_at.desc())
     result = await session.execute(stmt)
     return list(result.scalars().all())
