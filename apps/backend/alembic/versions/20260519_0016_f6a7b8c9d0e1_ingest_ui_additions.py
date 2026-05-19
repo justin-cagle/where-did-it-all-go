@@ -1,7 +1,7 @@
 """ingest ui additions: sync config fields, csv mapping, account/tx cross-refs
 
-Revision ID: e5f6a7b8c9d0
-Revises: d4e5f6a7b8c9
+Revision ID: f6a7b8c9d0e1
+Revises: e5f6a7b8c9d0
 Create Date: 2026-05-19
 
 Changes:
@@ -21,8 +21,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # pragma: allowlist secret
-revision: str = "e5f6a7b8c9d0"  # pragma: allowlist secret
-down_revision: str | None = "d4e5f6a7b8c9"  # pragma: allowlist secret
+revision: str = "f6a7b8c9d0e1"  # pragma: allowlist secret
+down_revision: str | None = "e5f6a7b8c9d0"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

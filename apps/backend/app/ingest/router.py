@@ -271,7 +271,7 @@ async def preview_simplefin_accounts(
         import redis.asyncio as aioredis
 
         redis_url = str(settings.redis_url)
-        redis_client = aioredis.from_url(redis_url, decode_responses=True)
+        redis_client = aioredis.from_url(redis_url, decode_responses=True)  # type: ignore[no-untyped-call]
         cached = await redis_client.get(cache_key)
         if cached is not None:
             await redis_client.aclose()
@@ -312,7 +312,7 @@ async def preview_simplefin_accounts(
         import redis.asyncio as aioredis
 
         redis_url = str(settings.redis_url)
-        redis_client = aioredis.from_url(redis_url, decode_responses=True)
+        redis_client = aioredis.from_url(redis_url, decode_responses=True)  # type: ignore[no-untyped-call]
         await redis_client.setex(cache_key, _PREVIEW_CACHE_TTL, json.dumps(accounts))
         await redis_client.aclose()
     except Exception:  # noqa: S110

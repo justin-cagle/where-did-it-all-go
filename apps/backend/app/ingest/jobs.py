@@ -334,7 +334,7 @@ async def reset_requests_today_job(ctx: dict[str, Any]) -> dict[str, Any]:
             .values(requests_today=0, requests_today_reset_at=today)
         )
         await session.commit()
-        updated = result.rowcount
+        updated: int = result.rowcount  # type: ignore[assignment]
 
     logger.info("reset_requests_today_job.complete", updated=updated)
     return {"updated": updated}

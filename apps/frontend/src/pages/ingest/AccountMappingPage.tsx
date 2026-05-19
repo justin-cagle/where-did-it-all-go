@@ -241,7 +241,8 @@ export function AccountMappingPage() {
     for (const acc of preview) {
       const key = acc.institution_name
       if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(acc)
+      const bucket = map.get(key)
+      if (bucket) bucket.push(acc)
     }
     return [...map.entries()]
   }, [preview])
