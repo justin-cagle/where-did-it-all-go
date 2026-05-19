@@ -85,6 +85,16 @@ function AuthedShell({ children }: { children: React.ReactNode }) {
   )
 }
 
+function AuthedAdmin({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard requireHousehold={false}>
+      <AdminGuard>
+        <AdminShell>{children}</AdminShell>
+      </AdminGuard>
+    </AuthGuard>
+  )
+}
+
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
 
@@ -272,113 +282,77 @@ export const router = createBrowserRouter([
     ),
   },
 
-  /* Admin — wrapped in AdminGuard + AdminShell */
+  /* Admin — requireHousehold=false: admin may have no household */
   {
     path: '/admin',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminOverviewPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminOverviewPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/users',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminUsersPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminUsersPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/users/:id',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminUserDetailPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminUserDetailPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/households',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminHouseholdsPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminHouseholdsPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/households/:id',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminHouseholdDetailPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminHouseholdDetailPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/system',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminSystemPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminSystemPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/smtp',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminSMTPPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminSMTPPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/backup',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminBackupPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminBackupPage />
+      </AuthedAdmin>
     ),
   },
   {
     path: '/admin/emergency',
     element: (
-      <AuthGuard>
-        <AdminGuard>
-          <AdminShell>
-            <AdminEmergencyPage />
-          </AdminShell>
-        </AdminGuard>
-      </AuthGuard>
+      <AuthedAdmin>
+        <AdminEmergencyPage />
+      </AuthedAdmin>
     ),
   },
 ])
