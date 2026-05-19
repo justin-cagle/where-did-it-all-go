@@ -8,17 +8,34 @@ export function formatBytes(bytes: number): string {
   return `${val < 10 ? val.toFixed(1) : Math.round(val)} ${units[i]}`
 }
 
-export function fmt(n: number, privacyMode: PrivacyMode = 'off', currency = 'USD'): string {
+export interface FmtOptions {
+  privacyMode?: PrivacyMode
+  currency?: string
+  isApproximate?: boolean
+}
+
+export function fmt(
+  n: number,
+  privacyOrOpts: PrivacyMode | FmtOptions = 'off',
+  currency = 'USD'
+): string {
+  const opts: FmtOptions =
+    typeof privacyOrOpts === 'string' ? { privacyMode: privacyOrOpts, currency } : privacyOrOpts
+  const privacyMode = opts.privacyMode ?? 'off'
+  const cur = opts.currency ?? currency
+
   if (privacyMode === 'full_blur') return '••••'
 
   const abs = Math.abs(n)
   const str = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: cur,
     maximumFractionDigits: 2,
   }).format(abs)
 
   if (privacyMode === 'partial_blur') return str.replace(/\d/g, '•')
 
-  return (n < 0 ? '-' : '') + str
+  const sign = n < 0 ? '-' : ''
+  const approx = opts.isApproximate ? '~' : ''
+  return approx + sign + str
 }

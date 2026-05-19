@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { UserMinus, Crown, Copy, RefreshCw, X, Mail, MailX, AlertTriangle } from 'lucide-react'
 import {
   useGetHouseholdApiV1HouseholdsHouseholdIdGet,
@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { MembershipOut } from '@/api/generated/model/membershipOut'
 import type { InvitationOut } from '@/api/generated/model/invitationOut'
 import { VisibilityMode } from '@/api/generated/model/visibilityMode'
+import { CurrencySelect } from '@/components/CurrencySelect'
 
 const VISIBILITY_OPTIONS = [
   {
@@ -204,6 +205,21 @@ export function HouseholdPage() {
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [pendingCurrency, setPendingCurrency] = useState<string | null>(null)
+  const [recomputing, setRecomputing] = useState(false)
+
+  useEffect(() => {
+    if (!recomputing || !hid) return
+    const source = new EventSource('/api/v1/households/events', { withCredentials: true })
+    source.addEventListener('fx_recompute_complete', () => {
+      setRecomputing(false)
+      source.close()
+    })
+    source.onerror = () => {
+      // SSE reconnects automatically
+    }
+    return () => source.close()
+  }, [recomputing, hid])
 
   const { data: household } = useGetHouseholdApiV1HouseholdsHouseholdIdGet(hid, {
     query: { enabled: !!hid },
@@ -260,6 +276,27 @@ export function HouseholdPage() {
     })
   }
 
+  const handleCurrencyChange = (code: string) => {
+    if (code !== household?.home_currency) {
+      setPendingCurrency(code)
+    }
+  }
+
+  const confirmCurrencyChange = async () => {
+    if (!pendingCurrency) return
+    const result = await updateHousehold.mutateAsync({
+      householdId: hid,
+      data: { home_currency: pendingCurrency },
+    })
+    setPendingCurrency(null)
+    await qc.invalidateQueries({
+      queryKey: getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey(hid),
+    })
+    if (result.recompute_started) {
+      setRecomputing(true)
+    }
+  }
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return
     setInviteError(null)
@@ -310,8 +347,116 @@ export function HouseholdPage() {
         Household
       </h2>
 
+      {recomputing && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 14px',
+            marginBottom: 16,
+            background: 'color-mix(in oklch, var(--accent) 10%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--accent) 30%, transparent)',
+            borderRadius: 8,
+            fontSize: 13,
+            color: 'var(--fg-secondary)',
+          }}
+        >
+          <RefreshCw size={13} className="animate-spin" style={{ flexShrink: 0 }} />
+          Recalculating FX rates for all transactions, budgets, and goals...
+        </div>
+      )}
+
+      {pendingCurrency && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '24px 28px',
+              maxWidth: 400,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <AlertTriangle size={18} style={{ flexShrink: 0, color: '#f59e0b', marginTop: 1 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg-primary)' }}>
+                  Change home currency to {pendingCurrency}?
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+                  This will re-trigger FX computation for all transactions, budgets, and goals.
+                  Existing home-currency amounts will be overwritten.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setPendingCurrency(null)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  background: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--fg-muted)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmCurrencyChange()}
+                disabled={updateHousehold.isPending}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  background: 'var(--accent)',
+                  color: 'var(--accent-fg)',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  opacity: updateHousehold.isPending ? 0.6 : 1,
+                }}
+              >
+                {updateHousehold.isPending ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SettingRow label="Household name">
         <InlineEdit value={household.name} onSave={handleSaveName} />
+      </SettingRow>
+
+      <SettingRow label="Home currency" description="All amounts are converted to this currency">
+        <div style={{ width: 260 }}>
+          <CurrencySelect
+            value={household.home_currency}
+            onChange={handleCurrencyChange}
+            disabled={!isOwner}
+          />
+        </div>
       </SettingRow>
 
       <SettingRow label="Visibility mode" description="Controls who can view this household">

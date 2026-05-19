@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { customInstance, ApiError } from '@/api/client'
+import { CurrencySelect } from '@/components/CurrencySelect'
 
 type VisibilityMode =
   | 'fully_shared'
@@ -34,6 +35,14 @@ const VISIBILITY_OPTIONS: { value: VisibilityMode; label: string; description: s
   },
 ]
 
+function detectHomeCurrency(): string {
+  try {
+    return new Intl.NumberFormat().resolvedOptions().currency ?? 'USD'
+  } catch {
+    return 'USD'
+  }
+}
+
 const step1Schema = z.object({
   name: z.string().min(1, 'Household name is required').max(100),
   visibility_mode: z.enum([
@@ -42,6 +51,7 @@ const step1Schema = z.object({
     'role_based',
     'admin_controlled',
   ]),
+  home_currency: z.string().length(3, 'Select a currency'),
 })
 type Step1Fields = z.infer<typeof step1Schema>
 
@@ -67,17 +77,22 @@ export function OnboardingPage() {
     formState: { errors, isSubmitting },
   } = useForm<Step1Fields>({
     resolver: zodResolver(step1Schema),
-    defaultValues: { visibility_mode: 'fully_shared' },
+    defaultValues: { visibility_mode: 'fully_shared', home_currency: detectHomeCurrency() },
   })
 
   const selectedMode = watch('visibility_mode')
+  const selectedCurrency = watch('home_currency')
 
   const onStep1Submit = async (data: Step1Fields) => {
     try {
       const household = await customInstance<HouseholdResponse>({
         url: '/api/v1/households',
         method: 'POST',
-        data: { name: data.name, visibility_mode: data.visibility_mode },
+        data: {
+          name: data.name,
+          visibility_mode: data.visibility_mode,
+          home_currency: data.home_currency,
+        },
       })
       setHouseholdId(household.id)
       setStep(2)
@@ -274,6 +289,21 @@ export function OnboardingPage() {
                     </div>
                   </label>
                 ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-secondary)' }}>
+                  Home currency
+                </label>
+                <CurrencySelect
+                  value={selectedCurrency}
+                  onChange={(code) => setValue('home_currency', code, { shouldValidate: true })}
+                />
+                {errors.home_currency && (
+                  <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>
+                    {errors.home_currency.message}
+                  </p>
+                )}
               </div>
 
               <button

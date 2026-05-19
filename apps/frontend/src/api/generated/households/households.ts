@@ -31,6 +31,7 @@ import type {
   HouseholdCreate,
   HouseholdOut,
   HouseholdUpdate,
+  HouseholdUpdateOut,
   InvitationOut,
   InviteMetadataOut,
   ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
@@ -1390,13 +1391,17 @@ export function useGetHouseholdApiV1HouseholdsHouseholdIdGet<
 
 /**
  * Update household settings (actor must be owner).
+
+When home_currency changes, enqueues recompute_fx_conversions_job and
+returns recompute_started=true. Clients should show a recalculating banner
+until the fx_recompute_complete SSE event is received.
  * @summary Update Household
  */
 export const updateHouseholdApiV1HouseholdsHouseholdIdPatch = (
   householdId: string,
   householdUpdate: HouseholdUpdate
 ) => {
-  return customInstance<HouseholdOut>({
+  return customInstance<HouseholdUpdateOut>({
     url: `/api/v1/households/${householdId}`,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

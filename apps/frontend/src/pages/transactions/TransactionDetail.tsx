@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, RefreshCw, ArrowLeftRight, CornerUpLeft, Archive, AlertTriangle } from 'lucide-react'
+import {
+  X,
+  RefreshCw,
+  ArrowLeftRight,
+  CornerUpLeft,
+  Archive,
+  AlertTriangle,
+  DollarSign,
+} from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { PrivacyMode } from '@/lib/format'
 import {
@@ -7,6 +15,7 @@ import {
   useTransitionStateCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdStatePatch,
   useArchiveTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdDelete,
   useUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch,
+  useOverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch,
   getListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGetQueryKey,
   getGetTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdGetQueryKey,
 } from '@/api/generated/transactions/transactions'
@@ -39,6 +48,9 @@ export function TransactionDetail({
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
+  const [showFxOverride, setShowFxOverride] = useState(false)
+  const [fxRateInput, setFxRateInput] = useState('')
+  const [fxNoteInput, setFxNoteInput] = useState('')
 
   const isOpen = !!transactionId
 
@@ -66,6 +78,28 @@ export function TransactionDetail({
 
   const { mutateAsync: updateNote } =
     useUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch()
+
+  const { mutateAsync: overrideFxRate, isPending: savingFx } =
+    useOverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch()
+
+  async function handleFxOverride() {
+    if (!tx || !fxRateInput) return
+    await overrideFxRate({
+      householdId,
+      transactionId: tx.id,
+      data: { rate: fxRateInput, note: fxNoteInput.trim() || null },
+    })
+    await qc.invalidateQueries({
+      queryKey:
+        getGetTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdGetQueryKey(
+          householdId,
+          tx.id
+        ),
+    })
+    setShowFxOverride(false)
+    setFxRateInput('')
+    setFxNoteInput('')
+  }
 
   async function handleReconcile() {
     if (!tx) return
@@ -276,6 +310,59 @@ export function TransactionDetail({
                 )}
               </Section>
 
+              {/* FX section — only for foreign currency transactions */}
+              {tx.fx_rate_source !== 'none' && tx.home_currency && (
+                <Section
+                  title="Foreign Exchange"
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFxRateInput(tx.fx_rate ?? '')
+                        setFxNoteInput('')
+                        setShowFxOverride(true)
+                      }}
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--accent)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      Override rate
+                    </button>
+                  }
+                >
+                  <MetaRow label="Original amount" value={`${tx.amount} ${tx.currency}`} />
+                  <MetaRow
+                    label="Rate"
+                    value={
+                      tx.fx_rate
+                        ? `${tx.fx_rate_source === 'fallback' ? '~' : ''}1 ${tx.currency} = ${tx.fx_rate} ${tx.home_currency}`
+                        : '—'
+                    }
+                  />
+                  {tx.home_currency_amount && (
+                    <MetaRow
+                      label={`Home (${tx.home_currency})`}
+                      value={fmt(parseFloat(tx.home_currency_amount), {
+                        privacyMode,
+                        currency: tx.home_currency,
+                        isApproximate: tx.fx_rate_source === 'fallback',
+                      })}
+                    />
+                  )}
+                  <MetaRow
+                    label="Source"
+                    value={tx.fx_rate_source}
+                    muted={tx.fx_rate_source !== 'manual'}
+                  />
+                  {tx.fx_rate_date && <MetaRow label="Rate date" value={tx.fx_rate_date} muted />}
+                </Section>
+              )}
+
               {/* Note */}
               <NoteSection
                 householdId={householdId}
@@ -445,6 +532,131 @@ export function TransactionDetail({
             open={showRefundModal}
             onClose={() => setShowRefundModal(false)}
           />
+        </>
+      )}
+
+      {/* FX override modal */}
+      {showFxOverride && tx && (
+        <>
+          <div
+            onClick={() => setShowFxOverride(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 400 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 401,
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '24px',
+              width: 380,
+              maxWidth: 'calc(100vw - 32px)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <DollarSign
+                size={18}
+                style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+              />
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg-primary)' }}>
+                  Override FX rate
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--fg-muted)', marginTop: 4 }}>
+                  Set a manual rate for {tx.currency} &rarr; {tx.home_currency}. Marks source as
+                  &ldquo;manual&rdquo;.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-secondary)' }}>
+                Rate (1 {tx.currency} =)
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={fxRateInput}
+                onChange={(e) => setFxRateInput(e.target.value)}
+                placeholder="e.g. 1.0823"
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--fg-primary)',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-mono)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-secondary)' }}>
+                Note (optional)
+              </label>
+              <input
+                type="text"
+                value={fxNoteInput}
+                onChange={(e) => setFxNoteInput(e.target.value)}
+                placeholder="e.g. Bank statement rate"
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--fg-primary)',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-sans)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setShowFxOverride(false)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'none',
+                  color: 'var(--fg-secondary)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!fxRateInput || savingFx}
+                onClick={() => void handleFxOverride()}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: 'var(--accent-fg)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: !fxRateInput || savingFx ? 'not-allowed' : 'pointer',
+                  opacity: !fxRateInput || savingFx ? 0.6 : 1,
+                }}
+              >
+                {savingFx ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
         </>
       )}
 

@@ -36,6 +36,7 @@ import type {
   SplitsSetRequest,
   TransactionCreate,
   TransactionDetailOut,
+  TransactionFXRateUpdate,
   TransactionNoteUpdate,
   TransactionOut,
   TransactionStateUpdate,
@@ -3743,3 +3744,123 @@ export const useArchivePaymentGroupApiV1HouseholdsHouseholdIdPaymentGroupsGroupI
 
   return useMutation(mutationOptions, queryClient)
 }
+/**
+ * Override the FX rate on a foreign-currency transaction.
+
+Sets fx_rate_source=manual. Recomputes home_currency_amount.
+Does NOT update the platform_fx_rate table (market rates only).
+ * @summary Override Transaction Fx Rate
+ */
+export const overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch =
+  (
+    householdId: string,
+    transactionId: string,
+    transactionFXRateUpdate: TransactionFXRateUpdate
+  ) => {
+    return customInstance<TransactionOut>({
+      url: `/api/v1/households/${householdId}/transactions/${transactionId}/fx-rate`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: transactionFXRateUpdate,
+    })
+  }
+
+export const getOverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatchMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+        >
+      >,
+      TError,
+      { householdId: string; transactionId: string; data: TransactionFXRateUpdate },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<
+        typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+      >
+    >,
+    TError,
+    { householdId: string; transactionId: string; data: TransactionFXRateUpdate },
+    TContext
+  > => {
+    const mutationKey = [
+      'overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+        >
+      >,
+      { householdId: string; transactionId: string; data: TransactionFXRateUpdate }
+    > = (props) => {
+      const { householdId, transactionId, data } = props ?? {}
+
+      return overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch(
+        householdId,
+        transactionId,
+        data
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type OverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatchMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+      >
+    >
+  >
+export type OverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatchMutationBody =
+  TransactionFXRateUpdate
+export type OverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatchMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Override Transaction Fx Rate
+ */
+export const useOverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch =
+  <TError = HTTPValidationError, TContext = unknown>(
+    options?: {
+      mutation?: UseMutationOptions<
+        Awaited<
+          ReturnType<
+            typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+          >
+        >,
+        TError,
+        { householdId: string; transactionId: string; data: TransactionFXRateUpdate },
+        TContext
+      >
+    },
+    queryClient?: QueryClient
+  ): UseMutationResult<
+    Awaited<
+      ReturnType<
+        typeof overrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatch
+      >
+    >,
+    TError,
+    { householdId: string; transactionId: string; data: TransactionFXRateUpdate },
+    TContext
+  > => {
+    const mutationOptions =
+      getOverrideTransactionFxRateApiV1HouseholdsHouseholdIdTransactionsTransactionIdFxRatePatchMutationOptions(
+        options
+      )
+
+    return useMutation(mutationOptions, queryClient)
+  }

@@ -16,6 +16,7 @@ import { useListPlansApiV1HouseholdsHouseholdIdDebtPlansGet } from '@/api/genera
 import { useListMembersApiV1HouseholdsHouseholdIdMembersGet } from '@/api/generated/households/households'
 import { useListCategoriesApiV1HouseholdsHouseholdIdCategoriesGet } from '@/api/generated/classification/classification'
 import { CategorySelect } from '@/components/CategorySelect'
+import { CurrencySelect } from '@/components/CurrencySelect'
 import type { GoalType } from '@/api/generated/model/goalType'
 import { CompletionPolicy } from '@/api/generated/model/completionPolicy'
 
@@ -487,16 +488,9 @@ export function GoalSetupModal({ householdId, onClose, onCreated }: Props) {
                   style={inputStyle()}
                 />
               </div>
-              <div style={{ width: 90 }}>
+              <div style={{ width: 130 }}>
                 <label style={labelStyle()}>Currency</label>
-                <input
-                  type="text"
-                  maxLength={3}
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                  placeholder="USD"
-                  style={inputStyle()}
-                />
+                <CurrencySelect value={currency} onChange={setCurrency} />
               </div>
             </div>
           )}
@@ -515,16 +509,9 @@ export function GoalSetupModal({ householdId, onClose, onCreated }: Props) {
                   style={inputStyle()}
                 />
               </div>
-              <div style={{ width: 90 }}>
+              <div style={{ width: 130 }}>
                 <label style={labelStyle()}>Currency</label>
-                <input
-                  type="text"
-                  maxLength={3}
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                  placeholder="USD"
-                  style={inputStyle()}
-                />
+                <CurrencySelect value={currency} onChange={setCurrency} />
               </div>
             </div>
           )}

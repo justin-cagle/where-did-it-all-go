@@ -77,6 +77,8 @@ function BudgetLineRow({
   currency: string
   onEdit: () => void
 }) {
+  const lineCurrency = lineStatus.line.currency
+  const isForeign = lineCurrency !== currency
   const spent = parseFloat(lineStatus.actual)
   const planned = parseFloat(lineStatus.planned)
   const carriedIn = parseFloat(lineStatus.carried_in)
@@ -127,6 +129,23 @@ function BudgetLineRow({
           >
             {categoryName}
           </span>
+          {isForeign && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '1px 6px',
+                borderRadius: 99,
+                background: 'color-mix(in oklch, var(--warning, #f59e0b) 14%, transparent)',
+                color: '#f59e0b',
+                letterSpacing: '0.04em',
+                fontFamily: 'var(--font-mono)',
+                flexShrink: 0,
+              }}
+            >
+              {lineCurrency}
+            </span>
+          )}
           {carriedIn > 0 && (
             <span
               style={{
@@ -409,6 +428,10 @@ export function BudgetDetailPage() {
   const expectedIncome = status?.expected_income != null ? parseFloat(status.expected_income) : null
   const totalSpent = status ? status.lines.reduce((s, l) => s + parseFloat(l.actual), 0) : 0
   const totalPlanned = status ? status.lines.reduce((s, l) => s + parseFloat(l.planned), 0) : 0
+  const hasMixedCurrencies =
+    budget != null &&
+    status != null &&
+    status.lines.some((l) => l.line.currency !== budget.currency)
 
   if (!householdId || !budgetId) {
     return <div style={{ padding: 32, color: 'var(--fg-muted)', fontSize: 13 }}>Loading...</div>
@@ -691,13 +714,26 @@ export function BudgetDetailPage() {
         >
           <div
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--fg-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               marginBottom: 4,
             }}
           >
-            Budget lines
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--fg-primary)',
+              }}
+            >
+              Budget lines
+            </div>
+            {hasMixedCurrencies && budget && (
+              <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
+                Mixed currencies — totals in {budget.currency}
+              </span>
+            )}
           </div>
 
           {statusLoading ? (

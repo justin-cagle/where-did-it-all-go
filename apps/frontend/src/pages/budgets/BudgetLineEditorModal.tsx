@@ -6,6 +6,7 @@ import {
 } from '@/api/generated/budgets/budgets'
 import { useQueryClient } from '@tanstack/react-query'
 import { CategorySelect } from '@/components/CategorySelect'
+import { CurrencySelect } from '@/components/CurrencySelect'
 import type { CategoryOut } from '@/api/generated/model/categoryOut'
 import type { BudgetLineOut } from '@/api/generated/model/budgetLineOut'
 import { RolloverPolicy } from '@/api/generated/model/rolloverPolicy'
@@ -64,6 +65,7 @@ export function BudgetLineEditorModal({
   const [rolloverCap, setRolloverCap] = useState(
     existingLine?.rollover_cap != null ? String(existingLine.rollover_cap) : ''
   )
+  const [lineCurrency, setLineCurrency] = useState(existingLine?.currency ?? currency)
   const [error, setError] = useState<string | null>(null)
 
   const createLine = useCreateBudgetLineApiV1HouseholdsHouseholdIdBudgetsBudgetIdLinesPost({
@@ -108,6 +110,7 @@ export function BudgetLineEditorModal({
         lineId: existingLine.id,
         data: {
           planned_amount: amount,
+          currency: lineCurrency,
           rollover_policy: rolloverPolicy as (typeof RolloverPolicy)[keyof typeof RolloverPolicy],
           rollover_cap: capVal ?? null,
         },
@@ -119,7 +122,7 @@ export function BudgetLineEditorModal({
         data: {
           category_id: categoryId,
           planned_amount: amount,
-          currency,
+          currency: lineCurrency,
           rollover_policy: rolloverPolicy as (typeof RolloverPolicy)[keyof typeof RolloverPolicy],
           rollover_cap: capVal ?? null,
         },
@@ -189,7 +192,7 @@ export function BudgetLineEditorModal({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-secondary)' }}>
-              Planned amount ({currency})
+              Planned amount ({lineCurrency})
             </label>
             <input
               type="number"
@@ -209,6 +212,13 @@ export function BudgetLineEditorModal({
                 outline: 'none',
               }}
             />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-secondary)' }}>
+              Currency
+            </label>
+            <CurrencySelect value={lineCurrency} onChange={setLineCurrency} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -256,7 +266,7 @@ export function BudgetLineEditorModal({
           {rolloverPolicy === RolloverPolicy.accumulate_capped && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-secondary)' }}>
-                Rollover cap ({currency})
+                Rollover cap ({lineCurrency})
               </label>
               <input
                 type="number"

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { CurrencySelect } from '@/components/CurrencySelect'
 import type { AccountOut } from '@/api/generated/model/accountOut'
 import { useCreateTransactionApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsPost } from '@/api/generated/transactions/transactions'
 import { getListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGetQueryKey } from '@/api/generated/transactions/transactions'
@@ -40,6 +41,8 @@ export function AddTransactionModal({ householdId, accounts, open, onClose }: Pr
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -49,6 +52,8 @@ export function AddTransactionModal({ householdId, accounts, open, onClose }: Pr
       currency: 'USD',
     },
   })
+
+  const selectedCurrency = watch('currency')
 
   const { mutateAsync } =
     useCreateTransactionApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsPost()
@@ -165,6 +170,13 @@ export function AddTransactionModal({ householdId, accounts, open, onClose }: Pr
               </select>
             </Field>
           </div>
+
+          <Field label="Currency" error={errors.currency?.message}>
+            <CurrencySelect
+              value={selectedCurrency}
+              onChange={(code) => setValue('currency', code, { shouldValidate: true })}
+            />
+          </Field>
 
           <Field label="Description" error={errors.description?.message}>
             <input
