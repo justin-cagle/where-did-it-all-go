@@ -40,26 +40,6 @@ _CHECKING = AccountType.CHECKING
 _CREDIT = AccountType.CREDIT_CARD
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture()
-async def session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as s:
-        yield s
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
-
 async def _make_user(session: AsyncSession, suffix: str = "") -> "households_service.User":  # type: ignore[name-defined]
     return await households_service.create_user(
         session,

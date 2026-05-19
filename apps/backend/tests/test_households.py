@@ -33,31 +33,6 @@ pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="module")
-def postgres_url_for_households(postgres_url: str) -> str:
-    return postgres_url
-
-
-@pytest.fixture()
-async def session(postgres_url_for_households: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url_for_households)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as s:
-        yield s
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
-
-# ---------------------------------------------------------------------------
 # User + auth tests
 # ---------------------------------------------------------------------------
 

@@ -6,10 +6,9 @@ pytest -m integration
 from __future__ import annotations
 
 import pytest
+import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.database import Base
 from app.main import create_app
 
 pytestmark = pytest.mark.integration
@@ -21,21 +20,6 @@ _PAYLOAD = {
     "display_name": "Test User",
     "password": "password123",  # pragma: allowlist secret
 }
-
-
-@pytest.fixture()
-async def db_session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as s:
-        yield s
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
 def _patch_settings(monkeypatch: pytest.MonkeyPatch, **overrides: object) -> None:
@@ -56,17 +40,12 @@ def _patch_settings(monkeypatch: pytest.MonkeyPatch, **overrides: object) -> Non
 
 
 @pytest.fixture()
-async def client(postgres_url: str, monkeypatch: pytest.MonkeyPatch) -> AsyncClient:  # type: ignore[misc]
+async def client(db_engine, session_factory, monkeypatch: pytest.MonkeyPatch) -> AsyncClient:  # type: ignore[misc]
     """ASGI test client wired to a real test database."""
     from app import database as db_module
 
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    db_module._engine = engine
-    db_module._session_factory = factory
+    db_module._engine = db_engine
+    db_module._session_factory = session_factory
 
     _patch_settings(monkeypatch, allow_registration=True)
 
@@ -74,9 +53,16 @@ async def client(postgres_url: str, monkeypatch: pytest.MonkeyPatch) -> AsyncCli
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    async with db_engine.connect() as conn:
+        await conn.execute(
+            sa.text(
+                "DO $$ DECLARE r RECORD; BEGIN "
+                "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP "
+                "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
+                "END LOOP; END $$;"
+            )
+        )
+        await conn.commit()
 
 
 async def test_registration_closed_returns_403(

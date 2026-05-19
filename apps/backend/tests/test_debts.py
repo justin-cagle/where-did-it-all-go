@@ -23,9 +23,8 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import Base
 from app.debts.enums import DebtPlanMethod
 from app.debts.service import (
     AccountState,
@@ -569,11 +568,19 @@ def test_hypothesis_snowball_flow_earlier_or_equal_payoff(
         start_date=date(2026, 1, 1),
     )
 
-    payoff_flow = max((r.period_date for r in rows_flow if r.is_payoff), default=None)
-    payoff_no_flow = max((r.period_date for r in rows_no_flow if r.is_payoff), default=None)
+    all_ids = {small_f.account_id, large_f.account_id}
+    flow_paid = {r.account_id for r in rows_flow if r.is_payoff}
+    nf_paid = {r.account_id for r in rows_no_flow if r.is_payoff}
 
-    if payoff_flow is None or payoff_no_flow is None:
+    # Only compare when no-flow scenario fully completes; if it leaves debts
+    # unpaid, flow (which redirects freed minimums) can only be equal or better.
+    if not nf_paid >= all_ids:
         return
+
+    assert flow_paid >= all_ids, "flow leaves accounts unpaid but no-flow completes them"
+
+    payoff_flow = max(r.period_date for r in rows_flow if r.is_payoff)
+    payoff_no_flow = max(r.period_date for r in rows_no_flow if r.is_payoff)
     assert payoff_flow <= payoff_no_flow
 
 
@@ -583,18 +590,8 @@ def test_hypothesis_snowball_flow_earlier_or_equal_payoff(
 
 
 @pytest.fixture()
-async def db_session_debts(postgres_url: str) -> AsyncGenerator[AsyncSession, None]:
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as session:
-        yield session
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+async def db_session_debts(session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+    yield session
 
 
 async def _bootstrap(session: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:

@@ -21,37 +21,12 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-import app.accounts.models
-import app.admin.models
-import app.transactions.models  # noqa: F401
-from app.database import Base
+from sqlalchemy.ext.asyncio import AsyncSession
 
 _MASTER_KEY = "test-master-key-not-for-production"  # pragma: allowlist secret
 _JWT_SECRET = "test-jwt-secret-not-for-production"  # pragma: allowlist secret
 
 pytestmark = pytest.mark.integration
-
-
-# ---------------------------------------------------------------------------
-# Session fixture
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture()
-async def session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as s:
-        yield s
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
 # ---------------------------------------------------------------------------

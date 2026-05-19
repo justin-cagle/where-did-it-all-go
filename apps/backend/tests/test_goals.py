@@ -24,14 +24,8 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Ensure all FK-referenced tables are in Base.metadata before create_all
-import app.audit.models
-import app.classification.models
-import app.households.models
-import app.recommendations.models  # noqa: F401
-from app.database import Base
 from app.goals.enums import (
     BurnUpStatus,
     CompletionPolicy,
@@ -293,21 +287,8 @@ class TestDeriveStatus:
 
 
 @pytest.fixture()
-async def _db_engine(postgres_url: str):  # type: ignore[no-untyped-def]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
-
-@pytest.fixture()
-async def db_session(_db_engine) -> AsyncGenerator[AsyncSession, None]:  # type: ignore[no-untyped-def]
-    factory = async_sessionmaker(_db_engine, expire_on_commit=False)
-    async with factory() as session:
-        yield session
+async def db_session(session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:  # type: ignore[no-untyped-def]
+    yield session
 
 
 async def _bootstrap(session: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:

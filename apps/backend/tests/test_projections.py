@@ -29,6 +29,7 @@ from typing import Any
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.projections.enums import (
     BreachType,
@@ -882,23 +883,10 @@ class TestProjectionIntegration:
     """End-to-end tests using a real Postgres DB via testcontainers."""
 
     @pytest.fixture()
-    async def session_with_models(self, postgres_url: str) -> AsyncGenerator[Any, None]:
-
-        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-        from app.database import Base
-
-        engine = create_async_engine(postgres_url)
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
-        factory = async_sessionmaker(engine, expire_on_commit=False)
-        async with factory() as session:
-            yield session
-
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-        await engine.dispose()
+    async def session_with_models(  # type: ignore[misc]
+        self, session: AsyncSession
+    ) -> AsyncGenerator[AsyncSession, None]:
+        yield session
 
     async def _create_household(self, session: Any) -> Any:
         from app.households.models import Household

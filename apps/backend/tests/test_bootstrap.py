@@ -6,29 +6,13 @@ pytest -m integration
 from __future__ import annotations
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
-from app.database import Base
 from app.households import service
 from app.households.bootstrap import run_bootstrap
 
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture()
-async def session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as s:
-        yield s
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
 @pytest.fixture()
