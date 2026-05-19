@@ -14,7 +14,6 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.households.deps import CurrentUser
 from app.platform.fx import FXRateUnavailableError, get_rate, get_supported_currencies
 
 router = APIRouter(tags=["platform"])
@@ -59,7 +58,6 @@ async def list_currencies(session: _DbSession) -> list[CurrencyOut]:
 @router.get("/fx-rates", response_model=FXRateOut)
 async def get_fx_rate(
     session: _DbSession,
-    _current_user: CurrentUser,
     from_currency: Annotated[str, Query(min_length=3, max_length=3)],
     to_currency: Annotated[str, Query(min_length=3, max_length=3)],
     rate_date: Annotated[date, Query(alias="date")],

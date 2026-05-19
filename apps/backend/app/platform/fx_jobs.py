@@ -136,67 +136,9 @@ async def recompute_fx_conversions_job(
 
         await session.commit()
 
-        # 4. Re-run compute_actuals for all active budget groups
-        budget_rows = await session.execute(
-            sa.text(
-                "SELECT DISTINCT budget_group_id FROM budgets_budget "
-                "WHERE household_id = :hid AND archived_at IS NULL AND effective_to IS NULL"
-            ).bindparams(hid=str(hid))
-        )
-        budget_group_ids = [row[0] for row in budget_rows.fetchall()]
-
-        for bgid in budget_group_ids:
-            try:
-                import datetime as _dt
-
-                from app.budgets.service import compute_actuals, resolve_period
-                from app.budgets.service import get_budget as get_budget_svc
-
-                today = _dt.date.today()
-                budget = await get_budget_svc(
-                    session, budget_group_id=uuid.UUID(str(bgid)), household_id=hid
-                )
-                period_start, period_end = resolve_period(budget, today)
-                await compute_actuals(
-                    session,
-                    budget_group_id=uuid.UUID(str(bgid)),
-                    household_id=hid,
-                    period_start=period_start,
-                    period_end=period_end,
-                )
-                await session.commit()
-            except Exception as exc:
-                logger.warning(
-                    "fx_recompute.budget_failed",
-                    budget_group_id=str(bgid),
-                    error=str(exc),
-                )
-                await session.rollback()
-
-        # 5. Re-run compute_burn_up for all active goals
-        goal_rows = await session.execute(
-            sa.text(
-                "SELECT id FROM goals_goal "
-                "WHERE household_id = :hid AND archived_at IS NULL AND status = 'active'"
-            ).bindparams(hid=str(hid))
-        )
-        goal_ids = [row[0] for row in goal_rows.fetchall()]
-
-        for gid in goal_ids:
-            try:
-                from app.goals.service import compute_burn_up
-
-                await compute_burn_up(session, goal_id=uuid.UUID(str(gid)), household_id=hid)
-                await session.commit()
-            except Exception as exc:
-                logger.warning(
-                    "fx_recompute.goal_failed",
-                    goal_id=str(gid),
-                    error=str(exc),
-                )
-                await session.rollback()
-
-        # 6. Emit SSE event to household members
+        # 4. Emit SSE event to household members.
+        # Budget/goal actuals (BudgetPeriodActual, GoalSnapshot) are recomputed
+        # lazily on next access -- the DELETEs above already invalidated them.
         try:
             member_rows = await session.execute(
                 sa.text(
@@ -206,7 +148,7 @@ async def recompute_fx_conversions_job(
             )
             member_ids = [row[0] for row in member_rows.fetchall()]
 
-            from app.households.sse import get_sse_manager
+            from app.platform.sse import get_sse_manager
 
             mgr = get_sse_manager()
             for mid in member_ids:
@@ -218,14 +160,5 @@ async def recompute_fx_conversions_job(
         except Exception as exc:
             logger.warning("fx_recompute.sse_failed", error=str(exc))
 
-    logger.info(
-        "fx_recompute.complete",
-        household_id=household_id,
-        budgets=len(budget_group_ids),
-        goals=len(goal_ids),
-    )
-    return {
-        "household_id": household_id,
-        "budgets_recomputed": len(budget_group_ids),
-        "goals_recomputed": len(goal_ids),
-    }
+    logger.info("fx_recompute.complete", household_id=household_id)
+    return {"household_id": household_id}

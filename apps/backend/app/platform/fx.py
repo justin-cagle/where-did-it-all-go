@@ -215,7 +215,7 @@ async def get_supported_currencies(_session: AsyncSession) -> list[dict[str, str
     try:
         import redis.asyncio as aioredis  # type: ignore[import-untyped]
 
-        r = aioredis.from_url(redis_url, decode_responses=True)
+        r = aioredis.from_url(redis_url, decode_responses=True)  # type: ignore[reportUnknownMemberType]
         cached = await r.get(_CURRENCIES_CACHE_KEY)
         await r.aclose()
         if cached:
@@ -236,7 +236,7 @@ async def get_supported_currencies(_session: AsyncSession) -> list[dict[str, str
     try:
         import redis.asyncio as aioredis  # type: ignore[import-untyped]
 
-        r = aioredis.from_url(redis_url, decode_responses=True)
+        r = aioredis.from_url(redis_url, decode_responses=True)  # type: ignore[reportUnknownMemberType]
         await r.setex(_CURRENCIES_CACHE_KEY, _CURRENCIES_TTL, json.dumps(currencies))
         await r.aclose()
     except Exception:  # noqa: S110
@@ -255,11 +255,11 @@ def is_supported_currency(code: str) -> bool:
     try:
         import redis  # type: ignore[import-untyped]
 
-        r = redis.from_url(str(get_settings().redis_url), decode_responses=True)
+        r = redis.from_url(str(get_settings().redis_url), decode_responses=True)  # type: ignore[reportUnknownMemberType]
         cached = r.get(_CURRENCIES_CACHE_KEY)
         r.close()
         if cached:
-            currencies: list[dict[str, str]] = json.loads(cached)
+            currencies: list[dict[str, str]] = json.loads(cached)  # type: ignore[arg-type]
             codes = {c["code"] for c in currencies}
             return code.upper() in codes
     except Exception:  # noqa: S110

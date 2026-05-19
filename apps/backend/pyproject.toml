@@ -43,6 +43,7 @@ dependencies = [
     # Utilities
     "python-multipart>=0.0.18",
     "httpx>=0.28",
+    "idna>=3.15",
     # Audit replay — RFC 6902 JSON Patch
     "jsonpatch>=1.32",
     # Admin — backup and email
