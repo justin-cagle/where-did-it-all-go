@@ -6,10 +6,8 @@ pytest -m integration tests/test_instance_info.py
 from __future__ import annotations
 
 import pytest
+import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-from app.database import Base
 
 pytestmark = pytest.mark.integration
 
@@ -39,52 +37,52 @@ def _patch_settings(
     monkeypatch.setattr(router_module, "get_settings", lambda: settings)
 
 
-async def _build_app_client(
-    postgres_url: str,
-    monkeypatch: pytest.MonkeyPatch,
-    *,
-    aio_mode: bool,
-) -> AsyncClient:  # type: ignore[misc]
-    _patch_settings(monkeypatch, aio_mode=aio_mode, postgres_url=postgres_url)
+_TRUNCATE = sa.text(
+    "DO $$ DECLARE r RECORD; BEGIN "
+    "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP "
+    "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
+    "END LOOP; END $$;"
+)
 
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-
+@pytest.fixture()
+async def client(  # type: ignore[misc]
+    postgres_url: str, db_engine, session_factory, monkeypatch: pytest.MonkeyPatch
+) -> AsyncClient:
     import app.database as db_module
-
-    db_module._engine = engine  # type: ignore[assignment]
-    db_module._session_factory = factory  # type: ignore[assignment]
-
     from app.main import create_app
+
+    _patch_settings(monkeypatch, aio_mode=False, postgres_url=postgres_url)
+    db_module._engine = db_engine  # type: ignore[assignment]
+    db_module._session_factory = session_factory  # type: ignore[assignment]
 
     application = create_app()
     async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as ac:
         yield ac
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-    db_module._engine = None
-    db_module._session_factory = None
-
-
-@pytest.fixture()
-async def client(  # type: ignore[misc]
-    postgres_url: str, monkeypatch: pytest.MonkeyPatch
-) -> AsyncClient:
-    async for ac in _build_app_client(postgres_url, monkeypatch, aio_mode=False):  # type: ignore[attr-defined]
-        yield ac
+    async with db_engine.connect() as conn:
+        await conn.execute(_TRUNCATE)
+        await conn.commit()
 
 
 @pytest.fixture()
 async def aio_client(  # type: ignore[misc]
-    postgres_url: str, monkeypatch: pytest.MonkeyPatch
+    postgres_url: str, db_engine, session_factory, monkeypatch: pytest.MonkeyPatch
 ) -> AsyncClient:
-    async for ac in _build_app_client(postgres_url, monkeypatch, aio_mode=True):  # type: ignore[attr-defined]
+    import app.database as db_module
+    from app.main import create_app
+
+    _patch_settings(monkeypatch, aio_mode=True, postgres_url=postgres_url)
+    db_module._engine = db_engine  # type: ignore[assignment]
+    db_module._session_factory = session_factory  # type: ignore[assignment]
+
+    application = create_app()
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as ac:
         yield ac
+
+    async with db_engine.connect() as conn:
+        await conn.execute(_TRUNCATE)
+        await conn.commit()
 
 
 async def test_instance_info_default(client: AsyncClient) -> None:

@@ -26,7 +26,7 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.budgets.enums import (
     BudgetLineStatus,
@@ -58,7 +58,6 @@ from app.budgets.service import (
     update_budget,
     update_budget_line,
 )
-from app.database import Base
 from app.households.service import create_household, create_user
 
 # ---------------------------------------------------------------------------
@@ -494,16 +493,8 @@ def test_annual_period_always_full_year(ref_date: date) -> None:
 
 
 @pytest.fixture()
-async def db(postgres_url: str) -> AsyncGenerator[AsyncSession, None]:
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as session:
-        yield session
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+async def db(session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+    yield session
 
 
 @pytest.fixture()

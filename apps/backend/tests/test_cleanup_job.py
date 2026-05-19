@@ -9,9 +9,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import Base
 from app.households import service
 from app.households.jobs import cleanup_unassigned_accounts
 from app.households.models import User
@@ -22,23 +21,25 @@ _JWT = "test-jwt-secret"
 
 
 @pytest.fixture()
-async def session(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
+async def session(db_engine, session_factory) -> AsyncSession:  # type: ignore[misc]
     from app import database as db_module
 
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    db_module._engine = engine
-    db_module._session_factory = factory
+    db_module._engine = db_engine
+    db_module._session_factory = session_factory
 
-    async with factory() as s:
+    async with session_factory() as s:
         yield s
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    async with db_engine.connect() as conn:
+        await conn.execute(
+            sa.text(
+                "DO $$ DECLARE r RECORD; BEGIN "
+                "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP "
+                "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
+                "END LOOP; END $$;"
+            )
+        )
+        await conn.commit()
 
 
 def _patch_settings(monkeypatch: pytest.MonkeyPatch, ttl_days: int = 7) -> None:

@@ -23,11 +23,10 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import given
 from hypothesis import strategies as st
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.accounts import service as accounts_service
 from app.accounts.enums import AccountType
-from app.database import Base
 from app.households import service as households_service
 from app.households.enums import VisibilityMode
 from app.ingest.parsers import ParsedTransaction
@@ -357,19 +356,21 @@ class TestPipelineHelpers:
 
 @pytest.fixture()
 async def ingest_db(
-    postgres_url: str,
+    db_engine,
+    session_factory: async_sessionmaker[AsyncSession],
 ) -> AsyncGenerator[tuple[object, async_sessionmaker[AsyncSession]], None]:
+    yield db_engine, session_factory
 
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    yield engine, factory
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    async with db_engine.connect() as conn:
+        await conn.execute(
+            sa.text(
+                "DO $$ DECLARE r RECORD; BEGIN "
+                "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP "
+                "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
+                "END LOOP; END $$;"
+            )
+        )
+        await conn.commit()
 
 
 async def _seed_household_and_account(

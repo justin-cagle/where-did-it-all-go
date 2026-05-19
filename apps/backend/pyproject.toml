@@ -59,6 +59,8 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.0",
+    "pytest-xdist>=3.5.0",
+    "pytest-split>=0.9.0",
     "hypothesis>=6.122",
     "testcontainers[postgres,redis]>=4.9",
     "psycopg2-binary>=2.9",
@@ -117,6 +119,8 @@ exclude = ["alembic/", "tests/", ".venv/"]
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 markers = [
     "integration: requires running Postgres and Redis (testcontainers)",

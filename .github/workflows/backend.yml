@@ -82,8 +82,12 @@ jobs:
           path: apps/backend/coverage.xml
 
   integration-tests:
-    name: Integration tests (testcontainers)
+    name: Integration tests (${{ matrix.group }}/3)
     runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -95,8 +99,9 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run integration tests
-        run: uv run pytest -m integration -v || [ $? -eq 5 ]
+        run: uv run pytest -m integration -v --splits 3 --group "$TEST_GROUP" || [ $? -eq 5 ]
         env:
+          TEST_GROUP: ${{ matrix.group }}
           # Placeholder URLs satisfy import-time get_settings(); testcontainers
           # fixtures override the engine with the real container URL at runtime.
           DATABASE_URL: postgresql+asyncpg://unused/unused

@@ -22,7 +22,7 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import assume, given
 from hypothesis import strategies as st
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.accounts.models
 import app.classification.models
@@ -54,7 +54,6 @@ from app.classification.service import (
     seed_default_categories,
     update_category,
 )
-from app.database import Base
 
 # ---------------------------------------------------------------------------
 # Hypothesis strategies
@@ -540,22 +539,6 @@ class TestConditionEdgeCases:
 # ===========================================================================
 # Integration tests — require real Postgres via testcontainers
 # ===========================================================================
-
-
-@pytest.fixture()
-async def db_session_with_models(postgres_url: str) -> AsyncSession:  # type: ignore[misc]
-    """Session with all classification tables created."""
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with factory() as session:
-        yield session
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
 # Helper to create a user + household in the DB for integration tests

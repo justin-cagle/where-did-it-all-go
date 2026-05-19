@@ -199,7 +199,7 @@ def simulate_schedule(
 
     rows: list[_PeriodRow] = []
 
-    redirected_extra = Decimal("0")
+    freed_minimums = Decimal("0")
 
     for month_offset in range(_HORIZON_MONTHS):
         # First day of this payment month
@@ -221,8 +221,7 @@ def simulate_schedule(
         # Build per-account payment for this period
         account_summaries: dict[uuid.UUID, tuple[Decimal, Decimal, Decimal, Decimal, bool]] = {}
 
-        available_extra = monthly_extra_payment + redirected_extra
-        redirected_extra = Decimal("0")
+        available_extra = monthly_extra_payment + freed_minimums
 
         for acct in ordered:
             total_opening = Decimal("0")
@@ -285,10 +284,9 @@ def simulate_schedule(
 
             is_payoff = total_closing <= Decimal("0")
 
-            # If account just paid off and snowball_flow, redirect its minimum
+            # If account just paid off and snowball_flow, permanently redirect its minimum
             if is_payoff and snowball_flow:
-                acct_minimum = acct.total_minimum
-                redirected_extra += acct_minimum
+                freed_minimums += acct.total_minimum
 
             account_summaries[acct.account_id] = (
                 total_opening,
