@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, RefreshCw, ArrowLeftRight, CornerUpLeft, Archive, AlertTriangle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { PrivacyMode } from '@/lib/format'
@@ -6,6 +6,7 @@ import {
   useGetTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdGet,
   useTransitionStateCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdStatePatch,
   useArchiveTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdDelete,
+  useUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch,
   getListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGetQueryKey,
   getGetTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdGetQueryKey,
 } from '@/api/generated/transactions/transactions'
@@ -62,6 +63,9 @@ export function TransactionDetail({
 
   const { mutateAsync: archiveTx, isPending: archiving } =
     useArchiveTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdDelete()
+
+  const { mutateAsync: updateNote } =
+    useUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch()
 
   async function handleReconcile() {
     if (!tx) return
@@ -271,6 +275,31 @@ export function TransactionDetail({
                   <MetaRow label="Recurrence" value="Linked" icon={<RefreshCw size={11} />} />
                 )}
               </Section>
+
+              {/* Note */}
+              <NoteSection
+                householdId={householdId}
+                transactionId={tx.id}
+                note={tx.note ?? null}
+                onUpdate={updateNote}
+                onRefresh={() =>
+                  Promise.all([
+                    qc.invalidateQueries({
+                      queryKey:
+                        getGetTransactionCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdGetQueryKey(
+                          householdId,
+                          tx.id
+                        ),
+                    }),
+                    qc.invalidateQueries({
+                      queryKey:
+                        getListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGetQueryKey(
+                          householdId
+                        ),
+                    }),
+                  ])
+                }
+              />
 
               {/* Splits */}
               <Section
@@ -755,5 +784,214 @@ function ActionButton({
       {icon}
       {label}
     </button>
+  )
+}
+
+const NOTE_MAX = 500
+const NOTE_COUNTER_THRESHOLD = 400
+
+function NoteSection({
+  householdId,
+  transactionId,
+  note,
+  onUpdate,
+  onRefresh,
+}: {
+  householdId: string
+  transactionId: string
+  note: string | null
+  onUpdate: (args: {
+    householdId: string
+    transactionId: string
+    data: { note: string | null }
+  }) => Promise<unknown>
+  onRefresh: () => Promise<unknown>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(note ?? '')
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus()
+      const len = textareaRef.current.value.length
+      textareaRef.current.setSelectionRange(len, len)
+    }
+  }, [editing])
+
+  const startEdit = () => {
+    setDraft(note ?? '')
+    setEditing(true)
+  }
+
+  const cancel = () => {
+    setDraft(note ?? '')
+    setEditing(false)
+  }
+
+  const save = async (value: string | null) => {
+    setSaving(true)
+    const prev = note
+    try {
+      await onUpdate({
+        householdId,
+        transactionId,
+        data: { note: value && value.trim() ? value.trim() : null },
+      })
+      await onRefresh()
+      setEditing(false)
+    } catch {
+      setDraft(prev ?? '')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      cancel()
+    } else if (e.key === 'Enter' && e.ctrlKey) {
+      void save(draft)
+    }
+  }
+
+  const showCounter = draft.length >= NOTE_COUNTER_THRESHOLD
+
+  if (!editing) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--fg-muted)',
+            textTransform: 'uppercase' as const,
+            letterSpacing: '0.07em',
+          }}
+        >
+          Note
+        </div>
+        {note ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              textAlign: 'left' as const,
+              cursor: 'pointer',
+              fontSize: 13,
+              color: 'var(--fg-secondary)',
+              lineHeight: 1.5,
+              width: '100%',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            {note}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={startEdit}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontSize: 12,
+              color: 'var(--fg-muted)',
+              fontFamily: 'var(--font-sans)',
+              textAlign: 'left' as const,
+            }}
+          >
+            + Add a note
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'var(--fg-muted)',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.07em',
+        }}
+      >
+        Note
+      </div>
+      <div style={{ position: 'relative' }}>
+        <textarea
+          ref={textareaRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value.slice(0, NOTE_MAX))}
+          onKeyDown={handleKeyDown}
+          onBlur={() => void save(draft)}
+          rows={3}
+          maxLength={NOTE_MAX}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--accent)',
+            background: 'var(--bg-secondary)',
+            color: 'var(--fg-primary)',
+            fontSize: 13,
+            lineHeight: 1.5,
+            fontFamily: 'var(--font-sans)',
+            outline: 'none',
+            resize: 'vertical' as const,
+            boxSizing: 'border-box' as const,
+          }}
+        />
+        {showCounter && (
+          <div
+            style={{
+              fontSize: 11,
+              color: draft.length >= NOTE_MAX ? 'var(--danger)' : 'var(--fg-muted)',
+              textAlign: 'right' as const,
+              marginTop: 2,
+            }}
+          >
+            {draft.length}/{NOTE_MAX}
+          </div>
+        )}
+        {draft.length > 0 && (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              setDraft('')
+              void save(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              padding: '2px 6px',
+              fontSize: 11,
+              color: 'var(--fg-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            x
+          </button>
+        )}
+      </div>
+      {saving && <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>Saving...</div>}
+      <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
+        Ctrl+Enter to save, Esc to cancel
+      </div>
+    </div>
   )
 }

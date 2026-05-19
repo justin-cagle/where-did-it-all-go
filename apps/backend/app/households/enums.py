@@ -17,3 +17,13 @@ class HouseholdRole(StrEnum):
 
     OWNER = "owner"
     MEMBER = "member"
+
+
+class InvitationStatus(StrEnum):
+    """Lifecycle state of a household invitation."""
+
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    EXPIRED = "expired"
+    REVOKED = "revoked"

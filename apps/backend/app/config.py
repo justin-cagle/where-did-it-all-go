@@ -49,6 +49,18 @@ class Settings(BaseSettings):
     registration_limit: int | None = None
     unassigned_account_ttl_days: int = 7
 
+    # App base URL — used to construct invite links
+    app_base_url: str = "http://localhost:5173"
+
+    # SMTP — all optional; SMTP is considered configured when smtp_host +
+    # smtp_from_address are both set.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_address: str | None = None
+    smtp_use_tls: bool = True
+
     # Backup — local volume always; S3 is additional optional destination
     backup_s3_endpoint: str | None = None
     backup_s3_bucket: str | None = None
@@ -67,3 +79,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()  # type: ignore[call-arg]
+
+
+def smtp_configured() -> bool:
+    """Return True when SMTP is minimally configured (host + from_address set)."""
+    s = get_settings()
+    return bool(s.smtp_host and s.smtp_from_address)

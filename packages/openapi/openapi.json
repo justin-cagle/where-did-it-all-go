@@ -690,11 +690,12 @@
         }
       }
     },
-    "/api/v1/households/{household_id}/invitations": {
+    "/api/v1/households/{household_id}/invitations/": {
       "post": {
         "tags": ["households", "auth"],
         "summary": "Create Invitation",
-        "operationId": "create_invitation_api_v1_households__household_id__invitations_post",
+        "description": "Create a household invitation (owner or app_admin).",
+        "operationId": "create_invitation_api_v1_households__household_id__invitations__post",
         "parameters": [
           {
             "name": "household_id",
@@ -707,17 +708,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "202": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Create Invitation Api V1 Households  Household Id  Invitations Post"
+                  "$ref": "#/components/schemas/InvitationOut"
                 }
               }
             }
@@ -728,6 +735,306 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["households", "auth"],
+        "summary": "List Invitations",
+        "description": "List invitations for this household (owner or app_admin).",
+        "operationId": "list_invitations_api_v1_households__household_id__invitations__get",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationOut"
+                  },
+                  "title": "Response List Invitations Api V1 Households  Household Id  Invitations  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/invitations/{invitation_id}/resend": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Resend Invitation",
+        "description": "Reset invite expiry and reattempt email delivery (owner or app_admin).",
+        "operationId": "resend_invitation_api_v1_households__household_id__invitations__invitation_id__resend_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/invitations/{invitation_id}/revoke": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Revoke Invitation",
+        "description": "Revoke a pending invitation (owner or app_admin).",
+        "operationId": "revoke_invitation_api_v1_households__household_id__invitations__invitation_id__revoke_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/{token}": {
+      "get": {
+        "tags": ["households", "auth"],
+        "summary": "Get Invitation Metadata",
+        "description": "Return public invitation metadata. Token is NOT included in response.",
+        "operationId": "get_invitation_metadata_api_v1_invitations__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteMetadataOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/{token}/accept": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Accept Invitation",
+        "description": "Accept an invitation. Requires authentication; validates email match.",
+        "operationId": "accept_invitation_api_v1_invitations__token__accept_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptInviteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/{token}/decline": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Decline Invitation",
+        "description": "Decline an invitation. No email match required.",
+        "operationId": "decline_invitation_api_v1_invitations__token__decline_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/smtp-status": {
+      "get": {
+        "tags": ["households", "auth"],
+        "summary": "Get Smtp Status",
+        "description": "Return SMTP configuration status (no auth required, non-sensitive).",
+        "operationId": "get_smtp_status_api_v1_settings_smtp_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmtpStatusResponse"
                 }
               }
             }
@@ -2551,6 +2858,78 @@
         }
       }
     },
+    "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/note": {
+      "patch": {
+        "tags": ["transactions"],
+        "summary": "Update Note For Account",
+        "description": "Set or clear the user note on a transaction.",
+        "operationId": "update_note_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__note_patch",
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transaction Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionNoteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/splits": {
       "post": {
         "tags": ["transactions"],
@@ -3237,6 +3616,68 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TransactionStateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/transactions/{transaction_id}/note": {
+      "patch": {
+        "tags": ["transactions"],
+        "summary": "Update Note Cross Account",
+        "description": "Set or clear the user note on a transaction (cross-account).",
+        "operationId": "update_note_cross_account_api_v1_households__household_id__transactions__transaction_id__note_patch",
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transaction Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionNoteUpdate"
               }
             }
           }
@@ -11204,6 +11645,24 @@
   },
   "components": {
     "schemas": {
+      "AcceptInviteResponse": {
+        "properties": {
+          "household_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Household Id"
+          },
+          "membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Membership Id"
+          }
+        },
+        "type": "object",
+        "required": ["household_id", "membership_id"],
+        "title": "AcceptInviteResponse",
+        "description": "Response to a successful invitation accept."
+      },
       "AccountCreate": {
         "properties": {
           "name": {
@@ -14040,6 +14499,23 @@
         "enum": ["manual", "tag_driven", "recurring_rule"],
         "title": "ContributionType"
       },
+      "CreateInvitationRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole",
+            "default": "member"
+          }
+        },
+        "type": "object",
+        "required": ["email"],
+        "title": "CreateInvitationRequest",
+        "description": "Create a household invitation."
+      },
       "DebtAnnotationCreate": {
         "properties": {
           "minimum_payment_strategy": {
@@ -16628,6 +17104,109 @@
         },
         "type": "object",
         "title": "IncomeSourceUpdate"
+      },
+      "InvitationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "household_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Household Id"
+          },
+          "household_name": {
+            "type": "string",
+            "title": "Household Name"
+          },
+          "invited_email": {
+            "type": "string",
+            "title": "Invited Email"
+          },
+          "invited_by_name": {
+            "type": "string",
+            "title": "Invited By Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "email_sent": {
+            "type": "boolean",
+            "title": "Email Sent"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "invite_url": {
+            "type": "string",
+            "title": "Invite Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "household_id",
+          "household_name",
+          "invited_email",
+          "invited_by_name",
+          "role",
+          "status",
+          "expires_at",
+          "email_sent",
+          "created_at",
+          "invite_url"
+        ],
+        "title": "InvitationOut",
+        "description": "Invitation info returned to household owners."
+      },
+      "InviteMetadataOut": {
+        "properties": {
+          "household_name": {
+            "type": "string",
+            "title": "Household Name"
+          },
+          "invited_by_name": {
+            "type": "string",
+            "title": "Invited By Name"
+          },
+          "invited_email": {
+            "type": "string",
+            "title": "Invited Email"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "household_name",
+          "invited_by_name",
+          "invited_email",
+          "status",
+          "expires_at"
+        ],
+        "title": "InviteMetadataOut",
+        "description": "Public metadata for the accept page (token never exposed)."
       },
       "LoginRequest": {
         "properties": {
@@ -19342,6 +19921,18 @@
         "title": "SimplefinAccountPreview",
         "description": "One SimpleFIN account returned by the preview endpoint."
       },
+      "SmtpStatusResponse": {
+        "properties": {
+          "smtp_configured": {
+            "type": "boolean",
+            "title": "Smtp Configured"
+          }
+        },
+        "type": "object",
+        "required": ["smtp_configured"],
+        "title": "SmtpStatusResponse",
+        "description": "SMTP configuration status (non-sensitive bool)."
+      },
       "SplitAllocationIn": {
         "properties": {
           "amount": {
@@ -20495,6 +21086,17 @@
             ],
             "title": "Merchant Name"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
           "external_id": {
             "anyOf": [
               {
@@ -20580,6 +21182,7 @@
           "occurred_at",
           "description",
           "merchant_name",
+          "note",
           "external_id",
           "recurrence_id",
           "manually_categorized",
@@ -20595,6 +21198,25 @@
         "type": "string",
         "enum": ["debit", "credit"],
         "title": "TransactionDirection"
+      },
+      "TransactionNoteUpdate": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "TransactionNoteUpdate",
+        "description": "Set or clear the user note on a transaction."
       },
       "TransactionOut": {
         "properties": {
@@ -20678,6 +21300,17 @@
             ],
             "title": "Merchant Name"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
           "external_id": {
             "anyOf": [
               {
@@ -20755,6 +21388,7 @@
           "occurred_at",
           "description",
           "merchant_name",
+          "note",
           "external_id",
           "recurrence_id",
           "manually_categorized",

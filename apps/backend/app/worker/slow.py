@@ -16,7 +16,7 @@ from app.budgets import budget_period_close_job
 from app.classification import reclassify_all_job
 from app.debts import recompute_debt_schedule_job
 from app.goals import goal_status_recalc_job
-from app.households.jobs import cleanup_unassigned_accounts
+from app.households.jobs import cleanup_unassigned_accounts, expire_stale_invites
 from app.ingest import (
     process_upload_job,
     reset_requests_today_job,
@@ -45,6 +45,7 @@ class WorkerSettings:
         cleanup_transient_scenarios_job,
         generate_insights_job,
         cleanup_unassigned_accounts,
+        expire_stale_invites,
         run_backup_job,
         check_backup_health_job,
     ]
@@ -52,6 +53,7 @@ class WorkerSettings:
     cron_jobs: ClassVar[list[object]] = [
         cron(check_backup_health_job, hour=2, minute=0),
         cron(reset_requests_today_job, hour=0, minute=0),
+        cron(expire_stale_invites, hour=1, minute=0),
     ]
 
     redis_settings: RedisSettings = get_redis_settings()

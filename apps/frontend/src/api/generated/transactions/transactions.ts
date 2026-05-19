@@ -36,6 +36,7 @@ import type {
   SplitsSetRequest,
   TransactionCreate,
   TransactionDetailOut,
+  TransactionNoteUpdate,
   TransactionOut,
   TransactionStateUpdate,
   TransferPairRequest,
@@ -921,6 +922,135 @@ export const useTransitionStateForAccountApiV1HouseholdsHouseholdIdAccountsAccou
   > => {
     const mutationOptions =
       getTransitionStateForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdStatePatchMutationOptions(
+        options
+      )
+
+    return useMutation(mutationOptions, queryClient)
+  }
+/**
+ * Set or clear the user note on a transaction.
+ * @summary Update Note For Account
+ */
+export const updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch =
+  (
+    householdId: string,
+    accountId: string,
+    transactionId: string,
+    transactionNoteUpdate: TransactionNoteUpdate
+  ) => {
+    return customInstance<TransactionOut>({
+      url: `/api/v1/households/${householdId}/accounts/${accountId}/transactions/${transactionId}/note`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: transactionNoteUpdate,
+    })
+  }
+
+export const getUpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatchMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+        >
+      >,
+      TError,
+      {
+        householdId: string
+        accountId: string
+        transactionId: string
+        data: TransactionNoteUpdate
+      },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<
+        typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+      >
+    >,
+    TError,
+    { householdId: string; accountId: string; transactionId: string; data: TransactionNoteUpdate },
+    TContext
+  > => {
+    const mutationKey = [
+      'updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+        >
+      >,
+      { householdId: string; accountId: string; transactionId: string; data: TransactionNoteUpdate }
+    > = (props) => {
+      const { householdId, accountId, transactionId, data } = props ?? {}
+
+      return updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch(
+        householdId,
+        accountId,
+        transactionId,
+        data
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type UpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatchMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+      >
+    >
+  >
+export type UpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatchMutationBody =
+  TransactionNoteUpdate
+export type UpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatchMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Update Note For Account
+ */
+export const useUpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch =
+  <TError = HTTPValidationError, TContext = unknown>(
+    options?: {
+      mutation?: UseMutationOptions<
+        Awaited<
+          ReturnType<
+            typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+          >
+        >,
+        TError,
+        {
+          householdId: string
+          accountId: string
+          transactionId: string
+          data: TransactionNoteUpdate
+        },
+        TContext
+      >
+    },
+    queryClient?: QueryClient
+  ): UseMutationResult<
+    Awaited<
+      ReturnType<
+        typeof updateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatch
+      >
+    >,
+    TError,
+    { householdId: string; accountId: string; transactionId: string; data: TransactionNoteUpdate },
+    TContext
+  > => {
+    const mutationOptions =
+      getUpdateNoteForAccountApiV1HouseholdsHouseholdIdAccountsAccountIdTransactionsTransactionIdNotePatchMutationOptions(
         options
       )
 
@@ -2586,6 +2716,122 @@ export const useTransitionStateCrossAccountApiV1HouseholdsHouseholdIdTransaction
   > => {
     const mutationOptions =
       getTransitionStateCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdStatePatchMutationOptions(
+        options
+      )
+
+    return useMutation(mutationOptions, queryClient)
+  }
+/**
+ * Set or clear the user note on a transaction (cross-account).
+ * @summary Update Note Cross Account
+ */
+export const updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch = (
+  householdId: string,
+  transactionId: string,
+  transactionNoteUpdate: TransactionNoteUpdate
+) => {
+  return customInstance<TransactionOut>({
+    url: `/api/v1/households/${householdId}/transactions/${transactionId}/note`,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    data: transactionNoteUpdate,
+  })
+}
+
+export const getUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatchMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+        >
+      >,
+      TError,
+      { householdId: string; transactionId: string; data: TransactionNoteUpdate },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<
+        typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+      >
+    >,
+    TError,
+    { householdId: string; transactionId: string; data: TransactionNoteUpdate },
+    TContext
+  > => {
+    const mutationKey = [
+      'updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+        >
+      >,
+      { householdId: string; transactionId: string; data: TransactionNoteUpdate }
+    > = (props) => {
+      const { householdId, transactionId, data } = props ?? {}
+
+      return updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch(
+        householdId,
+        transactionId,
+        data
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type UpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatchMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+      >
+    >
+  >
+export type UpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatchMutationBody =
+  TransactionNoteUpdate
+export type UpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatchMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Update Note Cross Account
+ */
+export const useUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch =
+  <TError = HTTPValidationError, TContext = unknown>(
+    options?: {
+      mutation?: UseMutationOptions<
+        Awaited<
+          ReturnType<
+            typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+          >
+        >,
+        TError,
+        { householdId: string; transactionId: string; data: TransactionNoteUpdate },
+        TContext
+      >
+    },
+    queryClient?: QueryClient
+  ): UseMutationResult<
+    Awaited<
+      ReturnType<
+        typeof updateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatch
+      >
+    >,
+    TError,
+    { householdId: string; transactionId: string; data: TransactionNoteUpdate },
+    TContext
+  > => {
+    const mutationOptions =
+      getUpdateNoteCrossAccountApiV1HouseholdsHouseholdIdTransactionsTransactionIdNotePatchMutationOptions(
         options
       )
 

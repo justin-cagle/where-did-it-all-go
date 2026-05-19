@@ -61,6 +61,12 @@ class TransactionStateUpdate(BaseModel):
     state: TransactionState
 
 
+class TransactionNoteUpdate(BaseModel):
+    """Set or clear the user note on a transaction."""
+
+    note: str | None = Field(default=None, max_length=500)
+
+
 class TransactionOut(_Base):
     """Transaction info returned in list and detail responses."""
 
@@ -77,6 +83,7 @@ class TransactionOut(_Base):
     occurred_at: date
     description: str
     merchant_name: str | None
+    note: str | None
     external_id: str | None
     recurrence_id: uuid.UUID | None
     manually_categorized: bool

@@ -8,6 +8,7 @@
 import type { TransactionOutTransactionType } from './transactionOutTransactionType'
 import type { TransactionOutPendingDate } from './transactionOutPendingDate'
 import type { TransactionOutMerchantName } from './transactionOutMerchantName'
+import type { TransactionOutNote } from './transactionOutNote'
 import type { TransactionOutExternalId } from './transactionOutExternalId'
 import type { TransactionOutRecurrenceId } from './transactionOutRecurrenceId'
 import type { TransactionOutTransferPeerId } from './transactionOutTransferPeerId'
@@ -31,6 +32,7 @@ export interface TransactionOut {
   occurred_at: string
   description: string
   merchant_name: TransactionOutMerchantName
+  note: TransactionOutNote
   external_id: TransactionOutExternalId
   recurrence_id: TransactionOutRecurrenceId
   manually_categorized: boolean

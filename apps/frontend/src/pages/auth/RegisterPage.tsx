@@ -3,9 +3,16 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store'
+import { useAuthStore } from '@/store/auth'
 import { customInstance, ApiError } from '@/api/client'
 import { AuthLayout } from './LoginPage'
+
+function safeRedirect(raw: string | null): string | null {
+  if (!raw) return null
+  const decoded = decodeURIComponent(raw)
+  if (decoded.startsWith('/invite/')) return decoded
+  return null
+}
 
 interface RegistrationSettings {
   allow_registration: boolean
@@ -41,6 +48,8 @@ export function RegisterPage() {
 
   const urlParams = new URLSearchParams(window.location.search)
   const inviteToken = urlParams.get('invite')
+  const prefillEmail = urlParams.get('email') ?? ''
+  const redirectAfter = safeRedirect(urlParams.get('redirect'))
 
   useEffect(() => {
     customInstance<RegistrationSettings>({
@@ -63,7 +72,7 @@ export function RegisterPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<Fields>({ resolver: zodResolver(schema) })
+  } = useForm<Fields>({ resolver: zodResolver(schema), defaultValues: { email: prefillEmail } })
 
   const onSubmit = async (data: Fields) => {
     try {
@@ -83,7 +92,7 @@ export function RegisterPage() {
         display_name: data.display_name,
         is_app_admin: result.is_app_admin,
       })
-      navigate(result.redirect, { replace: true })
+      navigate(redirectAfter ?? result.redirect, { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setError('email', { message: 'Email already registered' })
@@ -142,7 +151,13 @@ export function RegisterPage() {
             {...register('email')}
             type="email"
             autoComplete="email"
-            style={inputStyle(!!errors.email)}
+            readOnly={!!prefillEmail}
+            style={{
+              ...inputStyle(!!errors.email),
+              ...(prefillEmail
+                ? { background: 'var(--bg-secondary)', color: 'var(--fg-muted)' }
+                : {}),
+            }}
             placeholder="you@example.com"
           />
         </Field>
