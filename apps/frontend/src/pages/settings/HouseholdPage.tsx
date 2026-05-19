@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserMinus, Crown } from 'lucide-react'
+import { UserMinus, Crown, Copy, RefreshCw, X, Mail, MailX, AlertTriangle } from 'lucide-react'
 import {
   useGetHouseholdApiV1HouseholdsHouseholdIdGet,
   useListMembersApiV1HouseholdsHouseholdIdMembersGet,
@@ -7,12 +7,17 @@ import {
   useUpdateHouseholdApiV1HouseholdsHouseholdIdPatch,
   getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey,
   useMeApiV1AuthMeGet,
+  useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost,
+  useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet,
+  useResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost,
+  useRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost,
+  useGetSmtpStatusApiV1SettingsSmtpStatusGet,
 } from '@/api/generated/households/households'
 import { useHousehold } from '@/hooks/use-household'
 import { useQueryClient } from '@tanstack/react-query'
 import type { MembershipOut } from '@/api/generated/model/membershipOut'
+import type { InvitationOut } from '@/api/generated/model/invitationOut'
 import { VisibilityMode } from '@/api/generated/model/visibilityMode'
-import { customInstance } from '@/api/client'
 
 const VISIBILITY_OPTIONS = [
   {
@@ -194,7 +199,11 @@ export function HouseholdPage() {
   const hid = householdId ?? ''
   const qc = useQueryClient()
   const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'member' | 'owner'>('member')
+  const [inviteResult, setInviteResult] = useState<InvitationOut | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const { data: household } = useGetHouseholdApiV1HouseholdsHouseholdIdGet(hid, {
     query: { enabled: !!hid },
@@ -203,8 +212,21 @@ export function HouseholdPage() {
     query: { enabled: !!hid },
   })
   const { data: me } = useMeApiV1AuthMeGet()
+  const { data: invitations = [] } = useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet(
+    hid,
+    { status_filter: 'pending' },
+    { query: { enabled: !!hid } }
+  )
+  const { data: smtpStatus } = useGetSmtpStatusApiV1SettingsSmtpStatusGet()
   const removeMember = useRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDelete()
   const updateHousehold = useUpdateHouseholdApiV1HouseholdsHouseholdIdPatch()
+  const createInvitation = useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost()
+  const resendInvitation =
+    useResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost()
+  const revokeInvitation =
+    useRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost()
+
+  const invitationsKey = [`/api/v1/households/${hid}/invitations`]
 
   if (!household) {
     return <div style={{ color: 'var(--fg-muted)', fontSize: 13 }}>Loading...</div>
@@ -240,12 +262,46 @@ export function HouseholdPage() {
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return
-    await customInstance({
-      url: `/api/v1/households/${hid}/invitations`,
-      method: 'POST',
-      data: { email: inviteEmail.trim() },
-    })
-    setInviteEmail('')
+    setInviteError(null)
+    setInviteResult(null)
+    try {
+      const result = await createInvitation.mutateAsync({
+        householdId: hid,
+        data: { email: inviteEmail.trim(), role: inviteRole },
+      })
+      setInviteResult(result)
+      setInviteEmail('')
+      await qc.invalidateQueries({ queryKey: invitationsKey })
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status
+      if (status === 409) {
+        setInviteError('A pending invitation already exists for this email.')
+      } else if (status === 422) {
+        setInviteError('Invalid email address.')
+      } else {
+        setInviteError('Failed to send invitation. Try again.')
+      }
+    }
+  }
+
+  const handleResend = async (invitationId: string) => {
+    await resendInvitation.mutateAsync({ householdId: hid, invitationId })
+    await qc.invalidateQueries({ queryKey: invitationsKey })
+  }
+
+  const handleRevoke = async (invitationId: string) => {
+    await revokeInvitation.mutateAsync({ householdId: hid, invitationId })
+    await qc.invalidateQueries({ queryKey: invitationsKey })
+  }
+
+  const handleCopyLink = async (inviteUrl: string, invitationId: string) => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopiedId(invitationId)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch {
+      // clipboard not available — silently ignore
+    }
   }
 
   return (
@@ -399,46 +455,276 @@ export function HouseholdPage() {
           </div>
         ))}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)' }}>
-            Invite member
+        {isOwner && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)' }}>
+              Invite member
+            </div>
+
+            {/* SMTP not configured banner */}
+            {smtpStatus && !smtpStatus.smtp_configured && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  background: 'color-mix(in oklch, var(--warning, #f59e0b) 10%, transparent)',
+                  border: '1px solid color-mix(in oklch, var(--warning, #f59e0b) 30%, transparent)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: 'var(--fg-secondary)',
+                }}
+              >
+                <AlertTriangle size={13} style={{ flexShrink: 0, color: '#f59e0b' }} />
+                SMTP not configured. Invitations will be created but email will not be sent. Copy
+                the link manually.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleInvite()
+                }}
+                placeholder="Email address"
+                type="email"
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--fg-primary)',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as 'member' | 'owner')}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--fg-primary)',
+                  fontSize: 13,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <option value="member">Member</option>
+                <option value="owner">Owner</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => void handleInvite()}
+                disabled={!inviteEmail.trim() || createInvitation.isPending}
+                style={{
+                  padding: '8px 16px',
+                  background:
+                    inviteEmail.trim() && !createInvitation.isPending
+                      ? 'var(--accent)'
+                      : 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color:
+                    inviteEmail.trim() && !createInvitation.isPending
+                      ? 'var(--accent-fg)'
+                      : 'var(--fg-muted)',
+                  cursor:
+                    inviteEmail.trim() && !createInvitation.isPending ? 'pointer' : 'not-allowed',
+                  fontFamily: 'var(--font-sans)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {createInvitation.isPending ? 'Sending...' : 'Invite'}
+              </button>
+            </div>
+
+            {inviteError && (
+              <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{inviteError}</p>
+            )}
+
+            {/* Result card */}
+            {inviteResult && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  padding: '10px 12px',
+                  background: inviteResult.email_sent
+                    ? 'color-mix(in oklch, var(--success, #22c55e) 10%, transparent)'
+                    : 'var(--bg-secondary)',
+                  border: `1px solid ${inviteResult.email_sent ? 'color-mix(in oklch, var(--success, #22c55e) 30%, transparent)' : 'var(--border)'}`,
+                  borderRadius: 8,
+                }}
+              >
+                {inviteResult.email_sent ? (
+                  <Mail size={14} style={{ marginTop: 1, flexShrink: 0, color: '#22c55e' }} />
+                ) : (
+                  <MailX
+                    size={14}
+                    style={{ marginTop: 1, flexShrink: 0, color: 'var(--fg-muted)' }}
+                  />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: 'var(--fg-primary)', fontWeight: 500 }}>
+                    {inviteResult.email_sent
+                      ? `Invitation sent to ${inviteResult.invited_email}`
+                      : `Invitation created (email not sent)`}
+                  </div>
+                  {!inviteResult.email_sent && (
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyLink(inviteResult.invite_url, inviteResult.id)}
+                      style={{
+                        marginTop: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: 11,
+                        color: 'var(--accent)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      <Copy size={10} />
+                      {copiedId === inviteResult.id ? 'Copied!' : 'Copy invite link'}
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInviteResult(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--fg-muted)',
+                    padding: 2,
+                    lineHeight: 1,
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+
+            {/* Pending invitations list */}
+            {(invitations as InvitationOut[]).length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--fg-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Pending invitations
+                </div>
+                {(invitations as InvitationOut[]).map((inv) => (
+                  <div
+                    key={inv.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 12px',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--fg-primary)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {inv.invited_email}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 1 }}>
+                        {inv.role} &middot; {inv.email_sent ? 'Email sent' : 'Email not sent'}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        title="Copy invite link"
+                        onClick={() => void handleCopyLink(inv.invite_url, inv.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--fg-muted)',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {copiedId === inv.id ? (
+                          <span style={{ fontSize: 10 }}>Copied</span>
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        title="Resend invitation"
+                        onClick={() => void handleResend(inv.id)}
+                        disabled={resendInvitation.isPending}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--fg-muted)',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <RefreshCw size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Revoke invitation"
+                        onClick={() => void handleRevoke(inv.id)}
+                        disabled={revokeInvitation.isPending}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--danger)',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="Email address"
-              type="email"
-              style={{
-                flex: 1,
-                padding: '8px 10px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-secondary)',
-                color: 'var(--fg-primary)',
-                fontSize: 13,
-                outline: 'none',
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => void handleInvite()}
-              disabled={!inviteEmail.trim()}
-              style={{
-                padding: '8px 16px',
-                background: inviteEmail.trim() ? 'var(--accent)' : 'var(--bg-secondary)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                fontSize: 13,
-                color: inviteEmail.trim() ? 'var(--accent-fg)' : 'var(--fg-muted)',
-                cursor: inviteEmail.trim() ? 'pointer' : 'not-allowed',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              Invite
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {!isOwner && (

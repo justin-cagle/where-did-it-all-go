@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.households.enums import HouseholdRole, VisibilityMode
+from app.households.enums import HouseholdRole, InvitationStatus, VisibilityMode
 from app.platform.db import SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.platform.ids import new_uuid
 from app.platform.time import utcnow
@@ -218,3 +218,86 @@ class RefreshToken(Base, UUIDPrimaryKeyMixin):
     def generate_raw() -> str:
         """Generate a cryptographically random opaque token string."""
         return str(new_uuid()) + str(uuid.uuid4())
+
+
+class HouseholdInvitation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Email-based invitation to join a household.
+
+    Token is URL-safe random (32 bytes). One active invite per email per
+    household at a time (enforced by partial unique index on status=pending).
+    """
+
+    __tablename__ = "households_invitation"
+
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey("households_household.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    invited_email: Mapped[str] = mapped_column(
+        sa.Text,
+        nullable=False,
+        comment="Lowercase-normalized invited email address",
+    )
+    invited_by_id: Mapped[uuid.UUID] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey("households_user.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(
+        sa.Enum(HouseholdRole, name="household_role", native_enum=False, length=16),
+        nullable=False,
+        default=HouseholdRole.MEMBER,
+    )
+    token: Mapped[str] = mapped_column(
+        sa.Text,
+        nullable=False,
+        unique=True,
+        comment="URL-safe random token (secrets.token_urlsafe(32))",
+    )
+    status: Mapped[str] = mapped_column(
+        sa.Enum(InvitationStatus, name="invitation_status", native_enum=False, length=16),
+        nullable=False,
+        default=InvitationStatus.PENDING,
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        comment="created_at + 72 hours",
+    )
+    accepted_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey("households_user.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    email_sent: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    email_sent_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    email_error: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    household: Mapped[Household] = relationship("Household", lazy="select")
+    invited_by: Mapped[User] = relationship("User", foreign_keys=[invited_by_id], lazy="select")
+    accepted_by: Mapped[User | None] = relationship(
+        "User", foreign_keys=[accepted_by_id], lazy="select"
+    )
+
+    __table_args__ = (
+        sa.Index("ix_households_invitation_token", "token", unique=True),
+        sa.Index("ix_households_invitation_email_status", "invited_email", "status"),
+        sa.Index("ix_households_invitation_household_status", "household_id", "status"),
+        sa.Index(
+            "uq_households_invitation_pending",
+            "household_id",
+            "invited_email",
+            unique=True,
+            postgresql_where=sa.text("status = 'pending'"),
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"HouseholdInvitation(id={self.id}, email={self.invited_email!r}, "
+            f"status={self.status!r})"
+        )

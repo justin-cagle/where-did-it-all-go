@@ -352,6 +352,43 @@ async def archive_transaction(
     )
 
 
+async def update_transaction_note(
+    session: AsyncSession,
+    *,
+    transaction_id: uuid.UUID,
+    household_id: uuid.UUID,
+    actor_id: uuid.UUID,
+    note: str | None,
+) -> Transaction:
+    """Set or clear the user note on a transaction. Audits old and new value."""
+    tx = await get_transaction(session, transaction_id=transaction_id, household_id=household_id)
+    old_note = tx.note
+    tx.note = note
+    await session.flush()
+
+    if old_note is None and note is not None:
+        op_label = "add"
+    elif old_note is not None and note is None:
+        op_label = "remove"
+    else:
+        op_label = "replace"
+
+    delta: list[dict[str, Any]] = [
+        {"op": op_label, "path": "/note", "old": old_note, "value": note}
+    ]
+    audit_op = AuditOperation.UPDATE
+    await _write_audit(
+        session,
+        actor_id=actor_id,
+        household_id=household_id,
+        entity_type="transaction",
+        entity_id=transaction_id,
+        operation=audit_op,
+        delta=delta,
+    )
+    return tx
+
+
 # ---------------------------------------------------------------------------
 # Split allocations
 # ---------------------------------------------------------------------------

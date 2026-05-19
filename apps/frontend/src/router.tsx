@@ -6,6 +6,7 @@ import { AdminGuard } from '@/components/admin/AdminGuard'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
+import { InviteAcceptPage } from '@/pages/invites/InviteAcceptPage'
 import { TotpSetupPage } from '@/pages/auth/TotpSetupPage'
 import { OnboardingPage } from '@/pages/onboarding/OnboardingPage'
 import { WaitingPage } from '@/pages/WaitingPage'
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/register/totp-setup', element: <TotpSetupPage /> },
+  { path: '/invite/:token', element: <InviteAcceptPage /> },
 
   /* Authed — no AppShell, no household required */
   {

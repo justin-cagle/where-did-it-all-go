@@ -9,7 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.households.enums import HouseholdRole, VisibilityMode
+from app.households.enums import HouseholdRole, InvitationStatus, VisibilityMode
 
 
 class _Base(BaseModel):
@@ -183,3 +183,101 @@ class MembershipOut(_Base):
     role: str
     created_at: datetime
     user: UserOut
+
+
+# ---------------------------------------------------------------------------
+# Invitation schemas
+# ---------------------------------------------------------------------------
+
+
+class CreateInvitationRequest(BaseModel):
+    """Create a household invitation."""
+
+    email: EmailStr
+    role: HouseholdRole = HouseholdRole.MEMBER
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def lowercase_email(cls, v: str) -> str:
+        return v.lower().strip()
+
+
+class InvitationOut(_Base):
+    """Invitation info returned to household owners."""
+
+    id: uuid.UUID
+    household_id: uuid.UUID
+    household_name: str
+    invited_email: str
+    invited_by_name: str
+    role: str
+    status: str
+    expires_at: datetime
+    email_sent: bool
+    created_at: datetime
+    invite_url: str
+
+    @classmethod
+    def from_invite(cls, invite: object, invite_url: str) -> "InvitationOut":
+        from app.households.models import HouseholdInvitation
+
+        inv: HouseholdInvitation = invite  # type: ignore[assignment]
+        hh_name = inv.household.name if inv.household else ""
+        by_name = inv.invited_by.display_name if inv.invited_by else ""
+        return cls(
+            id=inv.id,
+            household_id=inv.household_id,
+            household_name=hh_name,
+            invited_email=inv.invited_email,
+            invited_by_name=by_name,
+            role=inv.role,
+            status=inv.status,
+            expires_at=inv.expires_at,
+            email_sent=inv.email_sent,
+            created_at=inv.created_at,
+            invite_url=invite_url,
+        )
+
+
+class InviteMetadataOut(BaseModel):
+    """Public metadata for the accept page (token never exposed)."""
+
+    household_name: str
+    invited_by_name: str
+    invited_email: str
+    status: str
+    expires_at: datetime
+
+    @classmethod
+    def from_invite(cls, invite: object) -> "InviteMetadataOut":
+        from app.households.models import HouseholdInvitation
+
+        inv: HouseholdInvitation = invite  # type: ignore[assignment]
+        hh_name = inv.household.name if inv.household else ""
+        by_name = inv.invited_by.display_name if inv.invited_by else ""
+        return cls(
+            household_name=hh_name,
+            invited_by_name=by_name,
+            invited_email=inv.invited_email,
+            status=inv.status,
+            expires_at=inv.expires_at,
+        )
+
+
+class AcceptInviteResponse(BaseModel):
+    """Response to a successful invitation accept."""
+
+    household_id: uuid.UUID
+    membership_id: uuid.UUID
+
+
+class SmtpStatusResponse(BaseModel):
+    """SMTP configuration status (non-sensitive bool)."""
+
+    smtp_configured: bool
+
+
+class InvitationStatusFilter(BaseModel):
+    """Filter for listing invitations."""
+
+    status: InvitationStatus | None = None

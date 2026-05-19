@@ -60,6 +60,7 @@ from app.goals.models import (  # noqa: E402, F401
 )
 from app.households.models import (  # noqa: E402, F401
     Household,
+    HouseholdInvitation,
     HouseholdMembership,
     RefreshToken,
     User,

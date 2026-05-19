@@ -59,6 +59,7 @@ from app.transactions.schemas import (
     SplitsSetRequest,
     TransactionCreate,
     TransactionDetailOut,
+    TransactionNoteUpdate,
     TransactionOut,
     TransactionStateUpdate,
     TransferPairRequest,
@@ -231,6 +232,32 @@ async def archive_transaction_for_account(
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.patch(
+    "/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/note",
+    response_model=TransactionOut,
+)
+async def update_note_for_account(
+    household_id: HouseholdMember,
+    account_id: AccountInHousehold,
+    transaction_id: uuid.UUID,
+    body: TransactionNoteUpdate,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> TransactionOut:
+    """Set or clear the user note on a transaction."""
+    try:
+        tx = await service.update_transaction_note(
+            session,
+            transaction_id=transaction_id,
+            household_id=household_id,
+            actor_id=current_user.id,
+            note=body.note,
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _tx_out(tx)
 
 
 @router.post(
@@ -501,6 +528,31 @@ async def archive_transaction_cross_account(
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.patch(
+    "/households/{household_id}/transactions/{transaction_id}/note",
+    response_model=TransactionOut,
+)
+async def update_note_cross_account(
+    household_id: HouseholdMember,
+    transaction_id: uuid.UUID,
+    body: TransactionNoteUpdate,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> TransactionOut:
+    """Set or clear the user note on a transaction (cross-account)."""
+    try:
+        tx = await service.update_transaction_note(
+            session,
+            transaction_id=transaction_id,
+            household_id=household_id,
+            actor_id=current_user.id,
+            note=body.note,
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _tx_out(tx)
 
 
 @router.post(

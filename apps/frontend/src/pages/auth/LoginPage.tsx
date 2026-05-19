@@ -2,8 +2,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store'
+import { useAuthStore } from '@/store/auth'
 import { customInstance, ApiError } from '@/api/client'
+
+function safeRedirect(raw: string | null): string {
+  if (!raw) return '/'
+  const decoded = decodeURIComponent(raw)
+  if (decoded === '/dashboard' || decoded.startsWith('/invite/')) return decoded
+  return '/'
+}
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -22,6 +29,7 @@ interface LoginResponse {
 export function LoginPage() {
   const { setUser } = useAuthStore()
   const navigate = useNavigate()
+  const redirectTo = safeRedirect(new URLSearchParams(window.location.search).get('redirect'))
 
   const {
     register,
@@ -38,7 +46,7 @@ export function LoginPage() {
         data: { email: data.email, password: data.password },
       })
       setUser(user)
-      navigate('/', { replace: true })
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('root', { message: 'Invalid email or password' })

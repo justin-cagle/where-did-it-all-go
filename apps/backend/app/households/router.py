@@ -24,34 +24,51 @@ Routes:
     GET    /api/v1/households/{household_id}/members
     POST   /api/v1/households/{household_id}/members     (step-up required)
     DELETE /api/v1/households/{household_id}/members/{user_id} (step-up required)
-    POST   /api/v1/households/{household_id}/invitations (stub — not yet implemented)
+    POST   /api/v1/households/{household_id}/invitations/
+    GET    /api/v1/households/{household_id}/invitations/
+    POST   /api/v1/households/{household_id}/invitations/{invitation_id}/resend
+    POST   /api/v1/households/{household_id}/invitations/{invitation_id}/revoke
 
-No business logic in this file — all logic is in service.py.
+  Public (no auth):
+    GET    /api/v1/invitations/{token}
+    POST   /api/v1/invitations/{token}/accept
+    POST   /api/v1/invitations/{token}/decline
+    GET    /api/v1/settings/smtp-status
+
+No business logic in this file — all logic is in service.py / invitations.py.
 """
 
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
+from app.config import get_settings, smtp_configured
 from app.database import get_db
+from app.households import invitations as inv_service
 from app.households import schemas, service
 from app.households.deps import CurrentUser, StepUpUser
+from app.households.enums import HouseholdRole, InvitationStatus
 from app.households.schemas import (
+    AcceptInviteResponse,
     AddMemberRequest,
     ChangePasswordRequest,
+    CreateInvitationRequest,
     HouseholdCreate,
     HouseholdOut,
     HouseholdUpdate,
+    InvitationOut,
+    InviteMetadataOut,
     LoginRequest,
     MembershipOut,
     RegisterRequest,
     RegisterResponse,
     SessionOut,
+    SmtpStatusResponse,
     StepUpRequest,
     TokenResponse,
     TotpSetupOut,
@@ -544,21 +561,251 @@ async def remove_member(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
+# ---------------------------------------------------------------------------
+# Invitation routes (owner or app_admin only)
+# ---------------------------------------------------------------------------
+
+
+async def _require_owner_or_admin(
+    session: AsyncSession,
+    household_id: uuid.UUID,
+    actor: service.User,
+) -> None:
+    """Raise HTTPException 403 unless actor is owner or app_admin."""
+    if actor.is_app_admin:
+        return
+    from app.households.models import HouseholdMembership
+
+    stmt = sa.select(HouseholdMembership).where(
+        HouseholdMembership.household_id == household_id,
+        HouseholdMembership.user_id == actor.id,
+        HouseholdMembership.archived_at.is_(None),
+    )
+    result = await session.execute(stmt)
+    membership = result.scalar_one_or_none()
+    if membership is None or membership.role != str(HouseholdRole.OWNER):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="must be household owner or app admin",
+        )
+
+
 @router.post(
-    "/households/{household_id}/invitations",
-    status_code=status.HTTP_202_ACCEPTED,
+    "/households/{household_id}/invitations/",
+    response_model=InvitationOut,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_invitation(
     household_id: uuid.UUID,
+    body: CreateInvitationRequest,
     current_user: CurrentUser,
-) -> dict[str, str]:
-    # TODO: implement email-based invitation flow
-    return {"detail": "invitations not yet implemented"}
+    session: _DbSession,
+) -> InvitationOut:
+    """Create a household invitation (owner or app_admin)."""
+    await _require_owner_or_admin(session, household_id, current_user)
+    try:
+        invite = await inv_service.create_invitation(
+            session,
+            household_id=household_id,
+            invited_by_id=current_user.id,
+            invited_email=body.email,
+            role=HouseholdRole(body.role),
+        )
+    except inv_service.AlreadyMemberError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already a member",
+        ) from exc
+    except inv_service.PendingInviteExistsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    await session.refresh(invite, ["household", "invited_by"])
+    return InvitationOut.from_invite(invite, inv_service.get_invite_url(invite.token))
+
+
+@router.get(
+    "/households/{household_id}/invitations/",
+    response_model=list[InvitationOut],
+)
+async def list_invitations(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+    status_filter: str | None = None,
+) -> list[InvitationOut]:
+    """List invitations for this household (owner or app_admin)."""
+    await _require_owner_or_admin(session, household_id, current_user)
+    inv_status: InvitationStatus | None = None
+    if status_filter and status_filter != "all":
+        try:
+            inv_status = InvitationStatus(status_filter)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"invalid status filter: {status_filter!r}",
+            ) from None
+    invites = await inv_service.list_invitations(
+        session, household_id=household_id, status=inv_status
+    )
+    results: list[InvitationOut] = []
+    for invite in invites:
+        await session.refresh(invite, ["household", "invited_by"])
+        results.append(InvitationOut.from_invite(invite, inv_service.get_invite_url(invite.token)))
+    return results
+
+
+@router.post(
+    "/households/{household_id}/invitations/{invitation_id}/resend",
+    response_model=InvitationOut,
+)
+async def resend_invitation(
+    household_id: uuid.UUID,
+    invitation_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> InvitationOut:
+    """Reset invite expiry and reattempt email delivery (owner or app_admin)."""
+    from app.households.models import HouseholdMembership
+
+    membership = await session.execute(
+        sa.select(HouseholdMembership).where(
+            HouseholdMembership.household_id == household_id,
+            HouseholdMembership.user_id == current_user.id,
+            HouseholdMembership.archived_at.is_(None),
+        )
+    )
+    m = membership.scalar_one_or_none()
+    is_owner = m is not None and m.role == str(HouseholdRole.OWNER)
+    try:
+        invite = await inv_service.resend_invite(
+            session,
+            invitation_id=invitation_id,
+            resent_by_id=current_user.id,
+            actor_is_owner=is_owner,
+            actor_is_app_admin=current_user.is_app_admin,
+        )
+    except inv_service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except inv_service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except inv_service.InviteExpiredError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    await session.refresh(invite, ["household", "invited_by"])
+    return InvitationOut.from_invite(invite, inv_service.get_invite_url(invite.token))
+
+
+@router.post(
+    "/households/{household_id}/invitations/{invitation_id}/revoke",
+    response_model=InvitationOut,
+)
+async def revoke_invitation(
+    household_id: uuid.UUID,
+    invitation_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> InvitationOut:
+    """Revoke a pending invitation (owner or app_admin)."""
+    from app.households.models import HouseholdMembership
+
+    membership = await session.execute(
+        sa.select(HouseholdMembership).where(
+            HouseholdMembership.household_id == household_id,
+            HouseholdMembership.user_id == current_user.id,
+            HouseholdMembership.archived_at.is_(None),
+        )
+    )
+    m = membership.scalar_one_or_none()
+    is_owner = m is not None and m.role == str(HouseholdRole.OWNER)
+    try:
+        invite = await inv_service.revoke_invite(
+            session,
+            invitation_id=invitation_id,
+            revoked_by_id=current_user.id,
+            actor_is_owner=is_owner,
+            actor_is_app_admin=current_user.is_app_admin,
+        )
+    except inv_service.PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except inv_service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    await session.refresh(invite, ["household", "invited_by"])
+    return InvitationOut.from_invite(invite, inv_service.get_invite_url(invite.token))
+
+
+# ---------------------------------------------------------------------------
+# Public invitation endpoints (no auth required for GET metadata + accept/decline)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/invitations/{token}", response_model=InviteMetadataOut)
+async def get_invitation_metadata(
+    token: str,
+    session: _DbSession,
+) -> InviteMetadataOut:
+    """Return public invitation metadata. Token is NOT included in response."""
+    try:
+        invite = await inv_service.get_invite_by_token(session, token)
+    except inv_service.InviteNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    await session.refresh(invite, ["household", "invited_by"])
+    return InviteMetadataOut.from_invite(invite)
+
+
+@router.post("/invitations/{token}/accept", response_model=AcceptInviteResponse)
+async def accept_invitation(
+    token: str,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> AcceptInviteResponse:
+    """Accept an invitation. Requires authentication; validates email match."""
+    try:
+        membership = await inv_service.accept_invite(session, token=token, user_id=current_user.id)
+    except inv_service.InviteNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except inv_service.InviteExpiredError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+    except inv_service.AlreadyAcceptedError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except inv_service.InviteRevokedError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+    except inv_service.EmailMismatchError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except inv_service.AlreadyMemberError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    return AcceptInviteResponse(
+        household_id=membership.household_id,
+        membership_id=membership.id,
+    )
+
+
+@router.post("/invitations/{token}/decline", status_code=status.HTTP_204_NO_CONTENT)
+async def decline_invitation(
+    token: str,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Decline an invitation. No email match required."""
+    try:
+        await inv_service.decline_invite(session, token=token, user_id=current_user.id)
+    except inv_service.InviteNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except (inv_service.InviteExpiredError, inv_service.InviteRevokedError) as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+    except inv_service.AlreadyAcceptedError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
 # Public settings
 # ---------------------------------------------------------------------------
+
+
+@router.get("/settings/smtp-status", response_model=SmtpStatusResponse)
+async def get_smtp_status() -> SmtpStatusResponse:
+    """Return SMTP configuration status (no auth required, non-sensitive)."""
+    return SmtpStatusResponse(smtp_configured=smtp_configured())
 
 
 @router.get("/settings/registration", include_in_schema=True)

@@ -73,6 +73,8 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     description: Mapped[str] = mapped_column(sa.Text, nullable=False)
     merchant_name: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
+    note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     # Ingest
     external_id: Mapped[str | None] = mapped_column(
         sa.Text,

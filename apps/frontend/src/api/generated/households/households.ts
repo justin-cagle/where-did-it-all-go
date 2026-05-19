@@ -22,19 +22,24 @@ import type {
 } from '@tanstack/react-query'
 
 import type {
+  AcceptInviteResponse,
   AddMemberRequest,
   ChangePasswordRequest,
-  CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost202,
+  CreateInvitationRequest,
   GetRegistrationSettingsApiV1SettingsRegistrationGet200,
   HTTPValidationError,
   HouseholdCreate,
   HouseholdOut,
   HouseholdUpdate,
+  InvitationOut,
+  InviteMetadataOut,
+  ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
   LoginRequest,
   MembershipOut,
   RegisterRequest,
   RegisterResponse,
   SessionOut,
+  SmtpStatusResponse,
   StepUpRequest,
   TokenResponse,
   TotpSetupOut,
@@ -1867,15 +1872,19 @@ export const useRemoveMemberApiV1HouseholdsHouseholdIdMembersUserIdDelete = <
   return useMutation(mutationOptions, queryClient)
 }
 /**
+ * Create a household invitation (owner or app_admin).
  * @summary Create Invitation
  */
 export const createInvitationApiV1HouseholdsHouseholdIdInvitationsPost = (
   householdId: string,
+  createInvitationRequest: CreateInvitationRequest,
   signal?: AbortSignal
 ) => {
-  return customInstance<CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost202>({
-    url: `/api/v1/households/${householdId}/invitations`,
+  return customInstance<InvitationOut>({
+    url: `/api/v1/households/${householdId}/invitations/`,
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: createInvitationRequest,
     signal,
   })
 }
@@ -1887,13 +1896,13 @@ export const getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutatio
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
     TError,
-    { householdId: string },
+    { householdId: string; data: CreateInvitationRequest },
     TContext
   >
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
   TError,
-  { householdId: string },
+  { householdId: string; data: CreateInvitationRequest },
   TContext
 > => {
   const mutationKey = ['createInvitationApiV1HouseholdsHouseholdIdInvitationsPost']
@@ -1905,11 +1914,11 @@ export const getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutatio
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
-    { householdId: string }
+    { householdId: string; data: CreateInvitationRequest }
   > = (props) => {
-    const { householdId } = props ?? {}
+    const { householdId, data } = props ?? {}
 
-    return createInvitationApiV1HouseholdsHouseholdIdInvitationsPost(householdId)
+    return createInvitationApiV1HouseholdsHouseholdIdInvitationsPost(householdId, data)
   }
 
   return { mutationFn, ...mutationOptions }
@@ -1918,7 +1927,8 @@ export const getCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutatio
 export type CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>
 >
-
+export type CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationBody =
+  CreateInvitationRequest
 export type CreateInvitationApiV1HouseholdsHouseholdIdInvitationsPostMutationError =
   HTTPValidationError
 
@@ -1933,7 +1943,7 @@ export const useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
       TError,
-      { householdId: string },
+      { householdId: string; data: CreateInvitationRequest },
       TContext
     >
   },
@@ -1941,7 +1951,7 @@ export const useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof createInvitationApiV1HouseholdsHouseholdIdInvitationsPost>>,
   TError,
-  { householdId: string },
+  { householdId: string; data: CreateInvitationRequest },
   TContext
 > => {
   const mutationOptions =
@@ -1949,6 +1959,844 @@ export const useCreateInvitationApiV1HouseholdsHouseholdIdInvitationsPost = <
 
   return useMutation(mutationOptions, queryClient)
 }
+/**
+ * List invitations for this household (owner or app_admin).
+ * @summary List Invitations
+ */
+export const listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet = (
+  householdId: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<InvitationOut[]>({
+    url: `/api/v1/households/${householdId}/invitations/`,
+    method: 'GET',
+    params,
+    signal,
+  })
+}
+
+export const getListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryKey = (
+  householdId?: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams
+) => {
+  return [`/api/v1/households/${householdId}/invitations/`, ...(params ? [params] : [])] as const
+}
+
+export const getListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+        TError,
+        TData
+      >
+    >
+  }
+) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryKey(householdId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>
+  > = ({ signal }) =>
+    listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet(householdId, params, signal)
+
+  return { queryKey, queryFn, enabled: !!householdId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>
+>
+export type ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryError = HTTPValidationError
+
+export function useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet<
+  TData = Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params: undefined | ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet<
+  TData = Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet<
+  TData = Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Invitations
+ */
+
+export function useListInvitationsApiV1HouseholdsHouseholdIdInvitationsGet<
+  TData = Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvitationsApiV1HouseholdsHouseholdIdInvitationsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListInvitationsApiV1HouseholdsHouseholdIdInvitationsGetQueryOptions(
+    householdId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Reset invite expiry and reattempt email delivery (owner or app_admin).
+ * @summary Resend Invitation
+ */
+export const resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost = (
+  householdId: string,
+  invitationId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<InvitationOut>({
+    url: `/api/v1/households/${householdId}/invitations/${invitationId}/resend`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost
+        >
+      >,
+      TError,
+      { householdId: string; invitationId: string },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost>
+    >,
+    TError,
+    { householdId: string; invitationId: string },
+    TContext
+  > => {
+    const mutationKey = [
+      'resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost
+        >
+      >,
+      { householdId: string; invitationId: string }
+    > = (props) => {
+      const { householdId, invitationId } = props ?? {}
+
+      return resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost(
+        householdId,
+        invitationId
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type ResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost>
+    >
+  >
+
+export type ResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Resend Invitation
+ */
+export const useResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost
+        >
+      >,
+      TError,
+      { householdId: string; invitationId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof resendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost>
+  >,
+  TError,
+  { householdId: string; invitationId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPostMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Revoke a pending invitation (owner or app_admin).
+ * @summary Revoke Invitation
+ */
+export const revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost = (
+  householdId: string,
+  invitationId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<InvitationOut>({
+    url: `/api/v1/households/${householdId}/invitations/${invitationId}/revoke`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost
+        >
+      >,
+      TError,
+      { householdId: string; invitationId: string },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost>
+    >,
+    TError,
+    { householdId: string; invitationId: string },
+    TContext
+  > => {
+    const mutationKey = [
+      'revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost
+        >
+      >,
+      { householdId: string; invitationId: string }
+    > = (props) => {
+      const { householdId, invitationId } = props ?? {}
+
+      return revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost(
+        householdId,
+        invitationId
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type RevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost>
+    >
+  >
+
+export type RevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Revoke Invitation
+ */
+export const useRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost
+        >
+      >,
+      TError,
+      { householdId: string; invitationId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof revokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost>
+  >,
+  TError,
+  { householdId: string; invitationId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePostMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Return public invitation metadata. Token is NOT included in response.
+ * @summary Get Invitation Metadata
+ */
+export const getInvitationMetadataApiV1InvitationsTokenGet = (
+  token: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<InviteMetadataOut>({
+    url: `/api/v1/invitations/${token}`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getGetInvitationMetadataApiV1InvitationsTokenGetQueryKey = (token?: string) => {
+  return [`/api/v1/invitations/${token}`] as const
+}
+
+export const getGetInvitationMetadataApiV1InvitationsTokenGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+  TError = HTTPValidationError,
+>(
+  token: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+        TError,
+        TData
+      >
+    >
+  }
+) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInvitationMetadataApiV1InvitationsTokenGetQueryKey(token)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>
+  > = ({ signal }) => getInvitationMetadataApiV1InvitationsTokenGet(token, signal)
+
+  return { queryKey, queryFn, enabled: !!token, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInvitationMetadataApiV1InvitationsTokenGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>
+>
+export type GetInvitationMetadataApiV1InvitationsTokenGetQueryError = HTTPValidationError
+
+export function useGetInvitationMetadataApiV1InvitationsTokenGet<
+  TData = Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+  TError = HTTPValidationError,
+>(
+  token: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInvitationMetadataApiV1InvitationsTokenGet<
+  TData = Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+  TError = HTTPValidationError,
+>(
+  token: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInvitationMetadataApiV1InvitationsTokenGet<
+  TData = Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+  TError = HTTPValidationError,
+>(
+  token: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Invitation Metadata
+ */
+
+export function useGetInvitationMetadataApiV1InvitationsTokenGet<
+  TData = Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+  TError = HTTPValidationError,
+>(
+  token: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvitationMetadataApiV1InvitationsTokenGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetInvitationMetadataApiV1InvitationsTokenGetQueryOptions(token, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Accept an invitation. Requires authentication; validates email match.
+ * @summary Accept Invitation
+ */
+export const acceptInvitationApiV1InvitationsTokenAcceptPost = (
+  token: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<AcceptInviteResponse>({
+    url: `/api/v1/invitations/${token}/accept`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getAcceptInvitationApiV1InvitationsTokenAcceptPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>,
+    TError,
+    { token: string },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationKey = ['acceptInvitationApiV1InvitationsTokenAcceptPost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>,
+    { token: string }
+  > = (props) => {
+    const { token } = props ?? {}
+
+    return acceptInvitationApiV1InvitationsTokenAcceptPost(token)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type AcceptInvitationApiV1InvitationsTokenAcceptPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>
+>
+
+export type AcceptInvitationApiV1InvitationsTokenAcceptPostMutationError = HTTPValidationError
+
+/**
+ * @summary Accept Invitation
+ */
+export const useAcceptInvitationApiV1InvitationsTokenAcceptPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>,
+      TError,
+      { token: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof acceptInvitationApiV1InvitationsTokenAcceptPost>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationOptions = getAcceptInvitationApiV1InvitationsTokenAcceptPostMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Decline an invitation. No email match required.
+ * @summary Decline Invitation
+ */
+export const declineInvitationApiV1InvitationsTokenDeclinePost = (
+  token: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>({
+    url: `/api/v1/invitations/${token}/decline`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getDeclineInvitationApiV1InvitationsTokenDeclinePostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>,
+    TError,
+    { token: string },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationKey = ['declineInvitationApiV1InvitationsTokenDeclinePost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>,
+    { token: string }
+  > = (props) => {
+    const { token } = props ?? {}
+
+    return declineInvitationApiV1InvitationsTokenDeclinePost(token)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type DeclineInvitationApiV1InvitationsTokenDeclinePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>
+>
+
+export type DeclineInvitationApiV1InvitationsTokenDeclinePostMutationError = HTTPValidationError
+
+/**
+ * @summary Decline Invitation
+ */
+export const useDeclineInvitationApiV1InvitationsTokenDeclinePost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>,
+      TError,
+      { token: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof declineInvitationApiV1InvitationsTokenDeclinePost>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationOptions =
+    getDeclineInvitationApiV1InvitationsTokenDeclinePostMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Return SMTP configuration status (no auth required, non-sensitive).
+ * @summary Get Smtp Status
+ */
+export const getSmtpStatusApiV1SettingsSmtpStatusGet = (signal?: AbortSignal) => {
+  return customInstance<SmtpStatusResponse>({
+    url: `/api/v1/settings/smtp-status`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getGetSmtpStatusApiV1SettingsSmtpStatusGetQueryKey = () => {
+  return [`/api/v1/settings/smtp-status`] as const
+}
+
+export const getGetSmtpStatusApiV1SettingsSmtpStatusGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+      TError,
+      TData
+    >
+  >
+}) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getGetSmtpStatusApiV1SettingsSmtpStatusGetQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>
+  > = ({ signal }) => getSmtpStatusApiV1SettingsSmtpStatusGet(signal)
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSmtpStatusApiV1SettingsSmtpStatusGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>
+>
+export type GetSmtpStatusApiV1SettingsSmtpStatusGetQueryError = unknown
+
+export function useGetSmtpStatusApiV1SettingsSmtpStatusGet<
+  TData = Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSmtpStatusApiV1SettingsSmtpStatusGet<
+  TData = Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSmtpStatusApiV1SettingsSmtpStatusGet<
+  TData = Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Smtp Status
+ */
+
+export function useGetSmtpStatusApiV1SettingsSmtpStatusGet<
+  TData = Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSmtpStatusApiV1SettingsSmtpStatusGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetSmtpStatusApiV1SettingsSmtpStatusGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
 /**
  * Return public registration configuration.
 
