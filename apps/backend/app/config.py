@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     backup_s3_secret_key: str | None = None
     backup_encryption_key: str | None = None
 
+    # AIO — set by entrypoint.sh; signals demo-mode banner on login page
+    aio_mode: bool = False
+
+    # Version — keep in sync with git tags; bumped manually per release
+    app_version: str = "0.3.1"
+
     @model_validator(mode="after")
     def _derive_jwt_secret(self) -> Self:
         """Derive JWT secret from master_key if not explicitly set."""

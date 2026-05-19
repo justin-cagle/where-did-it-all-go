@@ -1,9 +1,27 @@
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
 import { customInstance, ApiError } from '@/api/client'
+
+interface InstanceInfo {
+  aio_mode: boolean
+  version: string
+  demo_credentials: { email: string; password: string } | null
+}
+
+async function fetchInstanceInfo(): Promise<InstanceInfo | null> {
+  try {
+    return await customInstance<InstanceInfo>({
+      url: '/api/v1/settings/instance-info',
+      method: 'GET',
+    })
+  } catch {
+    return null
+  }
+}
 
 function safeRedirect(raw: string | null): string {
   if (!raw) return '/'
@@ -30,13 +48,25 @@ export function LoginPage() {
   const { setUser } = useAuthStore()
   const navigate = useNavigate()
   const redirectTo = safeRedirect(new URLSearchParams(window.location.search).get('redirect'))
+  const [instanceInfo, setInstanceInfo] = useState<InstanceInfo | null>(null)
+
+  useEffect(() => {
+    fetchInstanceInfo().then(setInstanceInfo)
+  }, [])
 
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Fields>({ resolver: zodResolver(schema) })
+
+  useEffect(() => {
+    if (instanceInfo?.aio_mode && instanceInfo.demo_credentials) {
+      setValue('email', instanceInfo.demo_credentials.email)
+    }
+  }, [instanceInfo, setValue])
 
   const onSubmit = async (data: Fields) => {
     try {
@@ -57,7 +87,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout demoBanner={instanceInfo?.aio_mode ? instanceInfo.demo_credentials : null}>
       <h1 style={styles.heading}>Sign in</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate style={styles.form}>
@@ -102,7 +132,13 @@ export function LoginPage() {
 
 /* ── Shared auth page layout ── */
 
-export function AuthLayout({ children }: { children: React.ReactNode }) {
+export function AuthLayout({
+  children,
+  demoBanner,
+}: {
+  children: React.ReactNode
+  demoBanner?: { email: string; password: string } | null
+}) {
   return (
     <div
       style={{
@@ -158,6 +194,27 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             wdiag
           </span>
         </div>
+
+        {/* Demo mode banner */}
+        {demoBanner && (
+          <div
+            style={{
+              background: 'var(--warning-bg, #fffbeb)',
+              border: '1px solid var(--warning-border, #fcd34d)',
+              borderRadius: 10,
+              padding: '12px 14px',
+              fontSize: 13,
+              color: 'var(--warning-fg, #92400e)',
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Demo mode</strong>
+            <br />
+            Default credentials: {demoBanner.email} / {demoBanner.password}
+            <br />
+            Change them in Settings &rsaquo; Profile after login.
+          </div>
+        )}
 
         {/* Card */}
         <div

@@ -26,6 +26,7 @@ from app.projections.router import router as projections_router
 from app.recommendations.router import router as recommendations_router
 from app.recurrences.router import router as recurrences_router
 from app.security.ratelimit import get_limiter, rate_limit_exceeded_handler
+from app.settings.router import router as settings_router
 from app.transactions.router import router as transactions_router
 
 logger = structlog.get_logger(__name__)
@@ -108,6 +109,7 @@ def create_app() -> FastAPI:
     app.include_router(insights_router, prefix="/api/v1")
     app.include_router(platform_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
+    app.include_router(settings_router, prefix="/api/v1")
 
     return app
 

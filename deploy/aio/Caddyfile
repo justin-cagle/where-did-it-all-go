@@ -1,0 +1,35 @@
+{$DOMAIN_NAME} {
+  # Serve frontend static files
+  root * /app/frontend/dist
+  file_server
+
+  # SPA fallback for React Router
+  @spa {
+    not path /api/*
+    not path /health
+    file {
+      try_files {path} /index.html
+    }
+  }
+  rewrite @spa /index.html
+
+  # SSE — disable buffering
+  handle /api/v1/*/events {
+    reverse_proxy localhost:8000 {
+      flush_interval -1
+    }
+  }
+
+  # Health check passthrough
+  handle /health {
+    reverse_proxy localhost:8000
+  }
+
+  # API proxy to uvicorn
+  handle /api/* {
+    reverse_proxy localhost:8000
+  }
+
+  # TLS — local CA for localhost; remove for real domain + Let's Encrypt
+  tls internal
+}
