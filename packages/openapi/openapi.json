@@ -11791,6 +11791,26 @@
           }
         }
       }
+    },
+    "/api/v1/settings/instance-info": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get Instance Info",
+        "description": "Return instance metadata. No authentication required.\n\nUsed by the login page to detect AIO/demo mode and show credentials.",
+        "operationId": "get_instance_info_api_v1_settings_instance_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceInfoOut"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -15665,6 +15685,21 @@
         "title": "DeduplicationLogOut",
         "description": "Dedup candidate pair returned in responses."
       },
+      "DemoCredentials": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": ["email", "password"],
+        "title": "DemoCredentials"
+      },
       "DepositSplitEntry": {
         "properties": {
           "account_id": {
@@ -17349,6 +17384,31 @@
         },
         "type": "object",
         "title": "IncomeSourceUpdate"
+      },
+      "InstanceInfoOut": {
+        "properties": {
+          "aio_mode": {
+            "type": "boolean",
+            "title": "Aio Mode"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "demo_credentials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DemoCredentials"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": ["aio_mode", "version", "demo_credentials"],
+        "title": "InstanceInfoOut"
       },
       "InvitationOut": {
         "properties": {

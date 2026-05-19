@@ -13,7 +13,7 @@ on:
         default: "latest"
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -77,6 +77,36 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Docker metadata (AIO)
+        id: meta-aio
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/wdiag-aio
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push AIO image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/aio/Dockerfile
+          push: true
+          tags: ${{ steps.meta-aio.outputs.tags }}
+          labels: ${{ steps.meta-aio.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
 
   deploy-homelab:
     name: Deploy to homelab

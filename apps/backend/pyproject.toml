@@ -121,6 +121,14 @@ testpaths = ["tests"]
 markers = [
     "integration: requires running Postgres and Redis (testcontainers)",
 ]
+filterwarnings = [
+    # passlib uses deprecated crypt module (Python 3.13 removal) — upstream issue
+    "ignore:'crypt' is deprecated:DeprecationWarning:passlib",
+    # passlib accesses argon2.__version__ via deprecated API — upstream issue
+    "ignore:Accessing argon2.__version__ is deprecated:DeprecationWarning:passlib",
+    # testcontainers uses deprecated @wait_container_is_ready decorator — upstream issue
+    "ignore:The @wait_container_is_ready decorator is deprecated:DeprecationWarning:testcontainers",
+]
 
 [tool.coverage.run]
 branch = true
