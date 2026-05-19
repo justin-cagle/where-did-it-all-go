@@ -24,6 +24,7 @@ from app.ingest import (
     sync_account_job_initial,
 )
 from app.insights import generate_insights_job
+from app.platform.fx_jobs import fetch_daily_rates_job, recompute_fx_conversions_job
 from app.projections import cleanup_transient_scenarios_job
 from app.recurrences import recurrence_detection_sweep_job
 from app.worker.settings import get_redis_settings
@@ -48,6 +49,8 @@ class WorkerSettings:
         expire_stale_invites,
         run_backup_job,
         check_backup_health_job,
+        fetch_daily_rates_job,
+        recompute_fx_conversions_job,
     ]
 
     cron_jobs: ClassVar[list[object]] = [

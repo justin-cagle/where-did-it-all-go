@@ -14,7 +14,7 @@ import string
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import sqlalchemy as sa
@@ -175,6 +175,7 @@ async def create_transaction(
     merchant_name: str | None = None,
     external_id: str | None = None,
     manually_categorized: bool = False,
+    home_currency: str | None = None,
 ) -> Transaction:
     """Create a transaction and seed an implicit uncategorized split allocation."""
     if external_id is not None:
@@ -187,11 +188,14 @@ async def create_transaction(
                 f"for account {account_id}"
             )
 
+    tx_currency = currency.upper()
+    tx_home_currency = home_currency.upper() if home_currency else None
+
     tx = Transaction(
         household_id=household_id,
         account_id=account_id,
         amount=amount,
-        currency=currency.upper(),
+        currency=tx_currency,
         direction=str(direction),
         transaction_type=str(transaction_type) if transaction_type is not None else None,
         state=str(state),
@@ -202,9 +206,19 @@ async def create_transaction(
         merchant_name=merchant_name,
         external_id=external_id,
         manually_categorized=manually_categorized,
+        fx_rate_source="none",
     )
     session.add(tx)
     await session.flush()
+
+    # Auto-fetch FX rate when transaction currency differs from home currency
+    if tx_home_currency and tx_currency != tx_home_currency:
+        await _apply_fx_rate(
+            session,
+            tx=tx,
+            home_currency=tx_home_currency,
+            occurred_at=occurred_at,
+        )
 
     # Seed implicit single uncategorized split
     split = SplitAllocation(
@@ -992,6 +1006,132 @@ async def _write_audit(
         rationale=rationale,
         actor_id=actor_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# FX rate management
+# ---------------------------------------------------------------------------
+
+
+async def update_transaction_fx_rate(
+    session: AsyncSession,
+    *,
+    transaction_id: uuid.UUID,
+    household_id: uuid.UUID,
+    actor_id: uuid.UUID,
+    rate: Decimal,
+    note: str | None,
+) -> Transaction:
+    """Override the FX rate on a transaction (manual rate entry).
+
+    Recomputes home_currency_amount from the new rate.
+    Sets fx_rate_source = manual.
+    Does NOT update platform_fx_rate (market rates only).
+    """
+    tx = await get_transaction(session, transaction_id=transaction_id, household_id=household_id)
+
+    if rate <= Decimal(0):
+        raise ValidationError("rate must be positive")
+
+    old_rate = tx.fx_rate
+    old_source = tx.fx_rate_source
+
+    tx.fx_rate = rate
+    tx.fx_rate_date = tx.occurred_at
+    tx.fx_rate_source = "manual"
+    if tx.home_currency:
+        tx.home_currency_amount = (tx.amount * rate).quantize(
+            Decimal("0.0001"), rounding=ROUND_HALF_UP
+        )
+    if note is not None:
+        tx.note = note
+    await session.flush()
+
+    await _write_audit(
+        session,
+        actor_id=actor_id,
+        household_id=household_id,
+        entity_type="transaction",
+        entity_id=transaction_id,
+        operation=AuditOperation.UPDATE,
+        delta=[
+            {"op": "test", "path": "/fx_rate", "value": str(old_rate)},
+            {"op": "replace", "path": "/fx_rate", "value": str(rate)},
+            {"op": "test", "path": "/fx_rate_source", "value": old_source},
+            {"op": "replace", "path": "/fx_rate_source", "value": "manual"},
+        ],
+    )
+    return tx
+
+
+async def _apply_fx_rate(
+    session: AsyncSession,
+    *,
+    tx: Transaction,
+    home_currency: str,
+    occurred_at: date,
+) -> None:
+    """Fetch rate from FX service and stamp it on the transaction.
+
+    On FXRateUnavailableError: sets source=fallback, logs warning.
+    On any other error: logs and returns (tx unchanged beyond source=none).
+    """
+    from app.platform.fx import FXRateUnavailableError
+    from app.platform.fx import get_rate as fx_get_rate
+
+    try:
+        rate, is_approx = await fx_get_rate(
+            tx.currency,
+            home_currency,
+            occurred_at,
+            session,
+        )
+        tx.fx_rate = rate
+        tx.fx_rate_date = occurred_at
+        tx.fx_rate_source = "fallback" if is_approx else "frankfurter"
+        tx.home_currency = home_currency
+        tx.home_currency_amount = (tx.amount * rate).quantize(
+            Decimal("0.0001"), rounding=ROUND_HALF_UP
+        )
+        await session.flush()
+    except FXRateUnavailableError:
+        import logging as _logging
+
+        _logging.getLogger(__name__).warning(
+            "fx_rate_unavailable: transaction %s (%s/%s on %s)",
+            tx.id,
+            home_currency,
+            tx.currency,
+            occurred_at,
+        )
+        tx.fx_rate_source = "fallback"
+        tx.home_currency = home_currency
+        await session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Cross-module helpers — date lookups for FX rate application
+# ---------------------------------------------------------------------------
+
+
+async def get_occurred_at_map(
+    session: AsyncSession,
+    *,
+    transaction_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, date]:
+    """Return {transaction_id: occurred_at} for the given IDs.
+
+    Used by budgets and goals modules to look up bank-reported transaction dates
+    for FX rate selection. Batch query; O(1) round trips regardless of set size.
+    """
+    if not transaction_ids:
+        return {}
+    result = await session.execute(
+        sa.select(Transaction.id, Transaction.occurred_at).where(
+            Transaction.id.in_(transaction_ids)
+        )
+    )
+    return {row[0]: row[1] for row in result.fetchall()}
 
 
 # ---------------------------------------------------------------------------

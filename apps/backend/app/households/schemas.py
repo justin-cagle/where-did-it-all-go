@@ -157,6 +157,17 @@ class HouseholdOut(_Base):
     created_at: datetime
 
 
+class HouseholdUpdateOut(HouseholdOut):
+    """Household info returned after a PATCH update.
+
+    recompute_started=True when home_currency changed and the FX recompute
+    job was successfully enqueued. Clients should show a recalculating banner
+    until the fx_recompute_complete SSE event is received.
+    """
+
+    recompute_started: bool = False
+
+
 # ---------------------------------------------------------------------------
 # Membership schemas
 # ---------------------------------------------------------------------------

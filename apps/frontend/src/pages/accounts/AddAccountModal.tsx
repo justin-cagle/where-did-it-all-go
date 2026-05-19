@@ -11,6 +11,7 @@ import {
 } from '@/api/generated/accounts/accounts'
 import { isLiabilityType } from '@/domain/accounts'
 import { ApiError } from '@/api/client'
+import { CurrencySelect } from '@/components/CurrencySelect'
 
 const ACCOUNT_TYPES = [
   { value: 'checking', label: 'Checking' },
@@ -63,9 +64,16 @@ interface AddAccountModalProps {
   open: boolean
   onClose: () => void
   onAdded?: () => void
+  defaultCurrency?: string
 }
 
-export function AddAccountModal({ householdId, open, onClose, onAdded }: AddAccountModalProps) {
+export function AddAccountModal({
+  householdId,
+  open,
+  onClose,
+  onAdded,
+  defaultCurrency = 'USD',
+}: AddAccountModalProps) {
   const [apiError, setApiError] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -77,14 +85,16 @@ export function AddAccountModal({ householdId, open, onClose, onAdded }: AddAcco
     register,
     handleSubmit,
     watch,
+    setValue,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { account_type: 'checking', currency: 'USD' },
+    defaultValues: { account_type: 'checking', currency: defaultCurrency },
   })
 
   const accountType = watch('account_type')
+  const selectedCurrency = watch('currency')
   const isDebt = isLiabilityType(accountType)
 
   const onSubmit = async (values: FormValues) => {
@@ -212,11 +222,9 @@ export function AddAccountModal({ householdId, open, onClose, onAdded }: AddAcco
               <input {...register('current_balance')} placeholder="0.00" style={inputStyle} />
             </Field>
             <Field label="Currency" error={errors.currency?.message}>
-              <input
-                {...register('currency')}
-                placeholder="USD"
-                maxLength={3}
-                style={{ ...inputStyle, textTransform: 'uppercase' }}
+              <CurrencySelect
+                value={selectedCurrency}
+                onChange={(code) => setValue('currency', code, { shouldValidate: true })}
               />
             </Field>
           </div>

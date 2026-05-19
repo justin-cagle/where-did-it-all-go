@@ -59,6 +59,7 @@ from app.transactions.schemas import (
     SplitsSetRequest,
     TransactionCreate,
     TransactionDetailOut,
+    TransactionFXRateUpdate,
     TransactionNoteUpdate,
     TransactionOut,
     TransactionStateUpdate,
@@ -729,3 +730,42 @@ async def archive_payment_group(
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+# ===========================================================================
+# FX rate override
+# ===========================================================================
+
+
+@router.patch(
+    "/households/{household_id}/transactions/{transaction_id}/fx-rate",
+    response_model=TransactionOut,
+)
+async def override_transaction_fx_rate(
+    household_id: HouseholdMember,
+    transaction_id: uuid.UUID,
+    body: TransactionFXRateUpdate,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> TransactionOut:
+    """Override the FX rate on a foreign-currency transaction.
+
+    Sets fx_rate_source=manual. Recomputes home_currency_amount.
+    Does NOT update the platform_fx_rate table (market rates only).
+    """
+    try:
+        tx = await service.update_transaction_fx_rate(
+            session,
+            transaction_id=transaction_id,
+            household_id=household_id,
+            actor_id=current_user.id,
+            rate=body.rate,
+            note=body.note,
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except service.ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return _tx_out(tx)

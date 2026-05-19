@@ -13,6 +13,10 @@ import type { TransactionOutExternalId } from './transactionOutExternalId'
 import type { TransactionOutRecurrenceId } from './transactionOutRecurrenceId'
 import type { TransactionOutTransferPeerId } from './transactionOutTransferPeerId'
 import type { TransactionOutRefundPeerId } from './transactionOutRefundPeerId'
+import type { TransactionOutFxRate } from './transactionOutFxRate'
+import type { TransactionOutFxRateDate } from './transactionOutFxRateDate'
+import type { TransactionOutHomeCurrencyAmount } from './transactionOutHomeCurrencyAmount'
+import type { TransactionOutHomeCurrency } from './transactionOutHomeCurrency'
 
 /**
  * Transaction info returned in list and detail responses.
@@ -38,6 +42,11 @@ export interface TransactionOut {
   manually_categorized: boolean
   transfer_peer_id: TransactionOutTransferPeerId
   refund_peer_id: TransactionOutRefundPeerId
+  fx_rate: TransactionOutFxRate
+  fx_rate_date: TransactionOutFxRateDate
+  fx_rate_source: string
+  home_currency_amount: TransactionOutHomeCurrencyAmount
+  home_currency: TransactionOutHomeCurrency
   created_at: string
   updated_at: string
 }

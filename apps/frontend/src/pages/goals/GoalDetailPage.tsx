@@ -24,8 +24,12 @@ import {
   useArchiveGoalApiV1HouseholdsHouseholdIdGoalsGoalIdDelete,
   useUpdateGoalApiV1HouseholdsHouseholdIdGoalsGoalIdPatch,
 } from '@/api/generated/default/default'
-import { useListMembersApiV1HouseholdsHouseholdIdMembersGet } from '@/api/generated/households/households'
+import {
+  useListMembersApiV1HouseholdsHouseholdIdMembersGet,
+  useGetHouseholdApiV1HouseholdsHouseholdIdGet,
+} from '@/api/generated/households/households'
 import { useHousehold } from '@/hooks/use-household'
+import { useGetFxRateApiV1FxRatesGet } from '@/api/generated/platform/platform'
 import { formatAmount } from '@/lib/format-amount'
 import { BurnUpStatus } from '@/api/generated/model/burnUpStatus'
 import { GoalStatus } from '@/api/generated/model/goalStatus'
@@ -207,6 +211,18 @@ export function GoalDetailPage() {
     query: { enabled: !!hid },
   })
 
+  const { data: household } = useGetHouseholdApiV1HouseholdsHouseholdIdGet(hid, {
+    query: { enabled: !!hid },
+  })
+  const homeCurrency = household?.home_currency ?? 'USD'
+  const todayStr = new Date().toISOString().split('T')[0] ?? new Date().toISOString().slice(0, 10)
+
+  const isForeignGoal = !!goal && goal.currency !== homeCurrency
+  const { data: fxRate } = useGetFxRateApiV1FxRatesGet(
+    { from_currency: goal?.currency ?? 'USD', to_currency: homeCurrency, date: todayStr },
+    { query: { enabled: isForeignGoal } }
+  )
+
   const { mutate: pauseGoal, isPending: pausing } =
     usePauseGoalApiV1HouseholdsHouseholdIdGoalsGoalIdPausePost({
       mutation: { onSuccess: () => void qc.invalidateQueries() },
@@ -256,6 +272,12 @@ export function GoalDetailPage() {
   const projectedCompletion = snapshot?.projected_completion_date ?? null
 
   const ownerMember = goal.owner_id ? members.find((m) => m.user_id === goal.owner_id) : null
+
+  const fxRateValue = fxRate ? parseFloat(fxRate.rate) : null
+  const homeEquivActual =
+    isForeignGoal && fxRateValue != null ? cumulativeActual * fxRateValue : null
+  const homeEquivTarget =
+    isForeignGoal && fxRateValue != null && targetAmount != null ? targetAmount * fxRateValue : null
 
   const chartData = history.map((s) => ({
     date: s.snapshot_date,
@@ -386,6 +408,22 @@ export function GoalDetailPage() {
 
           <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
             <Badge label={goalTypeLabel(goal.goal_type)} color="var(--accent)" />
+            {isForeignGoal && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '2px 7px',
+                  borderRadius: 99,
+                  background: 'color-mix(in oklch, var(--warning, #f59e0b) 14%, transparent)',
+                  color: '#f59e0b',
+                  letterSpacing: '0.04em',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              >
+                {currency}
+              </span>
+            )}
             {burnStatus && (
               <Badge label={statusLabel(burnStatus)} color={burnUpColor(burnStatus)} />
             )}
@@ -520,7 +558,13 @@ export function GoalDetailPage() {
             label="Saved so far"
             value={formatAmount(cumulativeActual, { currency })}
             color={burnStatus ? burnUpColor(burnStatus) : undefined}
-            sub={targetAmount ? `of ${formatAmount(targetAmount, { currency })}` : undefined}
+            sub={
+              homeEquivActual != null
+                ? `≈ ${formatAmount(homeEquivActual, { currency: homeCurrency })}${targetAmount ? ` · of ${formatAmount(targetAmount, { currency })}` : ''}${homeEquivTarget != null ? ` (≈ ${formatAmount(homeEquivTarget, { currency: homeCurrency })})` : ''}`
+                : targetAmount
+                  ? `of ${formatAmount(targetAmount, { currency })}`
+                  : undefined
+            }
           />
           {requiredPaceMonth != null && (
             <StatCard

@@ -13,6 +13,10 @@ import type { TransactionDetailOutExternalId } from './transactionDetailOutExter
 import type { TransactionDetailOutRecurrenceId } from './transactionDetailOutRecurrenceId'
 import type { TransactionDetailOutTransferPeerId } from './transactionDetailOutTransferPeerId'
 import type { TransactionDetailOutRefundPeerId } from './transactionDetailOutRefundPeerId'
+import type { TransactionDetailOutFxRate } from './transactionDetailOutFxRate'
+import type { TransactionDetailOutFxRateDate } from './transactionDetailOutFxRateDate'
+import type { TransactionDetailOutHomeCurrencyAmount } from './transactionDetailOutHomeCurrencyAmount'
+import type { TransactionDetailOutHomeCurrency } from './transactionDetailOutHomeCurrency'
 import type { SplitAllocationOut } from './splitAllocationOut'
 
 /**
@@ -39,6 +43,11 @@ export interface TransactionDetailOut {
   manually_categorized: boolean
   transfer_peer_id: TransactionDetailOutTransferPeerId
   refund_peer_id: TransactionDetailOutRefundPeerId
+  fx_rate: TransactionDetailOutFxRate
+  fx_rate_date: TransactionDetailOutFxRateDate
+  fx_rate_source: string
+  home_currency_amount: TransactionDetailOutHomeCurrencyAmount
+  home_currency: TransactionDetailOutHomeCurrency
   created_at: string
   updated_at: string
   splits?: SplitAllocationOut[]

@@ -468,7 +468,7 @@
       "patch": {
         "tags": ["households", "auth"],
         "summary": "Update Household",
-        "description": "Update household settings (actor must be owner).",
+        "description": "Update household settings (actor must be owner).\n\nWhen home_currency changes, enqueues recompute_fx_conversions_job and\nreturns recompute_started=true. Clients should show a recalculating banner\nuntil the fx_recompute_complete SSE event is received.",
         "operationId": "update_household_api_v1_households__household_id__patch",
         "parameters": [
           {
@@ -498,7 +498,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HouseholdOut"
+                  "$ref": "#/components/schemas/HouseholdUpdateOut"
                 }
               }
             }
@@ -4081,6 +4081,68 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/transactions/{transaction_id}/fx-rate": {
+      "patch": {
+        "tags": ["transactions"],
+        "summary": "Override Transaction Fx Rate",
+        "description": "Override the FX rate on a foreign-currency transaction.\n\nSets fx_rate_source=manual. Recomputes home_currency_amount.\nDoes NOT update the platform_fx_rate table (market rates only).",
+        "operationId": "override_transaction_fx_rate_api_v1_households__household_id__transactions__transaction_id__fx_rate_patch",
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transaction Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionFXRateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -10706,6 +10768,94 @@
         }
       }
     },
+    "/api/v1/currencies": {
+      "get": {
+        "tags": ["platform"],
+        "summary": "List Currencies",
+        "description": "Return all currencies supported by the Frankfurter API.\n\nNo auth required. Cached in Redis for 24 hours.",
+        "operationId": "list_currencies_api_v1_currencies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Currencies Api V1 Currencies Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fx-rates": {
+      "get": {
+        "tags": ["platform"],
+        "summary": "Get Fx Rate",
+        "description": "Look up an FX rate for a currency pair and date.\n\nRequires authentication. Stores the rate if fetched from Frankfurter.\nReturns is_approximate=true when using a fallback rate.",
+        "operationId": "get_fx_rate_api_v1_fx_rates_get",
+        "parameters": [
+          {
+            "name": "from_currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3,
+              "title": "From Currency"
+            }
+          },
+          {
+            "name": "to_currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3,
+              "title": "To Currency"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FXRateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/overview": {
       "get": {
         "tags": ["admin"],
@@ -14516,6 +14666,21 @@
         "title": "CreateInvitationRequest",
         "description": "Create a household invitation."
       },
+      "CurrencyOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": ["code", "name"],
+        "title": "CurrencyOut"
+      },
       "DebtAnnotationCreate": {
         "properties": {
           "minimum_payment_strategy": {
@@ -15754,6 +15919,45 @@
         ],
         "title": "ExpectedIncomeStrategy"
       },
+      "FXRateOut": {
+        "properties": {
+          "from_currency": {
+            "type": "string",
+            "title": "From Currency"
+          },
+          "to_currency": {
+            "type": "string",
+            "title": "To Currency"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "rate": {
+            "type": "string",
+            "title": "Rate"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "is_approximate": {
+            "type": "boolean",
+            "title": "Is Approximate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_currency",
+          "to_currency",
+          "date",
+          "rate",
+          "source",
+          "is_approximate"
+        ],
+        "title": "FXRateOut"
+      },
       "FailedJobOut": {
         "properties": {
           "job_id": {
@@ -16681,6 +16885,47 @@
         "type": "object",
         "title": "HouseholdUpdate",
         "description": "Mutable household fields."
+      },
+      "HouseholdUpdateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "visibility_mode": {
+            "type": "string",
+            "title": "Visibility Mode"
+          },
+          "home_currency": {
+            "type": "string",
+            "title": "Home Currency"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "recompute_started": {
+            "type": "boolean",
+            "title": "Recompute Started",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "visibility_mode",
+          "home_currency",
+          "created_at"
+        ],
+        "title": "HouseholdUpdateOut",
+        "description": "Household info returned after a PATCH update.\n\nrecompute_started=True when home_currency changed and the FX recompute\njob was successfully enqueued. Clients should show a recalculating banner\nuntil the fx_recompute_complete SSE event is received."
       },
       "ImportJobOut": {
         "properties": {
@@ -21148,6 +21393,57 @@
             ],
             "title": "Refund Peer Id"
           },
+          "fx_rate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fx Rate"
+          },
+          "fx_rate_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fx Rate Date"
+          },
+          "fx_rate_source": {
+            "type": "string",
+            "title": "Fx Rate Source"
+          },
+          "home_currency_amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Currency Amount"
+          },
+          "home_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Currency"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -21188,6 +21484,11 @@
           "manually_categorized",
           "transfer_peer_id",
           "refund_peer_id",
+          "fx_rate",
+          "fx_rate_date",
+          "fx_rate_source",
+          "home_currency_amount",
+          "home_currency",
           "created_at",
           "updated_at"
         ],
@@ -21198,6 +21499,39 @@
         "type": "string",
         "enum": ["debit", "credit"],
         "title": "TransactionDirection"
+      },
+      "TransactionFXRateUpdate": {
+        "properties": {
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Rate"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": ["rate"],
+        "title": "TransactionFXRateUpdate",
+        "description": "Override the FX rate on a transaction."
       },
       "TransactionNoteUpdate": {
         "properties": {
@@ -21362,6 +21696,57 @@
             ],
             "title": "Refund Peer Id"
           },
+          "fx_rate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fx Rate"
+          },
+          "fx_rate_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fx Rate Date"
+          },
+          "fx_rate_source": {
+            "type": "string",
+            "title": "Fx Rate Source"
+          },
+          "home_currency_amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Currency Amount"
+          },
+          "home_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Currency"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -21394,6 +21779,11 @@
           "manually_categorized",
           "transfer_peer_id",
           "refund_peer_id",
+          "fx_rate",
+          "fx_rate_date",
+          "fx_rate_source",
+          "home_currency_amount",
+          "home_currency",
           "created_at",
           "updated_at"
         ],

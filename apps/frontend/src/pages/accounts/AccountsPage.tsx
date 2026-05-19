@@ -8,6 +8,7 @@ import {
   useFindGroupCandidatesApiV1HouseholdsHouseholdIdAccountsGroupsCandidatesGet,
   getGetAccountApiV1HouseholdsHouseholdIdAccountsAccountIdGetQueryOptions,
 } from '@/api/generated/accounts/accounts'
+import { useGetHouseholdApiV1HouseholdsHouseholdIdGet } from '@/api/generated/households/households'
 import { useListSyncConfigsApiV1HouseholdsHouseholdIdIngestSyncConfigsGet } from '@/api/generated/ingest/ingest'
 import type { AccountOut } from '@/api/generated/model/accountOut'
 import type { SyncConfigOut } from '@/api/generated/model/syncConfigOut'
@@ -90,10 +91,12 @@ function AccountCard({
   account,
   householdId,
   syncConfigs,
+  homeCurrency,
 }: {
   account: AccountOut
   householdId: string
   syncConfigs: SyncConfigOut[]
+  homeCurrency: string
 }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -180,6 +183,23 @@ function AccountCard({
           {syncConfig && syncConfig.status !== 'active' && (
             <SyncStatusBadge status={syncConfig.status} />
           )}
+          {account.currency !== homeCurrency && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 99,
+                background: 'color-mix(in oklch, var(--warning, #f59e0b) 14%, transparent)',
+                color: '#f59e0b',
+                letterSpacing: '0.04em',
+                fontFamily: 'var(--font-mono)',
+                flexShrink: 0,
+              }}
+            >
+              {account.currency}
+            </span>
+          )}
           <TypeBadge type={account.account_type} />
         </div>
       </div>
@@ -204,12 +224,14 @@ function AccountGroupSection({
   privacyMode,
   householdId,
   syncConfigs,
+  homeCurrency,
 }: {
   config: AccountGroupConfig
   accounts: AccountOut[]
   privacyMode: PrivacyMode
   householdId: string
   syncConfigs: SyncConfigOut[]
+  homeCurrency: string
 }) {
   const total = groupTotal(accounts)
   const isLiab = config.types.some((t) => isLiabilityType(t))
@@ -254,7 +276,13 @@ function AccountGroupSection({
         }}
       >
         {accounts.map((a) => (
-          <AccountCard key={a.id} account={a} householdId={householdId} syncConfigs={syncConfigs} />
+          <AccountCard
+            key={a.id}
+            account={a}
+            householdId={householdId}
+            syncConfigs={syncConfigs}
+            homeCurrency={homeCurrency}
+          />
         ))}
       </div>
     </div>
@@ -279,10 +307,12 @@ function PageHeader({
   netWorth,
   privacyMode,
   onAdd,
+  isApproximate = false,
 }: {
   netWorth: number
   privacyMode: PrivacyMode
   onAdd: () => void
+  isApproximate?: boolean
 }) {
   return (
     <div
@@ -316,7 +346,7 @@ function PageHeader({
               color: netWorth >= 0 ? 'var(--fg-primary)' : 'var(--danger)',
             }}
           >
-            {fmt(netWorth, privacyMode)}
+            {fmt(netWorth, { privacyMode, isApproximate })}
           </span>
         </div>
       </div>
@@ -349,6 +379,11 @@ export function AccountsPage() {
   const privacyMode = useAuthStore((s) => s.privacyMode)
   const [showAddModal, setShowAddModal] = useState(false)
 
+  const { data: household } = useGetHouseholdApiV1HouseholdsHouseholdIdGet(householdId ?? '', {
+    query: { enabled: !!householdId },
+  })
+  const homeCurrency = household?.home_currency ?? 'USD'
+
   const {
     data: accounts,
     isLoading: accountsLoading,
@@ -373,11 +408,17 @@ export function AccountsPage() {
   const isLoading = householdLoading || accountsLoading
   const netWorth = accounts ? calcNetWorth(accounts) : 0
   const grouped = accounts ? groupAccounts(accounts) : []
+  const hasApproxFx = accounts ? accounts.some((a) => a.currency !== homeCurrency) : false
 
   if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <PageHeader netWorth={0} privacyMode={privacyMode} onAdd={() => setShowAddModal(true)} />
+        <PageHeader
+          netWorth={0}
+          privacyMode={privacyMode}
+          onAdd={() => setShowAddModal(true)}
+          isApproximate={false}
+        />
         <div
           style={{
             display: 'grid',
@@ -426,7 +467,12 @@ export function AccountsPage() {
   if (!accounts || accounts.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <PageHeader netWorth={0} privacyMode={privacyMode} onAdd={() => setShowAddModal(true)} />
+        <PageHeader
+          netWorth={0}
+          privacyMode={privacyMode}
+          onAdd={() => setShowAddModal(true)}
+          isApproximate={false}
+        />
         <div
           style={{
             display: 'flex',
@@ -474,6 +520,7 @@ export function AccountsPage() {
             householdId={householdId}
             open={showAddModal}
             onClose={() => setShowAddModal(false)}
+            defaultCurrency={homeCurrency}
           />
         )}
       </div>
@@ -486,6 +533,7 @@ export function AccountsPage() {
         netWorth={netWorth}
         privacyMode={privacyMode}
         onAdd={() => setShowAddModal(true)}
+        isApproximate={hasApproxFx}
       />
 
       {candidates && candidates.length > 0 && householdId && (
@@ -504,6 +552,7 @@ export function AccountsPage() {
           privacyMode={privacyMode}
           householdId={householdId ?? ''}
           syncConfigs={syncConfigs ?? []}
+          homeCurrency={homeCurrency}
         />
       ))}
 
@@ -512,6 +561,7 @@ export function AccountsPage() {
           householdId={householdId}
           open={showAddModal}
           onClose={() => setShowAddModal(false)}
+          defaultCurrency={homeCurrency}
         />
       )}
     </div>

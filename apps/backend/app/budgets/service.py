@@ -668,6 +668,10 @@ async def compute_actuals(
         direction="debit",
     )
 
+    # Batch-fetch occurred_at for FX rate selection
+    tx_ids = list({a.transaction_id for a in allocations})
+    occurred_at_map = await tx_service.get_occurred_at_map(session, transaction_ids=tx_ids)
+
     # Build category -> allocations lookup
     from collections import defaultdict
 
@@ -678,7 +682,7 @@ async def compute_actuals(
     results: list[BudgetLineResult] = []
 
     for line in lines:
-        # Sum actuals for this line
+        # Sum actuals for this line (with FX conversion if currencies differ)
         line_allocations = alloc_by_category.get(line.category_id, [])
         if line.tag_id is not None:
             tag_str = str(line.tag_id)
@@ -686,7 +690,25 @@ async def compute_actuals(
                 a for a in line_allocations if tag_str in [str(t) for t in a.tag_ids]
             ]
 
-        actual = sum((a.amount for a in line_allocations), Decimal("0"))
+        actual = Decimal("0")
+        line_has_approx_fx = False
+        for alloc in line_allocations:
+            if alloc.currency == line.currency:
+                actual += alloc.amount
+            else:
+                tx_date = occurred_at_map.get(alloc.transaction_id, period_start)
+                try:
+                    from app.platform.fx import convert as fx_convert
+
+                    converted, is_approx = await fx_convert(
+                        alloc.amount, alloc.currency, line.currency, tx_date, session
+                    )
+                    actual += converted
+                    if is_approx:
+                        line_has_approx_fx = True
+                except Exception:
+                    actual += alloc.amount
+
         carried_in = line.carried_amount
         effective_planned = line.planned_amount + carried_in
 
@@ -722,6 +744,7 @@ async def compute_actuals(
                 actual_amount=actual,
                 carried_in=carried_in,
                 carried_out=carried_out,
+                has_approximate_fx=line_has_approx_fx,
             )
             session.add(period_actual)
         else:
@@ -730,6 +753,7 @@ async def compute_actuals(
             period_actual.actual_amount = actual
             period_actual.carried_in = carried_in
             period_actual.carried_out = carried_out
+            period_actual.has_approximate_fx = line_has_approx_fx
 
         await session.flush()
 

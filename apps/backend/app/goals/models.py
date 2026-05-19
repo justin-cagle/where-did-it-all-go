@@ -269,6 +269,13 @@ class GoalSnapshot(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         server_default=sa.text("NOW()"),
     )
+    has_approximate_fx: Mapped[bool] = mapped_column(
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("FALSE"),
+        comment="True when any contribution in this snapshot used a fallback FX rate",
+    )
 
     __table_args__ = (
         sa.Index("ix_goals_snapshot_goal", "goal_id"),

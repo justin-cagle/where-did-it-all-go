@@ -243,6 +243,13 @@ class BudgetPeriodActual(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         default=Decimal("0"),
         server_default=sa.text("0"),
     )
+    has_approximate_fx: Mapped[bool] = mapped_column(
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("FALSE"),
+        comment="True when any allocation in this period used a fallback FX rate",
+    )
 
     __table_args__ = (
         sa.Index("ix_budgets_period_actual_budget", "budget_id"),
