@@ -149,6 +149,8 @@ services:
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME:?DOMAIN_NAME is required when using bundled-proxy}
       CADDY_EMAIL: ${CADDY_EMAIL:-}
+    labels:
+      - wud.watch=false
 
   # Optional local LLM. Active when COMPOSE_PROFILES includes 'ollama'.
   ollama:

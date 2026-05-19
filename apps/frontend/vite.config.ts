@@ -41,6 +41,15 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8111',
+        changeOrigin: true,
+        cookieDomainRewrite: '',
+      },
+    },
+  },
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
