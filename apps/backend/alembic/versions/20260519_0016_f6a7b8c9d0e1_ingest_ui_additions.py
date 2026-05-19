@@ -207,3 +207,20 @@ def downgrade() -> None:
     op.execute(sa.text("ALTER TABLE ingest_sync_config DROP COLUMN IF EXISTS requests_today"))
     op.execute(sa.text("ALTER TABLE ingest_sync_config DROP COLUMN IF EXISTS sync_interval_hours"))
     op.execute(sa.text("ALTER TABLE ingest_sync_config DROP COLUMN IF EXISTS label"))
+
+    # Restore account_id NOT NULL + FK + index + unique that upgrade() dropped
+    op.execute(sa.text("ALTER TABLE ingest_sync_config ALTER COLUMN account_id SET NOT NULL"))
+    op.create_index("ix_ingest_sync_config_account", "ingest_sync_config", ["account_id"])
+    op.create_foreign_key(
+        "ingest_sync_config_account_id_fkey",
+        "ingest_sync_config",
+        "accounts_account",
+        ["account_id"],
+        ["id"],
+        ondelete="CASCADE",
+    )
+    op.create_unique_constraint(
+        "uq_ingest_sync_config_account_provider",
+        "ingest_sync_config",
+        ["account_id", "provider"],
+    )
