@@ -1,6 +1,6 @@
 """transaction note field
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: 3a7e9f2b1c4d
 Revises: f6a7b8c9d0e1
 Create Date: 2026-05-19
 
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # pragma: allowlist secret
-revision: str = "a1b2c3d4e5f6"  # pragma: allowlist secret
+revision: str = "3a7e9f2b1c4d"  # pragma: allowlist secret
 down_revision: str | None = "f6a7b8c9d0e1"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

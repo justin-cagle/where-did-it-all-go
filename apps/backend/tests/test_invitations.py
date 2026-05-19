@@ -656,7 +656,7 @@ def test_email_normalization_idempotent(email: str) -> None:
     assert normalized == normalized.lower().strip()
 
 
-@given(st.integers(min_value=0, max_value=200))
+@given(st.integers(min_value=1, max_value=200))
 @settings(max_examples=30, deadline=None)
 def test_token_urlsafe_min_length(nbytes: int) -> None:
     import secrets

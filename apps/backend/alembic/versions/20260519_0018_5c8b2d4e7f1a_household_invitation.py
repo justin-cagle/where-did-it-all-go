@@ -1,7 +1,7 @@
 """household invitation table
 
-Revision ID: b2c3d4e5f6a7
-Revises: a1b2c3d4e5f6
+Revision ID: 5c8b2d4e7f1a
+Revises: 3a7e9f2b1c4d
 Create Date: 2026-05-19
 
 Changes:
@@ -17,8 +17,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # pragma: allowlist secret
-revision: str = "b2c3d4e5f6a7"  # pragma: allowlist secret
-down_revision: str | None = "a1b2c3d4e5f6"  # pragma: allowlist secret
+revision: str = "5c8b2d4e7f1a"  # pragma: allowlist secret
+down_revision: str | None = "3a7e9f2b1c4d"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
