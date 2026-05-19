@@ -93,6 +93,16 @@ class Account(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         sa.ForeignKey("accounts_account_group.id", ondelete="SET NULL"),
         nullable=True,
     )
+    authoritative_sync_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        nullable=True,
+        comment="Cross-module ref to ingest_sync_config; no FK enforced",
+    )
+    simplefin_account_id: Mapped[str | None] = mapped_column(
+        sa.Text,
+        nullable=True,
+        comment="SimpleFIN external account ID for transaction routing during sync",
+    )
 
     account_group: Mapped["AccountGroup | None"] = relationship(
         "AccountGroup",

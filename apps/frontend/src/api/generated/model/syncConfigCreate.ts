@@ -5,12 +5,21 @@
  * Personal finance budgeting and intelligence
  * OpenAPI spec version: 0.1.0
  */
-import type { SyncConfigCreateCredentials } from './syncConfigCreateCredentials'
+import type { SyncConfigCreateSetupToken } from './syncConfigCreateSetupToken'
+import type { SyncConfigCreateLabel } from './syncConfigCreateLabel'
 
+/**
+ * Create a SimpleFIN sync configuration.
+
+For SimpleFIN: supply setup_token (exchanged immediately for access_url) and label.
+setup_token is one-time-use and never stored.
+ */
 export interface SyncConfigCreate {
-  account_id: string
   /** @pattern ^(simplefin|ofx|csv|manual)$ */
   provider: string
-  credentials?: SyncConfigCreateCredentials
+  /** SimpleFIN one-time setup token */
+  setup_token?: SyncConfigCreateSetupToken
+  /** User-assigned display name */
+  label?: SyncConfigCreateLabel
   sync_enabled?: boolean
 }

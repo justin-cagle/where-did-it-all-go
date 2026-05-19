@@ -376,6 +376,7 @@ async def list_transactions_cross_account(
     transaction_type: TransactionType | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    import_job_id: uuid.UUID | None = None,
 ) -> list[TransactionOut]:
     """List all transactions in the household (cross-account)."""
     txs = await service.list_transactions(
@@ -386,6 +387,7 @@ async def list_transactions_cross_account(
         transaction_type=transaction_type,
         date_from=date_from,
         date_to=date_to,
+        import_job_id=import_job_id,
     )
     return [_tx_out(t) for t in txs]
 

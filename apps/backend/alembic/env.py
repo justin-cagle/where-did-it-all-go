@@ -64,7 +64,7 @@ from app.households.models import (  # noqa: E402, F401
     RefreshToken,
     User,
 )
-from app.ingest.models import ImportJob, SyncConfig  # noqa: E402, F401
+from app.ingest.models import ImportJob, IngestCSVMapping, SyncConfig  # noqa: E402, F401
 from app.insights.models import (  # noqa: E402, F401
     InsightAuditLog,
     InsightProviderConfig,

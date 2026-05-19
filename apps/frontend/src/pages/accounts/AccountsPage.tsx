@@ -8,7 +8,9 @@ import {
   useFindGroupCandidatesApiV1HouseholdsHouseholdIdAccountsGroupsCandidatesGet,
   getGetAccountApiV1HouseholdsHouseholdIdAccountsAccountIdGetQueryOptions,
 } from '@/api/generated/accounts/accounts'
+import { useListSyncConfigsApiV1HouseholdsHouseholdIdIngestSyncConfigsGet } from '@/api/generated/ingest/ingest'
 import type { AccountOut } from '@/api/generated/model/accountOut'
+import type { SyncConfigOut } from '@/api/generated/model/syncConfigOut'
 import { useAuthStore } from '@/store'
 import { fmt } from '@/lib/format'
 import type { PrivacyMode } from '@/lib/format'
@@ -22,6 +24,43 @@ import {
 import type { AccountGroupConfig } from '@/domain/accounts'
 import { AddAccountModal } from './AddAccountModal'
 import { GroupCandidateBanner } from './GroupCandidateBanner'
+
+const SYNC_STATUS_CFG: Record<string, { color: string; label: string }> = {
+  active: { color: 'var(--success)', label: 'Syncing' },
+  warning: { color: 'var(--warning)', label: 'Warning' },
+  rate_limited: { color: 'oklch(62% 0.18 42)', label: 'Paused' },
+  error: { color: 'var(--danger)', label: 'Error' },
+  disabled: { color: 'var(--fg-muted)', label: 'Disabled' },
+}
+const DEFAULT_SYNC_CFG = { color: 'var(--fg-muted)', label: 'Unknown' }
+
+function SyncStatusBadge({ status }: { status: string }) {
+  const navigate = useNavigate()
+  const cfg = SYNC_STATUS_CFG[status] ?? DEFAULT_SYNC_CFG
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        void navigate('/settings/ingest')
+      }}
+      title={`Sync status: ${cfg.label} — click to manage`}
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        padding: '2px 7px',
+        borderRadius: 99,
+        background: `color-mix(in oklch, ${cfg.color} 14%, transparent)`,
+        color: cfg.color,
+        border: 'none',
+        cursor: 'pointer',
+        letterSpacing: '0.03em',
+        flexShrink: 0,
+      }}
+    >
+      {cfg.label}
+    </button>
+  )
+}
 
 function TypeBadge({ type }: { type: string }) {
   const isLiab = isLiabilityType(type)
@@ -47,13 +86,24 @@ function TypeBadge({ type }: { type: string }) {
   )
 }
 
-function AccountCard({ account, householdId }: { account: AccountOut; householdId: string }) {
+function AccountCard({
+  account,
+  householdId,
+  syncConfigs,
+}: {
+  account: AccountOut
+  householdId: string
+  syncConfigs: SyncConfigOut[]
+}) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const privacyMode = useAuthStore((s) => s.privacyMode)
   const balance = parseFloat(account.current_balance)
   const isLiab = isLiabilityType(account.account_type)
+  const syncConfig = account.authoritative_sync_config_id
+    ? syncConfigs.find((c) => c.id === account.authoritative_sync_config_id)
+    : undefined
 
   function handleMouseEnter() {
     hoverTimer.current = setTimeout(() => {
@@ -126,7 +176,12 @@ function AccountCard({ account, householdId }: { account: AccountOut; householdI
             {account.name}
           </div>
         </div>
-        <TypeBadge type={account.account_type} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {syncConfig && syncConfig.status !== 'active' && (
+            <SyncStatusBadge status={syncConfig.status} />
+          )}
+          <TypeBadge type={account.account_type} />
+        </div>
       </div>
       <span
         style={{
@@ -148,11 +203,13 @@ function AccountGroupSection({
   accounts,
   privacyMode,
   householdId,
+  syncConfigs,
 }: {
   config: AccountGroupConfig
   accounts: AccountOut[]
   privacyMode: PrivacyMode
   householdId: string
+  syncConfigs: SyncConfigOut[]
 }) {
   const total = groupTotal(accounts)
   const isLiab = config.types.some((t) => isLiabilityType(t))
@@ -197,7 +254,7 @@ function AccountGroupSection({
         }}
       >
         {accounts.map((a) => (
-          <AccountCard key={a.id} account={a} householdId={householdId} />
+          <AccountCard key={a.id} account={a} householdId={householdId} syncConfigs={syncConfigs} />
         ))}
       </div>
     </div>
@@ -300,6 +357,13 @@ export function AccountsPage() {
   } = useListAccountsApiV1HouseholdsHouseholdIdAccountsGet(householdId ?? '', undefined, {
     query: { enabled: !!householdId },
   })
+
+  const { data: syncConfigs } = useListSyncConfigsApiV1HouseholdsHouseholdIdIngestSyncConfigsGet(
+    householdId ?? '',
+    {
+      query: { enabled: !!householdId, staleTime: 60_000 },
+    }
+  )
 
   const { data: candidates } =
     useFindGroupCandidatesApiV1HouseholdsHouseholdIdAccountsGroupsCandidatesGet(householdId ?? '', {
@@ -439,6 +503,7 @@ export function AccountsPage() {
           accounts={groupAccs}
           privacyMode={privacyMode}
           householdId={householdId ?? ''}
+          syncConfigs={syncConfigs ?? []}
         />
       ))}
 

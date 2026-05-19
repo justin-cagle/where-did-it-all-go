@@ -597,7 +597,7 @@ async def test_sync_config_credential_encryption(ingest_db: tuple) -> None:
     _engine, factory = ingest_db
 
     async with factory() as session:
-        hh_id, _user_id, acc_id = await _seed_household_and_account(session)
+        hh_id, _user_id, _acc_id = await _seed_household_and_account(session)
         await session.commit()
 
     plaintext_creds = {"access_url": "https://secret-token@bridge.simplefin.org/simplefin"}
@@ -606,7 +606,6 @@ async def test_sync_config_credential_encryption(ingest_db: tuple) -> None:
         config = await ingest_service.create_sync_config(
             session,
             household_id=hh_id,
-            account_id=acc_id,
             provider=IngestProvider.SIMPLEFIN,
             credentials=plaintext_creds,
             master_key="test-master-key",

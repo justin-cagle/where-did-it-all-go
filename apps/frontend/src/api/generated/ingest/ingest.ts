@@ -23,10 +23,17 @@ import type {
 
 import type {
   BodyUploadFileApiV1HouseholdsHouseholdIdIngestUploadPost,
+  CSVMappingIn,
+  CSVMappingOut,
   HTTPValidationError,
   ImportJobOut,
+  ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  MappingDecision,
+  MappingResult,
+  SimplefinAccountPreview,
   SyncConfigCreate,
   SyncConfigOut,
+  SyncConfigUpdate,
   TriggerResponse,
   UploadFileApiV1HouseholdsHouseholdIdIngestUploadPostParams,
   UploadResponse,
@@ -280,42 +287,40 @@ export function useListSyncConfigsApiV1HouseholdsHouseholdIdIngestSyncConfigsGet
 }
 
 /**
- * Enqueue sync_account_job for a SimpleFIN sync config. Returns job ID.
- * @summary Trigger Sync
+ * @summary Update Sync Config
  */
-export const triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost = (
+export const updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch = (
   householdId: string,
   configId: string,
-  signal?: AbortSignal
+  syncConfigUpdate: SyncConfigUpdate
 ) => {
-  return customInstance<TriggerResponse>({
-    url: `/api/v1/households/${householdId}/ingest/sync-configs/${configId}/trigger`,
-    method: 'POST',
-    signal,
+  return customInstance<SyncConfigOut>({
+    url: `/api/v1/households/${householdId}/ingest/sync-configs/${configId}`,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    data: syncConfigUpdate,
   })
 }
 
-export const getTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationOptions =
+export const getUpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatchMutationOptions =
   <TError = HTTPValidationError, TContext = unknown>(options?: {
     mutation?: UseMutationOptions<
       Awaited<
-        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+        ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
       >,
       TError,
-      { householdId: string; configId: string },
+      { householdId: string; configId: string; data: SyncConfigUpdate },
       TContext
     >
   }): UseMutationOptions<
     Awaited<
-      ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+      ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
     >,
     TError,
-    { householdId: string; configId: string },
+    { householdId: string; configId: string; data: SyncConfigUpdate },
     TContext
   > => {
-    const mutationKey = [
-      'triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost',
-    ]
+    const mutationKey = ['updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch']
     const { mutation: mutationOptions } = options
       ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
         ? options
@@ -324,59 +329,61 @@ export const getTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTr
 
     const mutationFn: MutationFunction<
       Awaited<
-        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+        ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
       >,
-      { householdId: string; configId: string }
+      { householdId: string; configId: string; data: SyncConfigUpdate }
     > = (props) => {
-      const { householdId, configId } = props ?? {}
+      const { householdId, configId, data } = props ?? {}
 
-      return triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost(
+      return updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch(
         householdId,
-        configId
+        configId,
+        data
       )
     }
 
     return { mutationFn, ...mutationOptions }
   }
 
-export type TriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationResult =
+export type UpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatchMutationResult =
   NonNullable<
     Awaited<
-      ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+      ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
     >
   >
-
-export type TriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationError =
+export type UpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatchMutationBody =
+  SyncConfigUpdate
+export type UpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatchMutationError =
   HTTPValidationError
 
 /**
- * @summary Trigger Sync
+ * @summary Update Sync Config
  */
-export const useTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost = <
+export const useUpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch = <
   TError = HTTPValidationError,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<
-        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+        ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
       >,
       TError,
-      { householdId: string; configId: string },
+      { householdId: string; configId: string; data: SyncConfigUpdate },
       TContext
     >
   },
   queryClient?: QueryClient
 ): UseMutationResult<
   Awaited<
-    ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+    ReturnType<typeof updateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatch>
   >,
   TError,
-  { householdId: string; configId: string },
+  { householdId: string; configId: string; data: SyncConfigUpdate },
   TContext
 > => {
   const mutationOptions =
-    getTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationOptions(
+    getUpdateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPatchMutationOptions(
       options
     )
 
@@ -482,6 +489,802 @@ export const useDeleteSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsConfi
 
   return useMutation(mutationOptions, queryClient)
 }
+/**
+ * Enqueue sync_account_job for a SimpleFIN sync config. Returns job ID.
+ * @summary Trigger Sync
+ */
+export const triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost = (
+  householdId: string,
+  configId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<TriggerResponse>({
+    url: `/api/v1/households/${householdId}/ingest/sync-configs/${configId}/trigger`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+      >,
+      TError,
+      { householdId: string; configId: string },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+    >,
+    TError,
+    { householdId: string; configId: string },
+    TContext
+  > => {
+    const mutationKey = [
+      'triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+      >,
+      { householdId: string; configId: string }
+    > = (props) => {
+      const { householdId, configId } = props ?? {}
+
+      return triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost(
+        householdId,
+        configId
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type TriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+    >
+  >
+
+export type TriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Trigger Sync
+ */
+export const useTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+      >,
+      TError,
+      { householdId: string; configId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof triggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPost>
+  >,
+  TError,
+  { householdId: string; configId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getTriggerSyncApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdTriggerPostMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Fetch SimpleFIN accounts for a SyncConfig and return preview with suggested types.
+
+Result is cached in Redis for 5 minutes to avoid repeated SimpleFIN calls.
+Does NOT create any system accounts.
+ * @summary Preview Simplefin Accounts
+ */
+export const previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet =
+  (householdId: string, configId: string, signal?: AbortSignal) => {
+    return customInstance<SimplefinAccountPreview[]>({
+      url: `/api/v1/households/${householdId}/ingest/sync-configs/${configId}/preview`,
+      method: 'GET',
+      signal,
+    })
+  }
+
+export const getPreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryKey =
+  (householdId?: string, configId?: string) => {
+    return [`/api/v1/households/${householdId}/ingest/sync-configs/${configId}/preview`] as const
+  }
+
+export const getPreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<
+        typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+      >
+    >,
+    TError = HTTPValidationError,
+  >(
+    householdId: string,
+    configId: string,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {}
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getPreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryKey(
+        householdId,
+        configId
+      )
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+        >
+      >
+    > = ({ signal }) =>
+      previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet(
+        householdId,
+        configId,
+        signal
+      )
+
+    return {
+      queryKey,
+      queryFn,
+      enabled: !!(householdId && configId),
+      ...queryOptions,
+    } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> }
+  }
+
+export type PreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+      >
+    >
+  >
+export type PreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryError =
+  HTTPValidationError
+
+export function usePreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet<
+  TData = Awaited<
+    ReturnType<
+      typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  configId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet<
+  TData = Awaited<
+    ReturnType<
+      typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  configId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet<
+  TData = Awaited<
+    ReturnType<
+      typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  configId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Preview Simplefin Accounts
+ */
+
+export function usePreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet<
+  TData = Awaited<
+    ReturnType<
+      typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  configId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof previewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getPreviewSimplefinAccountsApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdPreviewGetQueryOptions(
+      householdId,
+      configId,
+      options
+    )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Save account mapping decisions for a SimpleFIN SyncConfig.
+
+Creates new accounts, maps existing accounts, or ignores SimpleFIN accounts.
+Sets authoritative_sync_config_id on mapped/created accounts.
+Triggers initial 90-day sync job on first mapping save.
+ * @summary Save Account Mapping
+ */
+export const saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost = (
+  householdId: string,
+  configId: string,
+  mappingDecision: MappingDecision[],
+  signal?: AbortSignal
+) => {
+  return customInstance<MappingResult>({
+    url: `/api/v1/households/${householdId}/ingest/sync-configs/${configId}/mapping`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: mappingDecision,
+    signal,
+  })
+}
+
+export const getSaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+        >
+      >,
+      TError,
+      { householdId: string; configId: string; data: MappingDecision[] },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<
+        typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+      >
+    >,
+    TError,
+    { householdId: string; configId: string; data: MappingDecision[] },
+    TContext
+  > => {
+    const mutationKey = [
+      'saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+        >
+      >,
+      { householdId: string; configId: string; data: MappingDecision[] }
+    > = (props) => {
+      const { householdId, configId, data } = props ?? {}
+
+      return saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost(
+        householdId,
+        configId,
+        data
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type SaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+      >
+    >
+  >
+export type SaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPostMutationBody =
+  MappingDecision[]
+export type SaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Save Account Mapping
+ */
+export const useSaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+        >
+      >,
+      TError,
+      { householdId: string; configId: string; data: MappingDecision[] },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<
+      typeof saveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPost
+    >
+  >,
+  TError,
+  { householdId: string; configId: string; data: MappingDecision[] },
+  TContext
+> => {
+  const mutationOptions =
+    getSaveAccountMappingApiV1HouseholdsHouseholdIdIngestSyncConfigsConfigIdMappingPostMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * @summary Upsert Csv Mapping
+ */
+export const upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost = (
+  householdId: string,
+  cSVMappingIn: CSVMappingIn,
+  signal?: AbortSignal
+) => {
+  return customInstance<CSVMappingOut>({
+    url: `/api/v1/households/${householdId}/ingest/csv-mappings`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: cSVMappingIn,
+    signal,
+  })
+}
+
+export const getUpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>,
+    TError,
+    { householdId: string; data: CSVMappingIn },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>,
+  TError,
+  { householdId: string; data: CSVMappingIn },
+  TContext
+> => {
+  const mutationKey = ['upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>,
+    { householdId: string; data: CSVMappingIn }
+  > = (props) => {
+    const { householdId, data } = props ?? {}
+
+    return upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost(householdId, data)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type UpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPostMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>
+  >
+export type UpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPostMutationBody =
+  CSVMappingIn
+export type UpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Upsert Csv Mapping
+ */
+export const useUpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>,
+      TError,
+      { householdId: string; data: CSVMappingIn },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof upsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPost>>,
+  TError,
+  { householdId: string; data: CSVMappingIn },
+  TContext
+> => {
+  const mutationOptions =
+    getUpsertCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsPostMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * @summary Get Csv Mapping
+ */
+export const getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet = (
+  householdId: string,
+  institutionName: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<CSVMappingOut>({
+    url: `/api/v1/households/${householdId}/ingest/csv-mappings/${institutionName}`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryKey =
+  (householdId?: string, institutionName?: string) => {
+    return [`/api/v1/households/${householdId}/ingest/csv-mappings/${institutionName}`] as const
+  }
+
+export const getGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+    >,
+    TError = HTTPValidationError,
+  >(
+    householdId: string,
+    institutionName: string,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {}
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryKey(
+        householdId,
+        institutionName
+      )
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+        >
+      >
+    > = ({ signal }) =>
+      getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet(
+        householdId,
+        institutionName,
+        signal
+      )
+
+    return {
+      queryKey,
+      queryFn,
+      enabled: !!(householdId && institutionName),
+      ...queryOptions,
+    } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> }
+  }
+
+export type GetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+    >
+  >
+export type GetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryError =
+  HTTPValidationError
+
+export function useGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet<
+  TData = Awaited<
+    ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  institutionName: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet<
+  TData = Awaited<
+    ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  institutionName: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet<
+  TData = Awaited<
+    ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  institutionName: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Csv Mapping
+ */
+
+export function useGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet<
+  TData = Awaited<
+    ReturnType<typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  institutionName: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetCsvMappingApiV1HouseholdsHouseholdIdIngestCsvMappingsInstitutionNameGetQueryOptions(
+      householdId,
+      institutionName,
+      options
+    )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
 /**
  * Accept a multipart OFX/QFX or CSV upload, enqueue processing job.
 
@@ -598,6 +1401,172 @@ export const useUploadFileApiV1HouseholdsHouseholdIdIngestUploadPost = <
 
   return useMutation(mutationOptions, queryClient)
 }
+/**
+ * Return recent import jobs for the household.
+ * @summary List Import Jobs
+ */
+export const listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet = (
+  householdId: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<ImportJobOut[]>({
+    url: `/api/v1/households/${householdId}/ingest/jobs/`,
+    method: 'GET',
+    params,
+    signal,
+  })
+}
+
+export const getListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryKey = (
+  householdId?: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams
+) => {
+  return [`/api/v1/households/${householdId}/ingest/jobs/`, ...(params ? [params] : [])] as const
+}
+
+export const getListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+        TError,
+        TData
+      >
+    >
+  }
+) => {
+  const { query: queryOptions } = options ?? {}
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryKey(householdId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>
+  > = ({ signal }) =>
+    listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet(householdId, params, signal)
+
+  return { queryKey, queryFn, enabled: !!householdId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>
+>
+export type ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryError = HTTPValidationError
+
+export function useListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet<
+  TData = Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params: undefined | ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet<
+  TData = Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet<
+  TData = Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Import Jobs
+ */
+
+export function useListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet<
+  TData = Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  params?: ListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listImportJobsApiV1HouseholdsHouseholdIdIngestJobsGet>>,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListImportJobsApiV1HouseholdsHouseholdIdIngestJobsGetQueryOptions(
+    householdId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
 /**
  * @summary Get Import Job
  */

@@ -22,3 +22,16 @@ class ImportStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class SyncConfigStatus(StrEnum):
+    ACTIVE = "active"
+    WARNING = "warning"
+    RATE_LIMITED = "rate_limited"
+    ERROR = "error"
+    DISABLED = "disabled"
+
+
+class AmountConvention(StrEnum):
+    POSITIVE_IS_CREDIT = "positive_is_credit"
+    POSITIVE_IS_DEBIT = "positive_is_debit"

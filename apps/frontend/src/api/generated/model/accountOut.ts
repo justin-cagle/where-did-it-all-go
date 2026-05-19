@@ -7,6 +7,7 @@
  */
 import type { AccountOutInstitution } from './accountOutInstitution'
 import type { AccountOutAccountGroupId } from './accountOutAccountGroupId'
+import type { AccountOutAuthoritativeSyncConfigId } from './accountOutAuthoritativeSyncConfigId'
 
 /**
  * Account info returned in responses.
@@ -22,6 +23,7 @@ export interface AccountOut {
   current_balance: string
   is_manual: boolean
   account_group_id: AccountOutAccountGroupId
+  authoritative_sync_config_id: AccountOutAuthoritativeSyncConfigId
   created_at: string
   updated_at: string
 }

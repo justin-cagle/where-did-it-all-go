@@ -5,6 +5,7 @@
  * Personal finance budgeting and intelligence
  * OpenAPI spec version: 0.1.0
  */
+import type { ImportJobOutFilename } from './importJobOutFilename'
 import type { ImportJobOutStartedAt } from './importJobOutStartedAt'
 import type { ImportJobOutCompletedAt } from './importJobOutCompletedAt'
 import type { ImportJobOutErrorDetail } from './importJobOutErrorDetail'
@@ -14,6 +15,7 @@ export interface ImportJobOut {
   household_id: string
   source: string
   status: string
+  filename: ImportJobOutFilename
   started_at: ImportJobOutStartedAt
   completed_at: ImportJobOutCompletedAt
   row_count: number

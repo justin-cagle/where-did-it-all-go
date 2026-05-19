@@ -55,6 +55,7 @@ class AccountOut(_Base):
     current_balance: Decimal
     is_manual: bool
     account_group_id: uuid.UUID | None
+    authoritative_sync_config_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 

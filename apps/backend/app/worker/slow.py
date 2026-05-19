@@ -17,7 +17,12 @@ from app.classification import reclassify_all_job
 from app.debts import recompute_debt_schedule_job
 from app.goals import goal_status_recalc_job
 from app.households.jobs import cleanup_unassigned_accounts
-from app.ingest import process_upload_job, sync_account_job
+from app.ingest import (
+    process_upload_job,
+    reset_requests_today_job,
+    sync_account_job,
+    sync_account_job_initial,
+)
 from app.insights import generate_insights_job
 from app.projections import cleanup_transient_scenarios_job
 from app.recurrences import recurrence_detection_sweep_job
@@ -30,7 +35,9 @@ class WorkerSettings:
     functions: ClassVar[list[object]] = [
         reclassify_all_job,
         sync_account_job,
+        sync_account_job_initial,
         process_upload_job,
+        reset_requests_today_job,
         recurrence_detection_sweep_job,
         budget_period_close_job,
         recompute_debt_schedule_job,
@@ -44,6 +51,7 @@ class WorkerSettings:
 
     cron_jobs: ClassVar[list[object]] = [
         cron(check_backup_health_job, hour=2, minute=0),
+        cron(reset_requests_today_job, hour=0, minute=0),
     ]
 
     redis_settings: RedisSettings = get_redis_settings()
