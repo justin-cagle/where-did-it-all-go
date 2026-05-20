@@ -138,3 +138,33 @@ class AskResponse(BaseModel):
 class GenerateResponse(BaseModel):
     job_id: str
     status: str = "enqueued"
+
+
+# ---------------------------------------------------------------------------
+# Ollama model management
+# ---------------------------------------------------------------------------
+
+
+class OllamaModelOut(BaseModel):
+    name: str
+    size_bytes: int
+    modified_at: str
+
+
+class OllamaModelsResponse(BaseModel):
+    models: list[OllamaModelOut]
+
+
+class OllamaPullRequest(BaseModel):
+    model_name: str = Field(..., min_length=1, max_length=200)
+
+
+# ---------------------------------------------------------------------------
+# Provider availability test
+# ---------------------------------------------------------------------------
+
+
+class ProviderTestResponse(BaseModel):
+    available: bool
+    model_name: str | None
+    error: str | None

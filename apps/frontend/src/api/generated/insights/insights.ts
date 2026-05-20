@@ -28,9 +28,12 @@ import type {
   GenerateResponse,
   HTTPValidationError,
   ListAuditApiV1HouseholdsHouseholdIdInsightsAuditGetParams,
+  OllamaModelsResponse,
+  OllamaPullRequest,
   ProviderConfigCreate,
   ProviderConfigOut,
   ProviderConfigUpdate,
+  ProviderTestResponse,
   TokenBudgetOut,
   TokenBudgetUpdate,
 } from '.././model'
@@ -283,6 +286,443 @@ export const useCreateProviderApiV1HouseholdsHouseholdIdInsightsProvidersPost = 
   return useMutation(mutationOptions, queryClient)
 }
 /**
+ * List models installed on the configured Ollama instance.
+
+Returns empty list (not 400) if Ollama is unreachable.
+Returns 400 if no Ollama provider is configured.
+ * @summary List Ollama Models
+ */
+export const listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet = (
+  householdId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<OllamaModelsResponse>({
+    url: `/api/v1/households/${householdId}/insights/providers/ollama/models`,
+    method: 'GET',
+    signal,
+  })
+}
+
+export const getListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryKey =
+  (householdId?: string) => {
+    return [`/api/v1/households/${householdId}/insights/providers/ollama/models`] as const
+  }
+
+export const getListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+    >,
+    TError = HTTPValidationError,
+  >(
+    householdId: string,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {}
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryKey(
+        householdId
+      )
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+        >
+      >
+    > = ({ signal }) =>
+      listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet(
+        householdId,
+        signal
+      )
+
+    return { queryKey, queryFn, enabled: !!householdId, ...queryOptions } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> }
+  }
+
+export type ListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+    >
+  >
+export type ListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryError =
+  HTTPValidationError
+
+export function useListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet<
+  TData = Awaited<
+    ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet<
+  TData = Awaited<
+    ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+            >
+          >
+        >,
+        'initialData'
+      >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet<
+  TData = Awaited<
+    ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Ollama Models
+ */
+
+export function useListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet<
+  TData = Awaited<
+    ReturnType<typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  householdId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof listOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getListOllamaModelsApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsGetQueryOptions(
+      householdId,
+      options
+    )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
+
+/**
+ * Pull a model from Ollama registry. Streams SSE progress events.
+ * @summary Pull Ollama Model
+ */
+export const pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost = (
+  householdId: string,
+  ollamaPullRequest: OllamaPullRequest,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>({
+    url: `/api/v1/households/${householdId}/insights/providers/ollama/pull`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: ollamaPullRequest,
+    signal,
+  })
+}
+
+export const getPullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+      >,
+      TError,
+      { householdId: string; data: OllamaPullRequest },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+    >,
+    TError,
+    { householdId: string; data: OllamaPullRequest },
+    TContext
+  > => {
+    const mutationKey = ['pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost']
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+      >,
+      { householdId: string; data: OllamaPullRequest }
+    > = (props) => {
+      const { householdId, data } = props ?? {}
+
+      return pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost(
+        householdId,
+        data
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type PullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+    >
+  >
+export type PullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPostMutationBody =
+  OllamaPullRequest
+export type PullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Pull Ollama Model
+ */
+export const usePullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+      >,
+      TError,
+      { householdId: string; data: OllamaPullRequest },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof pullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPost>
+  >,
+  TError,
+  { householdId: string; data: OllamaPullRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getPullOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaPullPostMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Delete a locally installed Ollama model. model_name may contain colons.
+ * @summary Delete Ollama Model
+ */
+export const deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete =
+  (householdId: string, modelName: string) => {
+    return customInstance<void>({
+      url: `/api/v1/households/${householdId}/insights/providers/ollama/models/${modelName}`,
+      method: 'DELETE',
+    })
+  }
+
+export const getDeleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDeleteMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+        >
+      >,
+      TError,
+      { householdId: string; modelName: string },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<
+        typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+      >
+    >,
+    TError,
+    { householdId: string; modelName: string },
+    TContext
+  > => {
+    const mutationKey = [
+      'deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete',
+    ]
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+        >
+      >,
+      { householdId: string; modelName: string }
+    > = (props) => {
+      const { householdId, modelName } = props ?? {}
+
+      return deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete(
+        householdId,
+        modelName
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type DeleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDeleteMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+      >
+    >
+  >
+
+export type DeleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDeleteMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Delete Ollama Model
+ */
+export const useDeleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete =
+  <TError = HTTPValidationError, TContext = unknown>(
+    options?: {
+      mutation?: UseMutationOptions<
+        Awaited<
+          ReturnType<
+            typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+          >
+        >,
+        TError,
+        { householdId: string; modelName: string },
+        TContext
+      >
+    },
+    queryClient?: QueryClient
+  ): UseMutationResult<
+    Awaited<
+      ReturnType<
+        typeof deleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDelete
+      >
+    >,
+    TError,
+    { householdId: string; modelName: string },
+    TContext
+  > => {
+    const mutationOptions =
+      getDeleteOllamaModelApiV1HouseholdsHouseholdIdInsightsProvidersOllamaModelsModelNameDeleteMutationOptions(
+        options
+      )
+
+    return useMutation(mutationOptions, queryClient)
+  }
+/**
  * @summary Update Provider
  */
 export const updateProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdPatch = (
@@ -478,6 +918,109 @@ export const useDeleteProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigI
 > => {
   const mutationOptions =
     getDeleteProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdDeleteMutationOptions(
+      options
+    )
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Check whether a specific provider config is reachable.
+
+Always returns 200. Never raises on connection failure.
+ * @summary Test Provider
+ */
+export const testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost = (
+  householdId: string,
+  configId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<ProviderTestResponse>({
+    url: `/api/v1/households/${householdId}/insights/providers/${configId}/test`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getTestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPostMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+      >,
+      TError,
+      { householdId: string; configId: string },
+      TContext
+    >
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+    >,
+    TError,
+    { householdId: string; configId: string },
+    TContext
+  > => {
+    const mutationKey = ['testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost']
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } }
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+      >,
+      { householdId: string; configId: string }
+    > = (props) => {
+      const { householdId, configId } = props ?? {}
+
+      return testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost(
+        householdId,
+        configId
+      )
+    }
+
+    return { mutationFn, ...mutationOptions }
+  }
+
+export type TestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+    >
+  >
+
+export type TestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPostMutationError =
+  HTTPValidationError
+
+/**
+ * @summary Test Provider
+ */
+export const useTestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+      >,
+      TError,
+      { householdId: string; configId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof testProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost>
+  >,
+  TError,
+  { householdId: string; configId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getTestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPostMutationOptions(
       options
     )
 

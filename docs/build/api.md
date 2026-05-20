@@ -25,6 +25,18 @@ All routes are household-scoped at the URL level. Versioned from day one.
 /api/v1/households/{household_id}/calendar?start=...&end=...&view=pay_period
 /api/v1/households/{household_id}/projections?horizon_months=12&scenario_id=...
 /api/v1/households/{household_id}/events   ← SSE endpoint
+
+# AI Insights (see domain-ai-insights.md for full table)
+/api/v1/households/{household_id}/insights/providers
+/api/v1/households/{household_id}/insights/providers/{config_id}
+/api/v1/households/{household_id}/insights/providers/{config_id}/test
+/api/v1/households/{household_id}/insights/providers/ollama/models
+/api/v1/households/{household_id}/insights/providers/ollama/pull   ← SSE stream (POST)
+/api/v1/households/{household_id}/insights/providers/ollama/models/{model_name:path}
+/api/v1/households/{household_id}/insights/budget
+/api/v1/households/{household_id}/insights/audit
+/api/v1/households/{household_id}/insights/ask
+/api/v1/households/{household_id}/insights/generate
 ```
 
 API paths with UUIDs appear only in network requests (over TLS). The frontend SPA uses friendly client-side routes (`/accounts`, `/budget`); UUIDs never appear in the browser URL bar.

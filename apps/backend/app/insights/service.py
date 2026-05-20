@@ -939,6 +939,35 @@ async def answer_question(
 
 
 # ---------------------------------------------------------------------------
+# Provider availability test
+# ---------------------------------------------------------------------------
+
+
+async def test_provider_config(
+    session: AsyncSession,
+    config_id: uuid.UUID,
+    household_id: uuid.UUID,
+    master_key: str,
+) -> tuple[bool, str | None, str | None]:
+    """Test whether a specific provider config is reachable.
+
+    Returns (available, model_name, error_message).
+    Never raises — connection failures are captured as available=False.
+    """
+    config = await get_provider_config(session, config_id, household_id)
+    provider = _build_provider(config, master_key)
+    try:
+        available = await provider.is_available()
+    except Exception:
+        available = False
+
+    if available:
+        return True, provider.get_model_name(), None
+    base = config.base_url or "no base URL configured"
+    return False, None, f"Connection refused at {base}"
+
+
+# ---------------------------------------------------------------------------
 # Provider config CRUD
 # ---------------------------------------------------------------------------
 

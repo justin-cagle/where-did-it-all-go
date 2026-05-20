@@ -10414,6 +10414,137 @@
         }
       }
     },
+    "/api/v1/households/{household_id}/insights/providers/ollama/models": {
+      "get": {
+        "tags": ["insights"],
+        "summary": "List Ollama Models",
+        "description": "List models installed on the configured Ollama instance.\n\nReturns empty list (not 400) if Ollama is unreachable.\nReturns 400 if no Ollama provider is configured.",
+        "operationId": "list_ollama_models_api_v1_households__household_id__insights_providers_ollama_models_get",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OllamaModelsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/insights/providers/ollama/pull": {
+      "post": {
+        "tags": ["insights"],
+        "summary": "Pull Ollama Model",
+        "description": "Pull a model from Ollama registry. Streams SSE progress events.",
+        "operationId": "pull_ollama_model_api_v1_households__household_id__insights_providers_ollama_pull_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OllamaPullRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/insights/providers/ollama/models/{model_name}": {
+      "delete": {
+        "tags": ["insights"],
+        "summary": "Delete Ollama Model",
+        "description": "Delete a locally installed Ollama model. model_name may contain colons.",
+        "operationId": "delete_ollama_model_api_v1_households__household_id__insights_providers_ollama_models__model_name__delete",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/households/{household_id}/insights/providers/{config_id}": {
       "patch": {
         "tags": ["insights"],
@@ -10503,6 +10634,58 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/insights/providers/{config_id}/test": {
+      "post": {
+        "tags": ["insights"],
+        "summary": "Test Provider",
+        "description": "Check whether a specific provider config is reachable.\n\nAlways returns 200. Never raises on connection failure.",
+        "operationId": "test_provider_api_v1_households__household_id__insights_providers__config_id__test_post",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderTestResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -17800,6 +17983,52 @@
         ],
         "title": "NotificationType"
       },
+      "OllamaModelOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "modified_at": {
+            "type": "string",
+            "title": "Modified At"
+          }
+        },
+        "type": "object",
+        "required": ["name", "size_bytes", "modified_at"],
+        "title": "OllamaModelOut"
+      },
+      "OllamaModelsResponse": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/OllamaModelOut"
+            },
+            "type": "array",
+            "title": "Models"
+          }
+        },
+        "type": "object",
+        "required": ["models"],
+        "title": "OllamaModelsResponse"
+      },
+      "OllamaPullRequest": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model Name"
+          }
+        },
+        "type": "object",
+        "required": ["model_name"],
+        "title": "OllamaPullRequest"
+      },
       "OverrideType": {
         "type": "string",
         "enum": [
@@ -18448,6 +18677,39 @@
         },
         "type": "object",
         "title": "ProviderConfigUpdate"
+      },
+      "ProviderTestResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["available", "model_name", "error"],
+        "title": "ProviderTestResponse"
       },
       "ReadOnlyStateOut": {
         "properties": {
