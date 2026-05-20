@@ -385,6 +385,77 @@ class TestSimulateBreaches:
         _, breaches = self._run(inputs)
         assert not breaches
 
+    def test_breach_fires_on_correct_month(self) -> None:
+        """Breach date equals the month of the event that caused negative balance."""
+        acct = _checking_account(balance=Decimal("150"))
+        rec = RecurrenceInput(
+            recurrence_id=uuid.uuid4(),
+            account_id=acct.account_id,
+            expected_dates=[date(2026, 3, 1)],  # Mar, not Feb
+            expected_amount=Decimal("200"),
+            currency="USD",
+            direction=str(ProjectedDirection.DEBIT),
+            confidence=str(ProjectedConfidence.HIGH),
+        )
+        inputs = _make_inputs(accounts=[acct], recurrences=[rec], as_of=date(2026, 1, 1))
+        _, breaches = self._run(inputs, horizon=6)
+        neg = [b for b in breaches if b.breach_type == str(BreachType.NEGATIVE_BALANCE)]
+        assert len(neg) == 1
+        assert neg[0].breach_date == date(2026, 3, 1)
+
+    def test_breach_fires_once_even_if_balance_stays_negative(self) -> None:
+        """Once a breach fires for (account, breach_type), it must not fire again.
+
+        Balance goes negative in month 1 and stays negative in months 2-3.
+        Exactly one breach must be emitted.
+        """
+        acct = _checking_account(balance=Decimal("50"))
+        rid = uuid.uuid4()
+        # Two consecutive debits each exceeding available balance
+        rec = RecurrenceInput(
+            recurrence_id=rid,
+            account_id=acct.account_id,
+            expected_dates=[date(2026, 2, 1), date(2026, 3, 1)],
+            expected_amount=Decimal("500"),
+            currency="USD",
+            direction=str(ProjectedDirection.DEBIT),
+            confidence=str(ProjectedConfidence.HIGH),
+        )
+        inputs = _make_inputs(accounts=[acct], recurrences=[rec], as_of=date(2026, 1, 1))
+        _, breaches = self._run(inputs, horizon=6)
+        neg = [b for b in breaches if b.breach_type == str(BreachType.NEGATIVE_BALANCE)]
+        assert len(neg) == 1, (
+            f"Expected 1 breach, got {len(neg)}: {[(b.breach_date, b.breach_type) for b in neg]}"
+        )
+
+    def test_no_breach_when_income_covers_expense(self) -> None:
+        """Monthly income that exceeds monthly expense produces no negative breach."""
+        acct = _checking_account(balance=Decimal("1000"))
+        income_rec = RecurrenceInput(
+            recurrence_id=uuid.uuid4(),
+            account_id=acct.account_id,
+            expected_dates=[date(2026, 2, 15), date(2026, 3, 15)],
+            expected_amount=Decimal("3000"),
+            currency="USD",
+            direction=str(ProjectedDirection.CREDIT),
+            confidence=str(ProjectedConfidence.HIGH),
+        )
+        expense_rec = RecurrenceInput(
+            recurrence_id=uuid.uuid4(),
+            account_id=acct.account_id,
+            expected_dates=[date(2026, 2, 1), date(2026, 3, 1)],
+            expected_amount=Decimal("500"),
+            currency="USD",
+            direction=str(ProjectedDirection.DEBIT),
+            confidence=str(ProjectedConfidence.HIGH),
+        )
+        inputs = _make_inputs(
+            accounts=[acct], recurrences=[income_rec, expense_rec], as_of=date(2026, 1, 1)
+        )
+        _, breaches = self._run(inputs, horizon=6)
+        neg = [b for b in breaches if b.breach_type == str(BreachType.NEGATIVE_BALANCE)]
+        assert neg == []
+
     @given(
         st.decimals(min_value=Decimal("0"), max_value=Decimal("10000"), places=2),
         st.decimals(min_value=Decimal("1"), max_value=Decimal("20000"), places=2),

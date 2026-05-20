@@ -66,3 +66,34 @@ def test_money_decimal_annotation_accepts_string() -> None:
 
     m = M(amount="42.50")  # type: ignore[arg-type]
     assert m.amount == Decimal("42.50")
+
+
+def test_money_decimal_scale_not_enforced_at_pydantic_layer() -> None:
+    """MoneyDecimal does NOT quantize to 4dp; scale is DB-enforced only.
+
+    Decimal("1.12345") passes validation unchanged.  A caller that sends a
+    5dp value will see it accepted by the schema — the DB write is what
+    enforces NUMERIC(19,4).  This test documents that behavior intentionally.
+    """
+    from pydantic import BaseModel
+
+    class M(BaseModel):
+        amount: MoneyDecimal
+
+    m = M(amount=Decimal("1.12345"))
+    # Five decimal places pass validation — NOT quantized at this layer
+    assert m.amount == Decimal("1.12345")
+
+
+def test_money_decimal_rejects_float_hypothesis() -> None:
+    """Any float value — nan, inf, or finite — is always rejected."""
+    floats = [0.0, 1.0, -1.0, 0.1, float("nan"), float("inf"), float("-inf")]
+    for f in floats:
+        with pytest.raises(ValueError, match="float is not permitted"):
+            _reject_float_money(f)
+
+
+def test_money_decimal_accepts_zero_decimal() -> None:
+    """Decimal zero is a valid monetary amount (e.g. $0.00 balance)."""
+    result = _reject_float_money(Decimal("0"))
+    assert result == Decimal("0")
