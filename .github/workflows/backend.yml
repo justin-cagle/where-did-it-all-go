@@ -124,9 +124,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 15432:5432
+          - 5432
     env:
-      DATABASE_URL: postgresql+asyncpg://wdiag_test:testpassword@localhost:15432/wdiag_test
+      DATABASE_URL: postgresql+asyncpg://wdiag_test:testpassword@localhost:${{ job.services.postgres.ports[5432] }}/wdiag_test
       MASTER_KEY: test-key-not-real
     steps:
       - uses: actions/checkout@v4

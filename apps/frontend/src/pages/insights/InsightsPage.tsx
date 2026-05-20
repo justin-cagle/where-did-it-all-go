@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Send, Loader, Sparkles, CheckCircle, XCircle, AlertTriangle, Settings } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import {
@@ -6,6 +6,7 @@ import {
   useAskApiV1HouseholdsHouseholdIdInsightsAskPost,
   useTriggerGenerateApiV1HouseholdsHouseholdIdInsightsGeneratePost,
   useGetBudgetApiV1HouseholdsHouseholdIdInsightsBudgetGet,
+  useTestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost,
 } from '@/api/generated/insights/insights'
 import {
   useListRecommendationsApiV1HouseholdsHouseholdIdRecommendationsGet,
@@ -22,52 +23,122 @@ import type { RecommendationOut } from '@/api/generated/model/recommendationOut'
 import type { AskResponse } from '@/api/generated/model/askResponse'
 import { NavLink } from 'react-router-dom'
 
+const SETTINGS_LINK = '/settings/insights'
+
 interface QAItem {
   id: string
   question: string
   response: AskResponse | null
   error: string | null
+  errorType: string | null
   loading: boolean
 }
 
-function ProviderStatusBar({ providers }: { providers: ProviderConfigOut[] }) {
+type ProviderStatus =
+  | { state: 'untested' }
+  | { state: 'testing' }
+  | { state: 'connected'; modelName: string }
+  | { state: 'unreachable'; error: string }
+
+function providerStatusColor(s: ProviderStatus) {
+  if (s.state === 'connected') return 'var(--success)'
+  if (s.state === 'unreachable') return 'var(--danger)'
+  if (s.state === 'testing') return 'var(--warning)'
+  return 'var(--fg-muted)'
+}
+
+function ProviderChip({
+  provider,
+  householdId,
+}: {
+  provider: ProviderConfigOut
+  householdId: string
+}) {
+  const [status, setStatus] = useState<ProviderStatus>({ state: 'untested' })
+  const testMutation = useTestProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdTestPost()
+
+  const runTest = async () => {
+    setStatus({ state: 'testing' })
+    try {
+      const result = await testMutation.mutateAsync({ householdId, configId: provider.id })
+      if (result.available) {
+        setStatus({ state: 'connected', modelName: result.model_name ?? '' })
+      } else {
+        setStatus({ state: 'unreachable', error: result.error ?? 'Unreachable' })
+      }
+    } catch {
+      setStatus({ state: 'unreachable', error: 'Test failed' })
+    }
+  }
+
+  useEffect(() => {
+    if (provider.enabled) {
+      void runTest()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider.id])
+
+  const dotColor = providerStatusColor(status)
+  const label = provider.provider.replace(/_/g, ' ')
+
+  return (
+    <button
+      type="button"
+      onClick={() => void runTest()}
+      title="Click to test connection"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '3px 10px',
+        borderRadius: 99,
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        fontSize: 12,
+        cursor: 'pointer',
+        fontFamily: 'var(--font-sans)',
+      }}
+    >
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: dotColor,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ color: 'var(--fg-secondary)' }}>{label}</span>
+      {status.state === 'connected' && status.modelName && (
+        <span style={{ color: 'var(--fg-muted)', fontSize: 11 }}>{status.modelName}</span>
+      )}
+      {status.state === 'testing' && (
+        <Loader
+          size={10}
+          style={{ animation: 'spin 1s linear infinite', color: 'var(--warning)' }}
+        />
+      )}
+    </button>
+  )
+}
+
+function ProviderStatusBar({
+  providers,
+  householdId,
+}: {
+  providers: ProviderConfigOut[]
+  householdId: string
+}) {
   if (providers.length === 0) return null
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       <span style={{ fontSize: 12, color: 'var(--fg-muted)', marginRight: 4 }}>Providers:</span>
-      {providers.map((p) => {
-        const dotColor = p.enabled ? 'var(--success)' : 'var(--fg-muted)'
-        const label = p.provider.replace(/_/g, ' ')
-        return (
-          <div
-            key={p.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '3px 10px',
-              borderRadius: 99,
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              fontSize: 12,
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: dotColor,
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ color: 'var(--fg-secondary)' }}>{label}</span>
-          </div>
-        )
-      })}
+      {providers.map((p) => (
+        <ProviderChip key={p.id} provider={p} householdId={householdId} />
+      ))}
       <NavLink
-        to="/settings/insights"
+        to={SETTINGS_LINK}
         style={{
           fontSize: 12,
           color: 'var(--accent)',
@@ -81,7 +152,61 @@ function ProviderStatusBar({ providers }: { providers: ProviderConfigOut[] }) {
   )
 }
 
-function QAHistory({ items, onClear }: { items: QAItem[]; onClear: () => void }) {
+function QAErrorMessage({ errorType, error }: { errorType: string | null; error: string | null }) {
+  if (!error && !errorType) return null
+
+  if (errorType === 'no_provider' || (error && error.includes('no_provider'))) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
+        No AI provider is available. Check your provider configuration in{' '}
+        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          Settings &rarr; AI
+        </NavLink>
+        .
+      </div>
+    )
+  }
+
+  if (errorType === 'budget_exceeded' || (error && error.includes('budget_exceeded'))) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
+        Monthly token budget reached. Adjust your budget in{' '}
+        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          Settings &rarr; AI
+        </NavLink>
+        .
+      </div>
+    )
+  }
+
+  if (errorType === 'disabled' || (error && error.includes('disabled'))) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
+        AI insights are disabled. Add a provider in{' '}
+        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          Settings &rarr; AI
+        </NavLink>
+        .
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
+      {error ?? 'Something went wrong. Try again.'}
+    </div>
+  )
+}
+
+function QAHistory({
+  items,
+  onClear,
+  onRetry,
+}: {
+  items: QAItem[]
+  onClear: () => void
+  onRetry: (question: string) => void
+}) {
   if (items.length === 0) return null
 
   return (
@@ -156,7 +281,29 @@ function QAHistory({ items, onClear }: { items: QAItem[]; onClear: () => void })
                 Thinking...
               </div>
             ) : item.error ? (
-              <div style={{ fontSize: 13, color: 'var(--danger)' }}>{item.error}</div>
+              <div>
+                <QAErrorMessage errorType={item.errorType} error={item.error} />
+                {(!item.errorType ||
+                  (item.errorType !== 'budget_exceeded' && item.errorType !== 'disabled')) && (
+                  <button
+                    type="button"
+                    onClick={() => onRetry(item.question)}
+                    style={{
+                      marginTop: 8,
+                      padding: '4px 10px',
+                      fontSize: 11,
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      borderRadius: 5,
+                      cursor: 'pointer',
+                      color: 'var(--fg-secondary)',
+                      fontFamily: 'var(--font-sans)',
+                    }}
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
             ) : item.response ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div
@@ -194,31 +341,75 @@ function QAHistory({ items, onClear }: { items: QAItem[]; onClear: () => void })
 function AskSection({ householdId }: { householdId: string }) {
   const [question, setQuestion] = useState('')
   const [history, setHistory] = useState<QAItem[]>([])
+  const [inlineError, setInlineError] = useState<{ msg: string; type: string | null } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [showLongWait, setShowLongWait] = useState(false)
 
   const ask = useAskApiV1HouseholdsHouseholdIdInsightsAskPost()
 
-  const handleSubmit = async () => {
-    const q = question.trim()
-    if (!q) return
+  const handleSubmit = async (q?: string) => {
+    const text = (q ?? question).trim()
+    if (!text) return
+
+    setInlineError(null)
+    setShowLongWait(false)
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    if (longWaitRef.current) clearTimeout(longWaitRef.current)
 
     const id = Math.random().toString(36).slice(2, 10)
-    const item: QAItem = { id, question: q, response: null, error: null, loading: true }
+    const item: QAItem = {
+      id,
+      question: text,
+      response: null,
+      error: null,
+      errorType: null,
+      loading: true,
+    }
     setHistory((prev) => [...prev, item])
-    setQuestion('')
+    if (!q) setQuestion('')
+
+    longWaitRef.current = setTimeout(() => {
+      setShowLongWait(true)
+    }, 60000)
 
     try {
-      const res = await ask.mutateAsync({ householdId, data: { question: q } })
-      setHistory((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, response: res, loading: false } : x))
-      )
+      const res = await ask.mutateAsync({ householdId, data: { question: text } })
+
+      if (longWaitRef.current) clearTimeout(longWaitRef.current)
+      setShowLongWait(false)
+
+      if (res.reason && !res.answer) {
+        const reasonError = res.reason
+        setHistory((prev) =>
+          prev.map((x) =>
+            x.id === id ? { ...x, error: reasonError, errorType: reasonError, loading: false } : x
+          )
+        )
+      } else {
+        setHistory((prev) =>
+          prev.map((x) => (x.id === id ? { ...x, response: res, loading: false } : x))
+        )
+        textareaRef.current?.focus()
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      if (longWaitRef.current) clearTimeout(longWaitRef.current)
+      setShowLongWait(false)
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Try again.'
       setHistory((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, error: msg, loading: false } : x))
+        prev.map((x) => (x.id === id ? { ...x, error: msg, errorType: null, loading: false } : x))
       )
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (longWaitRef.current) clearTimeout(longWaitRef.current)
+    }
+  }, [])
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -226,6 +417,8 @@ function AskSection({ householdId }: { householdId: string }) {
       void handleSubmit()
     }
   }
+
+  const isInFlight = ask.isPending
 
   return (
     <div
@@ -268,6 +461,7 @@ function AskSection({ householdId }: { householdId: string }) {
             onKeyDown={handleKey}
             placeholder="Ask anything about your finances..."
             rows={2}
+            disabled={isInFlight}
             style={{
               flex: 1,
               background: 'none',
@@ -278,35 +472,72 @@ function AskSection({ householdId }: { householdId: string }) {
               color: 'var(--fg-primary)',
               fontFamily: 'var(--font-sans)',
               lineHeight: 1.5,
+              opacity: isInFlight ? 0.6 : 1,
             }}
           />
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={!question.trim() || ask.isPending}
+            disabled={!question.trim() || isInFlight}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 34,
+              gap: 4,
+              padding: '0 10px',
               height: 34,
-              background: question.trim() ? 'var(--accent)' : 'var(--border)',
+              background: question.trim() && !isInFlight ? 'var(--accent)' : 'var(--border)',
               border: 'none',
               borderRadius: 8,
-              cursor: question.trim() ? 'pointer' : 'default',
-              color: question.trim() ? 'var(--accent-fg)' : 'var(--fg-muted)',
+              cursor: question.trim() && !isInFlight ? 'pointer' : 'default',
+              color: question.trim() && !isInFlight ? 'var(--accent-fg)' : 'var(--fg-muted)',
               flexShrink: 0,
               transition: 'background 0.15s',
+              fontSize: 12,
+              fontFamily: 'var(--font-sans)',
             }}
           >
-            {ask.isPending ? <Loader size={14} /> : <Send size={14} />}
+            {isInFlight ? (
+              <>
+                <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                Thinking...
+              </>
+            ) : (
+              <Send size={14} />
+            )}
           </button>
         </div>
+
+        {showLongWait && (
+          <div
+            style={{
+              marginTop: 8,
+              padding: '6px 10px',
+              background: 'color-mix(in oklch, var(--warning) 8%, transparent)',
+              border: '1px solid color-mix(in oklch, var(--warning) 25%, transparent)',
+              borderRadius: 6,
+              fontSize: 11,
+              color: 'var(--warning)',
+            }}
+          >
+            This is taking longer than expected. The model may be loading.
+          </div>
+        )}
+
+        {inlineError && (
+          <div style={{ marginTop: 8 }}>
+            <QAErrorMessage errorType={inlineError.type} error={inlineError.msg} />
+          </div>
+        )}
       </div>
 
       {history.length > 0 && (
         <div style={{ padding: '16px 20px' }}>
-          <QAHistory items={history} onClear={() => setHistory([])} />
+          <QAHistory
+            items={history}
+            onClear={() => setHistory([])}
+            onRetry={(q) => void handleSubmit(q)}
+          />
         </div>
       )}
     </div>
@@ -516,7 +747,7 @@ function TokenBudgetWidget({ householdId, currency }: { householdId: string; cur
           Token budget
         </div>
         <NavLink
-          to="/settings/insights"
+          to={SETTINGS_LINK}
           style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
         >
           Edit limits
@@ -595,6 +826,113 @@ function TokenBudgetWidget({ householdId, currency }: { householdId: string; cur
   )
 }
 
+function GenerateSection({ householdId, recCount }: { householdId: string; recCount: number }) {
+  const generate = useTriggerGenerateApiV1HouseholdsHouseholdIdInsightsGeneratePost()
+  const [disabledUntil, setDisabledUntil] = useState<number | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
+  const isDisabled = generate.isPending || (disabledUntil !== null && Date.now() < disabledUntil)
+
+  const handleGenerate = async () => {
+    setGenerateError(null)
+    try {
+      await generate.mutateAsync({ householdId })
+      setDisabledUntil(Date.now() + 60000)
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Failed to start generation')
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--fg-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}
+          >
+            Generated Insights
+          </div>
+          {recCount > 0 && (
+            <div style={{ fontSize: 12, color: 'var(--fg-muted)', marginTop: 2 }}>
+              {recCount} pending
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <button
+            type="button"
+            onClick={() => void handleGenerate()}
+            disabled={isDisabled}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 14px',
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              fontSize: 12,
+              color: 'var(--fg-secondary)',
+              cursor: isDisabled ? 'default' : 'pointer',
+              fontFamily: 'var(--font-sans)',
+              opacity: isDisabled ? 0.5 : 1,
+            }}
+          >
+            {generate.isPending ? (
+              <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Sparkles size={13} />
+            )}
+            Generate insights
+          </button>
+        </div>
+      </div>
+
+      {generate.isSuccess && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: 'color-mix(in oklch, var(--success) 10%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--success) 30%, transparent)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: 'var(--success)',
+          }}
+        >
+          Generating insights &mdash; check back in a few minutes.
+        </div>
+      )}
+
+      {generateError && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: 'color-mix(in oklch, var(--danger) 8%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--danger) 25%, transparent)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: 'var(--danger)',
+          }}
+        >
+          {generateError}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function InsightsPage() {
   const { household, householdId } = useHousehold()
   const hid = householdId ?? ''
@@ -605,22 +943,14 @@ export function InsightsPage() {
     { query: { enabled: !!hid } }
   )
 
-  const { data: aiRecs = [], refetch: refetchRecs } =
-    useListRecommendationsApiV1HouseholdsHouseholdIdRecommendationsGet(
-      hid,
-      {
-        source: RecommendationSource.ai_insights,
-        status: RecommendationStatus.pending,
-      },
-      { query: { enabled: !!hid } }
-    )
-
-  const generate = useTriggerGenerateApiV1HouseholdsHouseholdIdInsightsGeneratePost()
-
-  const handleGenerate = async () => {
-    await generate.mutateAsync({ householdId: hid })
-    void refetchRecs()
-  }
+  const { data: aiRecs = [] } = useListRecommendationsApiV1HouseholdsHouseholdIdRecommendationsGet(
+    hid,
+    {
+      source: RecommendationSource.ai_insights,
+      status: RecommendationStatus.pending,
+    },
+    { query: { enabled: !!hid } }
+  )
 
   const handleResolved = () => {
     void qc.invalidateQueries({
@@ -628,7 +958,8 @@ export function InsightsPage() {
     })
   }
 
-  const hasNoProviders = providers.length === 0
+  const hasNoProviders = (providers as ProviderConfigOut[]).length === 0
+  const allDisabled = (providers as ProviderConfigOut[]).every((p) => !p.enabled)
   const currency = household?.home_currency ?? 'USD'
 
   if (!householdId) {
@@ -674,10 +1005,10 @@ export function InsightsPage() {
             No AI provider configured
           </div>
           <div style={{ fontSize: 13, color: 'var(--fg-muted)', maxWidth: 360 }}>
-            Connect a local or cloud AI provider to get started with insights, Q&A, and more.
+            No AI provider configured &mdash; add one in Settings to get started.
           </div>
           <NavLink
-            to="/settings/insights"
+            to={SETTINGS_LINK}
             style={{
               marginTop: 8,
               display: 'flex',
@@ -693,7 +1024,7 @@ export function InsightsPage() {
             }}
           >
             <Settings size={14} />
-            Configure provider
+            Go to Settings &rarr;
           </NavLink>
         </div>
       </div>
@@ -732,78 +1063,43 @@ export function InsightsPage() {
           gap: 24,
         }}
       >
-        <ProviderStatusBar providers={providers as ProviderConfigOut[]} />
+        <ProviderStatusBar providers={providers as ProviderConfigOut[]} householdId={hid} />
+
+        {allDisabled && (
+          <div
+            style={{
+              padding: '12px 16px',
+              background: 'color-mix(in oklch, var(--warning) 8%, transparent)',
+              border: '1px solid color-mix(in oklch, var(--warning) 25%, transparent)',
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 13,
+            }}
+          >
+            <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+            <span style={{ color: 'var(--fg-secondary)', flex: 1 }}>
+              AI is unavailable &mdash; check your provider configuration.
+            </span>
+            <NavLink
+              to={SETTINGS_LINK}
+              style={{
+                fontSize: 12,
+                color: 'var(--accent)',
+                textDecoration: 'none',
+                flexShrink: 0,
+              }}
+            >
+              Settings &rarr;
+            </NavLink>
+          </div>
+        )}
 
         <AskSection householdId={hid} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--fg-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}
-              >
-                Generated Insights
-              </div>
-              {(aiRecs as RecommendationOut[]).length > 0 && (
-                <div style={{ fontSize: 12, color: 'var(--fg-muted)', marginTop: 2 }}>
-                  {(aiRecs as RecommendationOut[]).length} pending
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleGenerate()}
-              disabled={generate.isPending}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                fontSize: 12,
-                color: 'var(--fg-secondary)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-sans)',
-                opacity: generate.isPending ? 0.6 : 1,
-              }}
-            >
-              {generate.isPending ? (
-                <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : (
-                <Sparkles size={13} />
-              )}
-              Generate insights
-            </button>
-          </div>
-
-          {generate.isSuccess && (
-            <div
-              style={{
-                padding: '10px 14px',
-                background: 'color-mix(in oklch, var(--success) 10%, transparent)',
-                border: '1px solid color-mix(in oklch, var(--success) 30%, transparent)',
-                borderRadius: 8,
-                fontSize: 12,
-                color: 'var(--success)',
-              }}
-            >
-              Generation queued — insights will appear shortly.
-            </div>
-          )}
+          <GenerateSection householdId={hid} recCount={(aiRecs as RecommendationOut[]).length} />
 
           {(aiRecs as RecommendationOut[]).length === 0 ? (
             <div style={{ fontSize: 13, color: 'var(--fg-muted)', padding: '12px 0' }}>
