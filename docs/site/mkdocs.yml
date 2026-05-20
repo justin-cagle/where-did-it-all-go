@@ -1,0 +1,100 @@
+site_name: WDIAG — Where Did It All Go
+site_description: Self-hosted personal finance for households that want control over their data.
+site_url: https://docs.wdiag.app
+repo_url: https://github.com/justin-cagle/where-did-it-all-go
+repo_name: justin-cagle/where-did-it-all-go
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started/quick-start.md
+    - Installation: getting-started/installation.md
+    - First Setup: getting-started/first-setup.md
+    - Connecting Your Bank: getting-started/connecting-bank.md
+  - Features:
+    - Overview: features/overview.md
+    - Accounts: features/accounts.md
+    - Transactions: features/transactions.md
+    - Budgets: features/budgets.md
+    - Debts: features/debts.md
+    - Goals: features/goals.md
+    - Calendar: features/calendar.md
+    - Projections: features/projections.md
+    - AI Insights: features/ai-insights.md
+    - Classification: features/classification.md
+    - Recurrences: features/recurrences.md
+  - Households:
+    - Overview: households/overview.md
+    - Visibility Modes: households/visibility-modes.md
+    - Inviting Members: households/inviting-members.md
+  - Administration:
+    - Admin Panel: admin/overview.md
+    - Registration Control: admin/registration.md
+    - User Management: admin/users.md
+    - SMTP Setup: admin/smtp.md
+    - Backup: admin/backup.md
+    - Emergency Controls: admin/emergency.md
+  - Deployment:
+    - Quick Start (Demo): deployment/demo.md
+    - Production Setup: deployment/production.md
+    - Configuration Reference: deployment/configuration.md
+    - Reverse Proxy: deployment/reverse-proxy.md
+    - Upgrading: deployment/upgrading.md
+    - Backup & Restore: deployment/backup-restore.md
+  - Connecting Data:
+    - SimpleFIN: data/simplefin.md
+    - File Import: data/file-import.md
+    - Data Freshness: data/freshness.md
+  - AI & Privacy:
+    - AI Providers: ai/providers.md
+    - Privacy Levels: ai/privacy.md
+    - Local Models: ai/local-models.md
+    - Token Budgets: ai/token-budgets.md
+  - FAQ: faq.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
