@@ -4,10 +4,12 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 RUN npm install -g pnpm
 
-COPY apps/frontend/package.json apps/frontend/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/frontend/package.json apps/frontend/package.json
+RUN pnpm install --frozen-lockfile --filter wdiag-frontend
 
-COPY apps/frontend/ .
+COPY apps/frontend/ apps/frontend/
+WORKDIR /app/apps/frontend
 
 ARG VITE_API_BASE_URL=""
 RUN pnpm build
@@ -39,7 +41,7 @@ RUN uv sync --no-dev
 COPY apps/backend/ .
 
 # Frontend static files
-COPY --from=frontend-builder /app/dist /app/frontend/dist/
+COPY --from=frontend-builder /app/apps/frontend/dist /app/frontend/dist/
 
 # AIO config
 COPY deploy/aio/supervisord.conf /etc/supervisor/conf.d/wdiag.conf
