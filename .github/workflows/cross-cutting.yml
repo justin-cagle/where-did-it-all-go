@@ -81,7 +81,9 @@ jobs:
         working-directory: apps/backend
 
       - name: pip-audit (Python dependencies)
-        run: uv run pip-audit
+        # PYSEC-2025-183: disputed pyjwt advisory (key length is caller responsibility,
+        # no fix version exists in any pyjwt release; maintainers dispute the finding)
+        run: uv run pip-audit --ignore-vuln PYSEC-2025-183
         working-directory: apps/backend
 
       - name: Install frontend dependencies
