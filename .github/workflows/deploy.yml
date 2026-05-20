@@ -138,6 +138,7 @@ jobs:
           CADDY_EMAIL: ${{ vars.CADDY_EMAIL }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          FRONTEND_PORT: ${{ vars.FRONTEND_PORT }}
         run: |
           docker compose pull
           docker compose up -d --remove-orphans
