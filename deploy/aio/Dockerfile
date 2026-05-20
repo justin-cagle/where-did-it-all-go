@@ -1,8 +1,8 @@
 ## Stage 1 — build frontend static files
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/frontend/package.json apps/frontend/package.json
