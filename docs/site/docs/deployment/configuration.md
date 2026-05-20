@@ -2,14 +2,22 @@
 
 All configuration is via environment variables in your `.env` file. Variables changed in `.env` require `docker compose up -d` to take effect. Some settings (registration, SMTP) can also be changed at runtime via the admin panel.
 
+## Container images
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `IMAGE_TAG` | No | `latest` | Tag for both `wdiag-backend` and `wdiag-frontend` images. Set to a specific version (e.g. `0.4.0`) to pin both images to an immutable release. |
+| `GITHUB_REPOSITORY_OWNER` | No | `local` | GitHub username or org that owns the container registry images. Set automatically in CI; override if self-hosting from a fork. |
+
 ## Core
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `MASTER_KEY` | Yes | — | 32-byte hex master encryption key for sensitive fields (SimpleFIN tokens, OIDC secrets, AI keys). Generate with `openssl rand -hex 32`. Never commit. |
-| `LOG_LEVEL` | No | `INFO` | Log verbosity. One of: `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
-| `DEBUG` | No | `false` | Enables debug mode. Sets cookies to HTTP-only (not Secure) — for local development only. Never enable in production. |
+| `LOG_LEVEL` | No | `INFO` | Log verbosity. One of: `DEBUG`, `INFO`, `WARNING`, `ERROR`. At `INFO` and above, output is structured JSON. At `DEBUG` (with `DEBUG=true`), output is human-readable colored console format. |
+| `DEBUG` | No | `false` | Enables debug mode. Sets cookies to HTTP-only (not Secure) and switches log output to colored console format. For local development only. Never enable in production. |
 | `ALLOWED_ORIGINS` | No | — | Comma-separated CORS origins. Only needed if running the frontend dev server separately from the backend. |
+| `FRONTEND_PORT` | No | `3000` | Host port the frontend container binds to. Override if port 3000 is already in use. |
 
 ## Database
 
