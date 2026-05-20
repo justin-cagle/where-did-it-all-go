@@ -488,6 +488,165 @@ def test_annual_period_always_full_year(ref_date: date) -> None:
 
 
 # ===========================================================================
+# Rollover edge-case and chain invariant tests (pure, no DB)
+# ===========================================================================
+
+
+class TestRolloverEdgeCases:
+    def test_zero_spend_full_carry_accumulate(self) -> None:
+        """Zero actual spending carries the full effective_planned amount."""
+        result = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("0"),
+            carried_in=Decimal("0"),
+            rollover_policy=RolloverPolicy.ACCUMULATE,
+            rollover_cap=None,
+        )
+        assert result == Decimal("500")
+
+    def test_exact_spend_zero_carry_accumulate(self) -> None:
+        """Spending exactly effective_planned produces zero carry."""
+        result = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("500"),
+            carried_in=Decimal("0"),
+            rollover_policy=RolloverPolicy.ACCUMULATE,
+            rollover_cap=None,
+        )
+        assert result == Decimal("0")
+
+    def test_first_period_carried_in_zero(self) -> None:
+        """First period: carried_in=0 — result must be independent of it."""
+        r0 = _compute_rollover(
+            planned=Decimal("300"),
+            actual=Decimal("100"),
+            carried_in=Decimal("0"),
+            rollover_policy=RolloverPolicy.ACCUMULATE,
+            rollover_cap=None,
+        )
+        # effective_planned = 300, unspent = 200
+        assert r0 == Decimal("200")
+
+    def test_accumulate_capped_cap_equals_unspent(self) -> None:
+        """When cap equals unspent amount, result equals cap exactly."""
+        unspent = Decimal("150")
+        result = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("350"),
+            carried_in=Decimal("0"),
+            rollover_policy=RolloverPolicy.ACCUMULATE_CAPPED,
+            rollover_cap=unspent,
+        )
+        assert result == unspent
+
+    def test_reset_on_overspend_then_underspend_chain(self) -> None:
+        """Period 1 overspends -> carry=0. Period 2 underspends -> positive carry."""
+        # Period 1: overspend, carry resets
+        carried_out_1 = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("700"),
+            carried_in=Decimal("0"),
+            rollover_policy=RolloverPolicy.RESET_ON_OVERSPEND,
+            rollover_cap=None,
+        )
+        assert carried_out_1 == Decimal("0")
+
+        # Period 2: carried_in = 0 (reset), underspend
+        carried_out_2 = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("200"),
+            carried_in=carried_out_1,
+            rollover_policy=RolloverPolicy.RESET_ON_OVERSPEND,
+            rollover_cap=None,
+        )
+        assert carried_out_2 == Decimal("300")
+
+    def test_debt_carry_negative_carried_in_reduces_effective_planned(self) -> None:
+        """Prior debt (negative carried_in) reduces effective_planned for next period.
+
+        Example: planned=500, carried_in=-800 (prior overspend).
+        effective_planned = -300, actual=100.
+        carried_out = -300 - 100 = -400 (deepening debt).
+        """
+        result = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("100"),
+            carried_in=Decimal("-800"),
+            rollover_policy=RolloverPolicy.DEBT_CARRY,
+            rollover_cap=None,
+        )
+        expected = Decimal("500") + Decimal("-800") - Decimal("100")  # = -400
+        assert result == expected
+
+    def test_debt_carry_negative_carried_in_large_underspend_can_clear_debt(self) -> None:
+        """Large underspend with debt_carry can partially or fully clear prior debt."""
+        result = _compute_rollover(
+            planned=Decimal("500"),
+            actual=Decimal("0"),  # zero spend
+            carried_in=Decimal("-200"),  # prior debt
+            rollover_policy=RolloverPolicy.DEBT_CARRY,
+            rollover_cap=None,
+        )
+        # effective_planned = 300, actual = 0, carried_out = 300 (debt cleared)
+        assert result == Decimal("300")
+
+
+@given(
+    planned=_money,
+    actuals=st.lists(_money, min_size=2, max_size=6),
+    initial_carry=st.decimals(min_value=Decimal("-500"), max_value=Decimal("500"), places=2),
+)
+@settings(max_examples=100)
+def test_rollover_chain_carried_out_feeds_next_carried_in(
+    planned: Decimal,
+    actuals: list[Decimal],
+    initial_carry: Decimal,
+) -> None:
+    """For debt_carry: chaining periods produces correct cumulative carry.
+
+    Invariant: carried_out(N) is used as carried_in(N+1) and the result equals
+    effective_planned(N+1) - actual(N+1).
+    """
+    carried = initial_carry
+    for actual in actuals:
+        prev_carry = carried
+        carried = _compute_rollover(
+            planned=planned,
+            actual=actual,
+            carried_in=prev_carry,
+            rollover_policy=RolloverPolicy.DEBT_CARRY,
+            rollover_cap=None,
+        )
+        expected = planned + prev_carry - actual
+        assert carried == expected, (
+            f"Chain broken: planned={planned}, actual={actual}, "
+            f"carried_in={prev_carry}, got={carried}, expected={expected}"
+        )
+
+
+@given(
+    planned=_money,
+    actuals=st.lists(_money, min_size=2, max_size=6),
+)
+@settings(max_examples=100)
+def test_rollover_accumulate_chain_never_negative(
+    planned: Decimal,
+    actuals: list[Decimal],
+) -> None:
+    """For accumulate: all chained carried_out values >= 0."""
+    carried = Decimal("0")
+    for actual in actuals:
+        carried = _compute_rollover(
+            planned=planned,
+            actual=actual,
+            carried_in=carried,
+            rollover_policy=RolloverPolicy.ACCUMULATE,
+            rollover_cap=None,
+        )
+        assert carried >= Decimal("0"), f"Negative carry in chain: {carried}"
+
+
+# ===========================================================================
 # Shared integration DB fixture
 # ===========================================================================
 

@@ -429,3 +429,67 @@ def test_hypothesis_convert_roundtrip_within_rounding_tolerance(
     inv = Decimal("1") / rate
     a_back = (b * inv).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
     assert abs(a_back - amount) <= Decimal("0.01")
+
+
+_rate_wide = st.decimals(
+    min_value=Decimal("0.0100"),
+    max_value=Decimal("150.0000"),
+    places=4,
+    allow_nan=False,
+    allow_infinity=False,
+)
+
+
+@given(amount=_pos_money, rate=_rate_wide)
+@settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
+def test_hypothesis_convert_roundtrip_wide_rate_range(amount: Decimal, rate: Decimal) -> None:
+    """Round-trip tolerance for rates in [0.01, 150] (covers JPY-class pairs).
+
+    For rate r, a 4dp rounding error epsilon in the forward direction amplifies
+    to epsilon/r in the inverse direction.  Tolerance = max($0.01, 2*eps/rate)
+    where eps = 0.00005.
+    """
+    b = (amount * rate).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    inv = Decimal("1") / rate
+    a_back = (b * inv).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    # Propagated rounding tolerance: forward error (0.00005) * 1/rate, rounded up
+    eps = Decimal("0.00005")
+    tolerance = max(Decimal("0.01"), (eps / rate + eps).quantize(Decimal("0.01"), ROUND_HALF_UP))
+    assert abs(a_back - amount) <= tolerance, (
+        f"Round-trip error {abs(a_back - amount)} > tolerance {tolerance} "
+        f"for amount={amount}, rate={rate}"
+    )
+
+
+@pytest.mark.integration
+async def test_convert_is_approximate_propagates_from_fallback(session: AsyncSession) -> None:
+    """convert() returns is_approximate=True when get_rate() uses a fallback rate.
+
+    This validates the propagation path: get_rate -> is_approx -> convert return value.
+    """
+    target_date = date(2026, 4, 20)
+    prior_date = date(2026, 4, 10)
+    fallback_rate = Decimal("1.08500000")
+
+    await _upsert_rate(session, "EUR", "USD", prior_date, fallback_rate, "frankfurter")
+    await session.flush()
+
+    with respx.mock() as mock:
+        # API failure forces fallback to prior rate
+        mock.get(f"{_FRANKFURTER_BASE}/{target_date.isoformat()}").mock(return_value=Response(503))
+        converted, is_approx = await convert(Decimal("100.00"), "EUR", "USD", target_date, session)
+
+    expected = (Decimal("100.00") * fallback_rate).quantize(Decimal("0.0001"), ROUND_HALF_UP)
+    assert converted == expected
+    assert is_approx is True
+
+
+@pytest.mark.integration
+async def test_convert_same_currency_never_approximate(session: AsyncSession) -> None:
+    """convert(amount, X, X, ...) always returns (amount, False) — no DB hit, not approximate."""
+    # No rates in DB, no HTTP mock — if DB is hit this will fail
+    result_amount, is_approx = await convert(
+        Decimal("500.00"), "GBP", "GBP", date(2026, 1, 1), session
+    )
+    assert result_amount == Decimal("500.00")
+    assert is_approx is False

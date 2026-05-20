@@ -585,6 +585,241 @@ def test_hypothesis_snowball_flow_earlier_or_equal_payoff(
 
 
 # ===========================================================================
+# Multi-tranche unit tests
+# ===========================================================================
+
+
+def _make_multi_tranche(specs: list[tuple[Decimal, Decimal]]) -> AccountState:
+    """Build one AccountState with multiple tranches from (principal, apr) pairs."""
+    acct_id = uuid.uuid4()
+    tranches = []
+    for principal, apr in specs:
+        t = AccountTranche(
+            balance_id=uuid.uuid4(),
+            account_id=acct_id,
+            principal=principal,
+            apr=apr,
+            currency="USD",
+            minimum_payment=Decimal("0"),
+        )
+        t.minimum_payment = _compute_minimum(t)
+        tranches.append(t)
+    return AccountState(account_id=acct_id, tranches=tranches, currency="USD")
+
+
+class TestMultiTranche:
+    def test_intra_account_highest_apr_paid_first(self) -> None:
+        """Extra payment within one account must target the highest-APR tranche first.
+
+        Low-APR tranche is listed first to expose any list-order bug.
+        Correct: total interest equals a two-account avalanche run with same APRs.
+        """
+        low_apr = Decimal("0.10")
+        high_apr = Decimal("0.30")
+        low_bal = Decimal("5000")
+        high_bal = Decimal("500")
+        extra = Decimal("300")
+
+        # Multi-tranche: low-APR listed first
+        multi = _make_multi_tranche([(low_bal, low_apr), (high_bal, high_apr)])
+
+        # Reference: two separate accounts in avalanche order (high-APR gets extra)
+        high_ref = _make_account(principal=high_bal, apr=high_apr)
+        low_ref = _make_account(principal=low_bal, apr=low_apr)
+
+        multi_rows = simulate_schedule(
+            accounts=[multi],
+            method=DebtPlanMethod.AVALANCHE,
+            monthly_extra_payment=extra,
+            snowball_flow=False,
+            account_ids_order=[multi.account_id],
+            start_date=date(2026, 1, 1),
+        )
+        ref_rows = simulate_schedule(
+            accounts=[high_ref, low_ref],
+            method=DebtPlanMethod.AVALANCHE,
+            monthly_extra_payment=extra,
+            snowball_flow=False,
+            account_ids_order=[high_ref.account_id, low_ref.account_id],
+            start_date=date(2026, 1, 1),
+        )
+
+        multi_interest = sum(r.interest for r in multi_rows)
+        ref_interest = sum(r.interest for r in ref_rows)
+        assert multi_interest == ref_interest, (
+            f"Multi-tranche total interest {multi_interest} != reference {ref_interest}; "
+            "extra payment applied to wrong tranche"
+        )
+
+    def test_five_tranches_zero_apr_accrues_no_interest(self) -> None:
+        """Zero-APR promotional tranches must never accrue interest."""
+        specs: list[tuple[Decimal, Decimal]] = [
+            (Decimal("2000"), Decimal("0.00")),
+            (Decimal("3000"), Decimal("0.00")),
+            (Decimal("1500"), Decimal("0.18")),
+            (Decimal("1000"), Decimal("0.00")),
+            (Decimal("500"), Decimal("0.24")),
+        ]
+        acct = _make_multi_tranche(specs)
+        # Assign zero-APR balance IDs so we can check interest per tranche;
+        # since rows are per-account, verify globally: interest only from non-zero tranches.
+        zero_apr_total = sum(p for p, a in specs if a == Decimal("0.00"))
+        nonzero_apr_balances = [(p, a) for p, a in specs if a > Decimal("0.00")]
+
+        rows = simulate_schedule(
+            accounts=[acct],
+            method=DebtPlanMethod.AVALANCHE,
+            monthly_extra_payment=Decimal("200"),
+            snowball_flow=False,
+            account_ids_order=[acct.account_id],
+            start_date=date(2026, 1, 1),
+        )
+
+        # First period interest must equal sum of (nonzero_apr * balance / 12)
+        first_period = min(rows, key=lambda r: r.period_date)
+        expected = sum(
+            (p * a / Decimal(12)).quantize(Decimal("0.01"), ROUND_HALF_UP)
+            for p, a in nonzero_apr_balances
+        )
+        assert first_period.interest == expected, (
+            f"Zero-APR tranches accrued interest: got {first_period.interest}, expected {expected}"
+        )
+        assert zero_apr_total > Decimal("0")
+
+    def test_closing_balance_never_negative_multi_tranche(self) -> None:
+        """Closing balance stays >= 0 for multi-tranche accounts."""
+        acct = _make_multi_tranche(
+            [
+                (Decimal("800"), Decimal("0.20")),
+                (Decimal("300"), Decimal("0.15")),
+                (Decimal("150"), Decimal("0.30")),
+            ]
+        )
+        rows = simulate_schedule(
+            accounts=[acct],
+            method=DebtPlanMethod.AVALANCHE,
+            monthly_extra_payment=Decimal("100"),
+            snowball_flow=False,
+            account_ids_order=[acct.account_id],
+            start_date=date(2026, 1, 1),
+        )
+        for row in rows:
+            assert row.closing_balance >= Decimal("0"), (
+                f"Negative closing balance {row.closing_balance} on {row.period_date}"
+            )
+
+    def test_payoff_overshoot_cascades_to_next_account(self) -> None:
+        """When priority account pays off, excess redirects to next account same period.
+
+        Account A: $200 at 20% APR (high APR = priority)
+        Account B: $3000 at 10% APR
+        Extra: $500 (far exceeds A's payoff amount)
+
+        After period 1 Account B must receive the excess beyond A's payoff.
+        """
+        acct_a = _make_account(principal=Decimal("200"), apr=Decimal("0.20"))
+        acct_b = _make_account(principal=Decimal("3000"), apr=Decimal("0.10"))
+        extra = Decimal("500")
+
+        rows = simulate_schedule(
+            accounts=[acct_a, acct_b],
+            method=DebtPlanMethod.AVALANCHE,
+            monthly_extra_payment=extra,
+            snowball_flow=False,
+            account_ids_order=[acct_a.account_id, acct_b.account_id],
+            start_date=date(2026, 1, 1),
+        )
+
+        first_period = min(rows, key=lambda r: r.period_date)
+
+        row_a = next(
+            r
+            for r in rows
+            if r.account_id == acct_a.account_id and r.period_date == first_period.period_date
+        )
+        row_b = next(
+            r
+            for r in rows
+            if r.account_id == acct_b.account_id and r.period_date == first_period.period_date
+        )
+
+        # A must be paid off in period 1
+        assert row_a.is_payoff, "Account A should pay off in period 1"
+
+        # A's payoff amount = ~$203.33; extra was $500; excess ≈ $296.67
+        # B's minimum ≈ $60; B's payment should be minimum + excess >> minimum
+        b_minimum = _compute_minimum(acct_b.tranches[0])
+        assert row_b.payment > b_minimum, (
+            f"Excess not cascaded: B payment {row_b.payment} <= B minimum {b_minimum}"
+        )
+
+    def test_total_minimum_equals_sum_of_tranche_minimums(self) -> None:
+        """AccountState.total_minimum equals _compute_minimum() per tranche sum."""
+        acct = _make_multi_tranche(
+            [
+                (Decimal("5000"), Decimal("0.18")),
+                (Decimal("2000"), Decimal("0.24")),
+                (Decimal("100"), Decimal("0.15")),
+            ]
+        )
+        expected = sum(_compute_minimum(t) for t in acct.tranches)
+        assert acct.total_minimum == expected
+
+
+@given(
+    specs=st.lists(
+        st.tuples(
+            st.decimals(min_value=Decimal("100"), max_value=Decimal("10000"), places=2),
+            st.decimals(min_value=Decimal("0.00"), max_value=Decimal("0.36"), places=4),
+        ),
+        min_size=1,
+        max_size=5,
+    )
+)
+@settings(max_examples=40, suppress_health_check=[HealthCheck.too_slow])
+def test_hypothesis_multi_tranche_interest_independent(
+    specs: list[tuple[Decimal, Decimal]],
+) -> None:
+    """First-period total interest equals sum of per-tranche (APR/12 * principal)."""
+    acct = _make_multi_tranche(specs)
+    rows = simulate_schedule(
+        accounts=[acct],
+        method=DebtPlanMethod.AVALANCHE,
+        monthly_extra_payment=Decimal("0"),
+        snowball_flow=False,
+        account_ids_order=[acct.account_id],
+        start_date=date(2026, 1, 1),
+    )
+    if not rows:
+        return
+    first = min(rows, key=lambda r: r.period_date)
+    expected = sum((p * a / Decimal(12)).quantize(Decimal("0.01"), ROUND_HALF_UP) for p, a in specs)
+    assert first.interest == expected, (
+        f"Interest {first.interest} != expected {expected} for specs {specs}"
+    )
+
+
+@given(
+    specs=st.lists(
+        st.tuples(
+            st.decimals(min_value=Decimal("100"), max_value=Decimal("10000"), places=2),
+            st.decimals(min_value=Decimal("0.01"), max_value=Decimal("0.36"), places=4),
+        ),
+        min_size=1,
+        max_size=6,
+    )
+)
+@settings(max_examples=40, suppress_health_check=[HealthCheck.too_slow])
+def test_hypothesis_total_minimum_equals_tranche_sum(
+    specs: list[tuple[Decimal, Decimal]],
+) -> None:
+    """AccountState.total_minimum == sum(_compute_minimum(t)) for all tranches."""
+    acct = _make_multi_tranche(specs)
+    expected = sum(_compute_minimum(t) for t in acct.tranches)
+    assert acct.total_minimum == expected
+
+
+# ===========================================================================
 # Integration tests (require real Postgres)
 # ===========================================================================
 

@@ -59,4 +59,11 @@ def _reject_float_money(v: object) -> object:
 
 
 MoneyDecimal = Annotated[Decimal, BeforeValidator(_reject_float_money)]
-"""Pydantic type for monetary fields. Accepts Decimal, str, int; rejects float."""
+"""Pydantic type for monetary fields. Accepts Decimal, str, int; rejects float.
+
+Scale enforcement: MoneyDecimal does NOT quantize to 4dp at the Pydantic layer.
+Decimal("1.12345") passes validation unchanged.  Scale is enforced at the DB
+layer by NUMERIC(19,4) — SQLAlchemy / Postgres truncates or rounds on write.
+Tests that verify scale behavior must go through a real DB write or must call
+quantize() explicitly.
+"""

@@ -183,7 +183,9 @@ def simulate_schedule(
 
     Multi-tranche accounts: each tranche is an independent amortization stream;
     minimums are summed for the account total minimum payment.
-    Extra payment always goes to the highest-priority account's first tranche.
+    Extra payment flows to accounts in priority order; within each account the
+    highest-APR tranche is targeted first.  Any payoff overshoot cascades to
+    the next active account in the same period.
     """
     if method == DebtPlanMethod.NONE or not accounts:
         return []
@@ -215,9 +217,6 @@ def simulate_schedule(
         if not active_accounts:
             break
 
-        # Determine priority account (first active in ordered list)
-        priority_account = active_accounts[0]
-
         # Build per-account payment for this period
         account_summaries: dict[uuid.UUID, tuple[Decimal, Decimal, Decimal, Decimal, bool]] = {}
 
@@ -243,7 +242,16 @@ def simulate_schedule(
                 )
                 continue
 
-            for tranche in acct.tranches:
+            # When extra is available, sort tranches by APR descending so the
+            # highest-rate balance is targeted first — applies to any account
+            # that receives cascaded extra, not only the priority account.
+            tranches_ordered = (
+                sorted(acct.tranches, key=lambda t: t.apr, reverse=True)
+                if available_extra > Decimal("0")
+                else acct.tranches
+            )
+
+            for tranche in tranches_ordered:
                 bal = balances.get(tranche.balance_id, Decimal("0"))
                 if bal <= Decimal("0"):
                     continue
@@ -252,10 +260,10 @@ def simulate_schedule(
                 interest = (bal * monthly_rate).quantize(_CENT, ROUND_HALF_UP)
                 minimum = _compute_minimum(tranche)
 
-                # Apply extra payment to priority account's tranches first
+                # Extra flows to accounts in priority order; any payoff overshoot
+                # cascades to the next active tranche/account in the same period.
                 extra_for_tranche = Decimal("0")
-                is_priority = acct.account_id == priority_account.account_id
-                if is_priority and available_extra > Decimal("0"):
+                if available_extra > Decimal("0"):
                     extra_for_tranche = available_extra
                     available_extra = Decimal("0")
 
@@ -264,6 +272,12 @@ def simulate_schedule(
                 payoff_amount = bal + interest
                 payment = min(payment_attempt, payoff_amount)
                 payment = max(payment, min(minimum, payoff_amount))
+
+                # Return any clamped excess so it cascades to the next tranche/account
+                if extra_for_tranche > Decimal("0"):
+                    excess = payment_attempt - payment
+                    if excess > Decimal("0"):
+                        available_extra = excess
 
                 principal_paid = payment - interest
                 if principal_paid < Decimal("0"):

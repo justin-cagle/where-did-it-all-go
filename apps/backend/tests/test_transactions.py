@@ -747,6 +747,88 @@ async def test_set_splits_archives_old_splits(session: AsyncSession) -> None:
     assert len(active) == 1
 
 
+@pytest.mark.integration
+async def test_twenty_equal_splits_no_rounding_error(session: AsyncSession) -> None:
+    """20 splits of 1/20 of total must sum exactly to total — no floating-point drift."""
+    actor_id, household_id, account_id = await _make_household_and_account(session)
+    total = Decimal("100.00")
+    each = Decimal("5.00")  # exactly 1/20 of 100
+    tx = await service.create_transaction(
+        session, **_tx_create_kwargs(household_id, account_id, actor_id, amount=total)
+    )
+    splits = await service.set_splits(
+        session,
+        transaction_id=tx.id,
+        household_id=household_id,
+        actor_id=actor_id,
+        splits=[{"amount": each, "currency": "USD"} for _ in range(20)],
+    )
+    assert sum(s.amount for s in splits) == total
+    # All 20 splits explicit; no remainder split created
+    assert len(splits) == 20
+
+
+@pytest.mark.integration
+async def test_twenty_uneven_splits_sum_equals_total(session: AsyncSession) -> None:
+    """19 splits of $5.26 + 1 of $0.06 must sum to $100.00 (19 * 5.26 + 0.06 = 99.94 + 0.06)."""
+    actor_id, household_id, account_id = await _make_household_and_account(session)
+    total = Decimal("100.00")
+    each = Decimal("5.26")  # 19 * 5.26 = 99.94; remainder = 0.06
+    tx = await service.create_transaction(
+        session, **_tx_create_kwargs(household_id, account_id, actor_id, amount=total)
+    )
+    splits = await service.set_splits(
+        session,
+        transaction_id=tx.id,
+        household_id=household_id,
+        actor_id=actor_id,
+        splits=[{"amount": each, "currency": "USD"} for _ in range(19)],
+    )
+    assert sum(s.amount for s in splits) == total
+
+
+@pytest.mark.integration
+async def test_set_splits_on_reconciled_transaction_succeeds(session: AsyncSession) -> None:
+    """set_splits on a RECONCILED transaction succeeds (no state guard in service).
+
+    Documents current behavior: reconciled transactions can have splits updated.
+    If the domain spec changes to forbid this, this test must be updated to
+    expect a ConflictError instead.
+    """
+    actor_id, household_id, account_id = await _make_household_and_account(session)
+    tx = await service.create_transaction(
+        session, **_tx_create_kwargs(household_id, account_id, actor_id, amount=Decimal("200.00"))
+    )
+    # Advance through: PENDING -> POSTED -> RECONCILED
+    tx = await service.transition_state(
+        session,
+        transaction_id=tx.id,
+        household_id=household_id,
+        actor_id=actor_id,
+        new_state=TransactionState.POSTED,
+    )
+    tx = await service.transition_state(
+        session,
+        transaction_id=tx.id,
+        household_id=household_id,
+        actor_id=actor_id,
+        new_state=TransactionState.RECONCILED,
+    )
+    assert tx.state == str(TransactionState.RECONCILED)
+
+    splits = await service.set_splits(
+        session,
+        transaction_id=tx.id,
+        household_id=household_id,
+        actor_id=actor_id,
+        splits=[
+            {"amount": Decimal("120.00"), "currency": "USD"},
+            {"amount": Decimal("80.00"), "currency": "USD"},
+        ],
+    )
+    assert sum(s.amount for s in splits) == Decimal("200.00")
+
+
 # ---------------------------------------------------------------------------
 # Transfer pairing (integration)
 # ---------------------------------------------------------------------------

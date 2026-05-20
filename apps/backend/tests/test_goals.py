@@ -842,3 +842,57 @@ class TestMinimumBalance:
             {"gid": str(goal.id)},
         )
         assert rec_result.scalar() == 0
+
+    async def test_alert_does_not_fire_at_exact_threshold(self, db_session: AsyncSession) -> None:
+        """balance == threshold must NOT trigger an alert.
+
+        Domain spec: alert fires when balance < threshold (strict less-than).
+        Equal-to-threshold means the minimum is met, not breached.
+        """
+        from unittest.mock import patch
+
+        from app.goals.service import check_minimum_balance, create_funding_source, create_goal
+
+        hh_id, actor_id = await _bootstrap(db_session)
+        account_id = uuid.uuid4()
+        threshold = Decimal("1000")
+
+        goal = await create_goal(
+            db_session,
+            household_id=hh_id,
+            actor_id=actor_id,
+            name="Emergency Buffer At Boundary",
+            goal_type=GoalType.MINIMUM_BALANCE,
+            minimum_balance_threshold=threshold,
+            currency="USD",
+        )
+        await create_funding_source(
+            db_session,
+            goal_id=goal.id,
+            household_id=hh_id,
+            source_type=FundingSourceType.ACCOUNT,
+            source_id=account_id,
+        )
+        await db_session.commit()
+
+        mock_account = MagicMock()
+        mock_account.current_balance = threshold  # exactly at threshold
+
+        with patch(
+            "app.goals.service.accounts_svc.get_account",
+            new_callable=AsyncMock,
+            return_value=mock_account,
+        ):
+            await check_minimum_balance(db_session, goal_id=goal.id, household_id=hh_id)
+            await db_session.commit()
+
+        rec_result = await db_session.execute(
+            sa.text(
+                "SELECT COUNT(*) FROM recommendations_recommendation "
+                "WHERE source = 'goal_engine' AND target_entity_id = :gid"
+            ),
+            {"gid": str(goal.id)},
+        )
+        assert rec_result.scalar() == 0, (
+            "Alert fired when balance == threshold; must be strict less-than"
+        )

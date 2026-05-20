@@ -12,11 +12,13 @@ Coverage targets:
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import sqlalchemy as sa
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -473,3 +475,222 @@ async def test_audit_event_delete_raises_db_error(db_session: Any) -> None:
             sa.text("DELETE FROM audit_event WHERE id = :id").bindparams(id=event.id)
         )
         await db_session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Audit completeness sweep (integration)
+# Verifies that key service-layer mutations write at least one audit event.
+# ---------------------------------------------------------------------------
+
+
+async def _count_audit_events(
+    session: Any,
+    *,
+    household_id: uuid.UUID,
+    entity_type: str,
+    operation: str,
+    entity_id: uuid.UUID | None = None,
+) -> int:
+    """Return count of audit events matching entity_type + operation."""
+    sql = (
+        "SELECT COUNT(*) FROM audit_event "
+        "WHERE household_id = CAST(:hh AS uuid) AND entity_type = :et AND operation = :op"
+    )
+    params: dict[str, Any] = {
+        "hh": str(household_id),
+        "et": entity_type,
+        "op": operation,
+    }
+    if entity_id is not None:
+        sql += " AND entity_id = CAST(:eid AS uuid)"
+        params["eid"] = str(entity_id)
+    result = await session.execute(sa.text(sql).bindparams(**params))
+    return result.scalar() or 0
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_audit_sweep_household_create(db_session: Any) -> None:
+    """create_household writes an audit event with operation=create."""
+    from app.households.enums import VisibilityMode
+    from app.households.service import create_household, create_user
+
+    user = await create_user(
+        db_session,
+        email=f"audit_sweep_{uuid.uuid4().hex[:6]}@test.com",
+        display_name="Audit Sweeper",
+        password="pw12345678",  # pragma: allowlist secret
+    )
+    await db_session.flush()
+    hh = await create_household(
+        db_session,
+        name="Audit Test HH",
+        visibility_mode=VisibilityMode.FULLY_SHARED,
+        home_currency="USD",
+        owner=user,
+    )
+    await db_session.flush()
+
+    count = await _count_audit_events(
+        db_session, household_id=hh.id, entity_type="household", operation="create"
+    )
+    assert count >= 1, "create_household must write at least one audit event"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_audit_sweep_account_create(db_session: Any) -> None:
+    """create_account writes an audit event with operation=create."""
+    from app.accounts import service as accounts_service
+    from app.accounts.enums import AccountType
+    from app.households.enums import VisibilityMode
+    from app.households.service import create_household, create_user
+
+    user = await create_user(
+        db_session,
+        email=f"audit_acct_{uuid.uuid4().hex[:6]}@test.com",
+        display_name="Account Auditor",
+        password="pw12345678",  # pragma: allowlist secret
+    )
+    hh = await create_household(
+        db_session,
+        name="Account Audit HH",
+        visibility_mode=VisibilityMode.FULLY_SHARED,
+        home_currency="USD",
+        owner=user,
+    )
+    await db_session.flush()
+
+    account = await accounts_service.create_account(
+        db_session,
+        household_id=hh.id,
+        actor_id=user.id,
+        name="Audit Checking",
+        institution=None,
+        account_type=AccountType.CHECKING,
+        currency="USD",
+        current_balance=Decimal("1000"),
+    )
+    await db_session.flush()
+
+    count = await _count_audit_events(
+        db_session,
+        household_id=hh.id,
+        entity_type="account",
+        operation="create",
+        entity_id=account.id,
+    )
+    assert count >= 1, "create_account must write at least one audit event"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_audit_sweep_transaction_create(db_session: Any) -> None:
+    """create_transaction writes an audit event with operation=create."""
+    from app.accounts import service as accounts_service
+    from app.accounts.enums import AccountType
+    from app.households.enums import VisibilityMode
+    from app.households.service import create_household, create_user
+    from app.transactions import service as tx_service
+    from app.transactions.enums import (
+        TransactionDirection,
+        TransactionState,
+        TransactionType,
+    )
+
+    user = await create_user(
+        db_session,
+        email=f"audit_tx_{uuid.uuid4().hex[:6]}@test.com",
+        display_name="TX Auditor",
+        password="pw12345678",  # pragma: allowlist secret
+    )
+    hh = await create_household(
+        db_session,
+        name="TX Audit HH",
+        visibility_mode=VisibilityMode.FULLY_SHARED,
+        home_currency="USD",
+        owner=user,
+    )
+    await db_session.flush()
+
+    account = await accounts_service.create_account(
+        db_session,
+        household_id=hh.id,
+        actor_id=user.id,
+        name="Audit Account",
+        institution=None,
+        account_type=AccountType.CHECKING,
+        currency="USD",
+        current_balance=Decimal("5000"),
+    )
+    await db_session.flush()
+
+    tx = await tx_service.create_transaction(
+        db_session,
+        household_id=hh.id,
+        account_id=account.id,
+        actor_id=user.id,
+        amount=Decimal("50.00"),
+        currency="USD",
+        direction=TransactionDirection.DEBIT,
+        transaction_type=TransactionType.REGULAR,
+        state=TransactionState.PENDING,
+        posted_date=date(2026, 1, 15),
+        pending_date=None,
+        occurred_at=date(2026, 1, 15),
+        description="Audit sweep test",
+        merchant_name=None,
+        external_id=None,
+        home_currency=None,
+    )
+    await db_session.flush()
+
+    count = await _count_audit_events(
+        db_session,
+        household_id=hh.id,
+        entity_type="transaction",
+        operation="create",
+        entity_id=tx.id,
+    )
+    assert count >= 1, "create_transaction must write at least one audit event"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_audit_sweep_budget_create(db_session: Any) -> None:
+    """create_budget writes an audit event with operation=create."""
+    from app.budgets.enums import BudgetMethod, BudgetPeriod
+    from app.budgets.service import create_budget
+    from app.households.enums import VisibilityMode
+    from app.households.service import create_household, create_user
+
+    user = await create_user(
+        db_session,
+        email=f"audit_bgt_{uuid.uuid4().hex[:6]}@test.com",
+        display_name="Budget Auditor",
+        password="pw12345678",  # pragma: allowlist secret
+    )
+    hh = await create_household(
+        db_session,
+        name="Budget Audit HH",
+        visibility_mode=VisibilityMode.FULLY_SHARED,
+        home_currency="USD",
+        owner=user,
+    )
+    await db_session.flush()
+
+    await create_budget(
+        db_session,
+        household_id=hh.id,
+        actor_id=user.id,
+        name="Audit Budget",
+        period=BudgetPeriod.MONTHLY,
+        start_date=date(2026, 1, 1),
+        method=BudgetMethod.MANUAL,
+    )
+    await db_session.flush()
+
+    count = await _count_audit_events(
+        db_session, household_id=hh.id, entity_type="budget", operation="create"
+    )
+    assert count >= 1, "create_budget must write at least one audit event"
