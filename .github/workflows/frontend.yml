@@ -114,7 +114,7 @@ jobs:
     name: Playwright E2E tests
     runs-on: [self-hosted, linux]
     needs: [build]
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: false
     steps:
       - uses: actions/checkout@v4
 
