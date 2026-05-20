@@ -17,16 +17,17 @@
     # SSE endpoints require streaming — disable response buffering.
     @sse path /api/v1/*/events
     handle @sse {
-        reverse_proxy app:8000 {
+        reverse_proxy frontend:80 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             flush_interval -1
         }
     }
 
-    # All other traffic
+    # All other traffic routes to the frontend nginx container.
+    # nginx serves static files and proxies /api/* to app:8000 internally.
     handle {
-        reverse_proxy app:8000 {
+        reverse_proxy frontend:80 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
         }
