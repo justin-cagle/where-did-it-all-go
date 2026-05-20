@@ -1,6 +1,7 @@
 """Alembic migration environment — async SQLAlchemy 2.0."""
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -85,9 +86,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection, emits SQL to stdout)."""
-    from app.config import get_settings
-
-    url = str(get_settings().database_url)
+    url = os.environ["DATABASE_URL"]
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -109,9 +108,7 @@ def do_run_migrations(connection: object) -> None:
 
 
 async def run_async_migrations() -> None:
-    from app.config import get_settings
-
-    engine = create_async_engine(str(get_settings().database_url))
+    engine = create_async_engine(os.environ["DATABASE_URL"])
     async with engine.begin() as conn:
         await conn.run_sync(do_run_migrations)
     await engine.dispose()
