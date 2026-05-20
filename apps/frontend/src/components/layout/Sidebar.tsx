@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
+import { useVersionCheck } from '@/hooks/use-version'
 
 interface SidebarProps {
   compact: boolean
@@ -26,6 +27,9 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
     query: { staleTime: 60_000, enabled: isAdmin },
   })
   const unassigned = isAdmin ? (overview?.unassigned_user_count ?? 0) : 0
+
+  const { status: versionStatus } = useVersionCheck()
+  const updateAvailable = versionStatus?.updateAvailable ?? false
 
   const w = compact ? 52 : 200
 
@@ -236,6 +240,52 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
           <CollapseIcon flipped={compact} />
           {!compact && <span>Collapse</span>}
         </button>
+
+        {/* Version chip */}
+        {compact ? (
+          updateAvailable ? (
+            <div
+              title={`v${versionStatus?.latest ?? ''} available`}
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: 'var(--warning)',
+                margin: '4px auto 0',
+                flexShrink: 0,
+              }}
+            />
+          ) : null
+        ) : (
+          <div
+            style={{
+              padding: '4px 10px',
+              fontSize: 11,
+              color: updateAvailable ? 'var(--warning)' : 'var(--fg-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              whiteSpace: 'nowrap',
+            }}
+            title={updateAvailable ? `v${versionStatus?.latest ?? ''} available` : undefined}
+          >
+            {updateAvailable && (
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            )}
+            <span>v{versionStatus?.current ?? __APP_VERSION__}</span>
+          </div>
+        )}
       </div>
     </nav>
   )

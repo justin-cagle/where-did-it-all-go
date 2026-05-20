@@ -1,6 +1,17 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useMeApiV1AuthMeGet } from '@/api/generated/households/households'
-import { User, Home, Tag, Sparkles, Shield, AlertTriangle, Link2 } from 'lucide-react'
+import {
+  User,
+  Home,
+  Tag,
+  Sparkles,
+  Shield,
+  AlertTriangle,
+  Link2,
+  ArrowUpCircle,
+  Info,
+} from 'lucide-react'
+import { useVersionCheck } from '@/hooks/use-version'
 
 const NAV_ITEMS = [
   { to: '/settings/profile', label: 'Profile', icon: User, description: 'Display name and TOTP' },
@@ -39,10 +50,11 @@ const NAV_ITEMS = [
 export function SettingsLayout() {
   const location = useLocation()
   const { data: me } = useMeApiV1AuthMeGet()
+  const { status: versionStatus } = useVersionCheck()
+  const isAdmin = me?.is_app_admin === true
 
   const isRoot = location.pathname === '/settings'
-  const isAdminOnly = me?.is_app_admin === true
-  const allItems = isAdminOnly
+  const allItems = isAdmin
     ? [
         ...NAV_ITEMS,
         {
@@ -178,6 +190,73 @@ export function SettingsLayout() {
                   </div>
                 </NavLink>
               ))}
+            </div>
+
+            {/* About / version */}
+            <div
+              style={{
+                marginTop: 16,
+                padding: '14px 16px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: 'color-mix(in oklch, var(--fg-muted) 10%, transparent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Info size={15} style={{ color: 'var(--fg-muted)' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>
+                  Where Did It All Go
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--fg-muted)', marginTop: 2 }}>
+                  v{versionStatus?.current ?? __APP_VERSION__}
+                  {versionStatus?.updateAvailable && (
+                    <span style={{ color: 'var(--warning)', marginLeft: 8 }}>
+                      v{versionStatus.latest} available
+                    </span>
+                  )}
+                </div>
+              </div>
+              {isAdmin && versionStatus?.updateAvailable && (
+                <a
+                  href={versionStatus.releaseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                    background: 'color-mix(in oklch, var(--warning) 15%, transparent)',
+                    border: '1px solid color-mix(in oklch, var(--warning) 40%, transparent)',
+                    color: 'var(--warning)',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    flexShrink: 0,
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <ArrowUpCircle size={13} />
+                  Update
+                </a>
+              )}
             </div>
           </div>
         ) : (
