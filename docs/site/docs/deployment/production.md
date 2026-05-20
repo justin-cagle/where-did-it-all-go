@@ -53,15 +53,9 @@ Set `COMPOSE_PROFILES=bundled-proxy` (already the default in `.env.example`) to 
 docker compose up -d
 ```
 
-First start pulls images, initializes Postgres, and starts all services. This takes 30–60 seconds.
+First start pulls images, initializes Postgres, runs database migrations automatically, and starts all services. This takes 30–60 seconds.
 
-## Step 5 — Apply migrations
-
-```bash
-docker compose exec app uv run alembic upgrade head
-```
-
-## Step 6 — Create the first admin
+## Step 5 — Create the first admin
 
 Add to `.env` temporarily:
 
@@ -78,7 +72,7 @@ docker compose up -d app
 
 The admin account is created on startup. Remove the bootstrap variables from `.env` once the account is created (they're ignored on subsequent starts when users exist).
 
-## Step 7 — Verify the stack is healthy
+## Step 6 — Verify the stack is healthy
 
 ```bash
 # All containers should show "running"
@@ -92,7 +86,7 @@ curl https://budget.yourdomain.com/health
 # System page shows worker pool status and migration state
 ```
 
-## Step 8 — Point your domain
+## Step 7 — Point your domain
 
 If you haven't already, create an A record in your DNS:
 
@@ -106,9 +100,11 @@ Caddy handles HTTPS automatically via Let's Encrypt once DNS propagates (usually
 
 | Service | Purpose |
 |---------|---------|
-| `app` | FastAPI application |
-| `worker-fast` | Fast background job pool (classification, notifications) |
-| `worker-slow` | Slow background job pool (syncs, backups, projection runs) |
+| `migrate` | Runs `alembic upgrade head` on every start; exits when complete |
+| `app` | FastAPI application (`wdiag-backend` image) |
+| `worker-fast` | Fast background job pool — classification, notifications (`wdiag-backend` image) |
+| `worker-slow` | Slow background job pool — syncs, backups, projection runs (`wdiag-backend` image) |
+| `frontend` | nginx serving the compiled React SPA (`wdiag-frontend` image) |
 | `postgres` | Primary database |
 | `redis` | Job queue broker and cache |
 | `caddy` | Reverse proxy, TLS termination (when `bundled-proxy` profile active) |

@@ -21,6 +21,7 @@ from app.goals.router import router as goals_router
 from app.households.router import router as households_router
 from app.ingest.router import router as ingest_router
 from app.insights.router import router as insights_router
+from app.log_config import configure_logging
 from app.platform.router import router as platform_router
 from app.projections.router import router as projections_router
 from app.recommendations.router import router as recommendations_router
@@ -55,6 +56,7 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging(settings.log_level, debug=settings.debug)
 
     app = FastAPI(
         title="WDIAG — Where Did It All Go",

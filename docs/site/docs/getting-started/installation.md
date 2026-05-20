@@ -56,17 +56,9 @@ Open `.env` in a text editor and fill in the required values.
 docker compose up -d
 ```
 
-This starts: Postgres, Redis, the app, two background worker pools, and Caddy.
+This starts: Postgres, Redis, the backend app, two background worker pools, the frontend (nginx), and Caddy. Database migrations run automatically before the app starts.
 
-## Step 4 — Run migrations
-
-```bash
-docker compose exec app uv run alembic upgrade head
-```
-
-This applies all database migrations. It's safe to run repeatedly — Alembic only applies what hasn't been applied yet.
-
-## Step 5 — Create the first admin account
+## Step 4 — Create the first admin account
 
 Set the bootstrap variables and restart the app:
 
@@ -88,11 +80,11 @@ docker compose exec app uv run python -m app.admin create-admin \
   --password=your-strong-password
 ```
 
-## Step 6 — Access the app
+## Step 5 — Access the app
 
 Navigate to `https://your-domain.com`. Caddy automatically obtains a Let's Encrypt certificate for your domain name (requires port 80 and 443 reachable from the internet).
 
-## Step 7 — Verify health
+## Step 6 — Verify health
 
 ```bash
 docker compose ps          # all services should be "running"

@@ -2,7 +2,7 @@
 
 ## Standard upgrade process
 
-Upgrading WDIAG is straightforward. The process: pull new code, pull new images, restart, run migrations.
+Upgrading WDIAG is straightforward. The process: pull new code, pull new images, restart.
 
 ```bash
 # Pull the latest code
@@ -11,14 +11,11 @@ git pull
 # Pull new Docker images
 docker compose pull
 
-# Restart services with new images
+# Restart services with new images — migrations run automatically
 docker compose up -d
-
-# Apply any new migrations
-docker compose exec app uv run alembic upgrade head
 ```
 
-Migrations are additive and safe to run on a running system. The migration step is a no-op if you're already on the latest revision.
+Migrations run automatically on every start via the `migrate` service, which exits once complete before `app` and the workers start. The migration step is a no-op if you're already on the latest revision.
 
 ## How migrations work
 
@@ -53,22 +50,17 @@ Breaking changes (API changes, migration changes requiring manual steps) are cal
 
 ## Version pinning
 
-To pin to a specific version instead of tracking `latest`:
+To pin to a specific version instead of tracking `latest`, set `IMAGE_TAG` in your `.env`:
 
 ```bash
-# In .env:
-# Use a specific version tag in your compose file
+IMAGE_TAG=0.4.0
 ```
 
-Or reference the image tag directly in `docker-compose.yml`:
-
-```yaml
-image: ghcr.io/justin-cagle/wdiag:0.4.0
-```
+This applies to both published images — `wdiag-backend` and `wdiag-frontend` — which are always released together under the same tag.
 
 Available tags:
 - `latest` — the most recent stable release
-- `0.4.0`, `0.3.1`, etc. — immutable version tags
+- `0.4.0`, `0.3.1`, etc. — immutable version tags (see [Changelog](../changelog.md))
 
 ## Verifying after upgrade
 
