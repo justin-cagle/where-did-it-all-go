@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   useMeApiV1AuthMeGet,
   useUpdateMeApiV1AuthMePatch,
+  useTotpDisableApiV1AuthTotpDisableDelete,
   getMeApiV1AuthMeGetQueryKey,
 } from '@/api/generated/households/households'
 import { useQueryClient } from '@tanstack/react-query'
@@ -141,8 +143,10 @@ function SettingRow({
 
 export function ProfilePage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const { data: me, isLoading } = useMeApiV1AuthMeGet()
   const updateMe = useUpdateMeApiV1AuthMePatch()
+  const disableTotp = useTotpDisableApiV1AuthTotpDisableDelete()
   const { currentUser, setUser } = useAuthStore()
 
   if (isLoading) {
@@ -156,6 +160,18 @@ export function ProfilePage() {
     await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
     if (currentUser) {
       setUser({ ...currentUser, display_name })
+    }
+  }
+
+  const handleEnableTotp = () => {
+    navigate('/settings/totp-setup', { state: { returnTo: '/settings/profile' } })
+  }
+
+  const handleDisableTotp = async () => {
+    await disableTotp.mutateAsync()
+    await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
+    if (currentUser) {
+      setUser({ ...currentUser, totp_enabled: false })
     }
   }
 
@@ -198,6 +214,8 @@ export function ProfilePage() {
           </span>
           <button
             type="button"
+            disabled={disableTotp.isPending}
+            onClick={me.totp_enabled ? () => void handleDisableTotp() : handleEnableTotp}
             style={{
               fontSize: 12,
               color: me.totp_enabled ? 'var(--danger)' : 'var(--accent)',
@@ -206,9 +224,10 @@ export function ProfilePage() {
               cursor: 'pointer',
               padding: 0,
               fontFamily: 'var(--font-sans)',
+              opacity: disableTotp.isPending ? 0.6 : 1,
             }}
           >
-            {me.totp_enabled ? 'Disable' : 'Enable'}
+            {disableTotp.isPending ? 'Disabling...' : me.totp_enabled ? 'Disable' : 'Enable'}
           </button>
         </div>
       </SettingRow>

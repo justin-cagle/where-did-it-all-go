@@ -92,6 +92,7 @@ class TotpSetupOut(BaseModel):
     """TOTP enrollment response."""
 
     provisioning_uri: str
+    secret: str
 
 
 class SessionOut(_Base):

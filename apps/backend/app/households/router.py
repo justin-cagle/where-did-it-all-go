@@ -310,9 +310,9 @@ async def totp_setup(
     current_user: CurrentUser,
     session: _DbSession,
 ) -> TotpSetupOut:
-    """Begin TOTP enrollment — returns a provisioning URI for QR-code display."""
-    uri = await service.setup_totp(session, user=current_user)
-    return TotpSetupOut(provisioning_uri=uri)
+    """Begin TOTP enrollment — returns a provisioning URI and raw secret for QR-code display."""
+    uri, secret = await service.setup_totp(session, user=current_user)
+    return TotpSetupOut(provisioning_uri=uri, secret=secret)
 
 
 @router.post("/auth/totp/confirm", status_code=status.HTTP_204_NO_CONTENT)
@@ -331,6 +331,15 @@ async def totp_confirm(
         await service.confirm_totp(session, user=current_user, code=body.totp_code)
     except service.AuthenticationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/auth/totp/disable", status_code=status.HTTP_204_NO_CONTENT)
+async def totp_disable(
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Disable TOTP for the current user."""
+    await service.disable_totp(session, user=current_user)
 
 
 @router.get("/auth/sessions", response_model=list[SessionOut])

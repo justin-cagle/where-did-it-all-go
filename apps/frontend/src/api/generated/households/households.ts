@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.13
+ * OpenAPI spec version: 0.2.14
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
@@ -610,7 +610,7 @@ export const useUpdateMeApiV1AuthMePatch = <TError = HTTPValidationError, TConte
   return useMutation(mutationOptions, queryClient)
 }
 /**
- * Begin TOTP enrollment — returns a provisioning URI for QR-code display.
+ * Begin TOTP enrollment — returns a provisioning URI and raw secret for QR-code display.
  * @summary Totp Setup
  */
 export const totpSetupApiV1AuthTotpSetupPost = (signal?: AbortSignal) => {
@@ -760,6 +760,76 @@ export const useTotpConfirmApiV1AuthTotpConfirmPost = <
   TContext
 > => {
   const mutationOptions = getTotpConfirmApiV1AuthTotpConfirmPostMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Disable TOTP for the current user.
+ * @summary Totp Disable
+ */
+export const totpDisableApiV1AuthTotpDisableDelete = () => {
+  return customInstance<void>({ url: `/api/v1/auth/totp/disable`, method: 'DELETE' })
+}
+
+export const getTotpDisableApiV1AuthTotpDisableDeleteMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+    TError,
+    void,
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ['totpDisableApiV1AuthTotpDisableDelete']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+    void
+  > = () => {
+    return totpDisableApiV1AuthTotpDisableDelete()
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type TotpDisableApiV1AuthTotpDisableDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>
+>
+
+export type TotpDisableApiV1AuthTotpDisableDeleteMutationError = unknown
+
+/**
+ * @summary Totp Disable
+ */
+export const useTotpDisableApiV1AuthTotpDisableDelete = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+      TError,
+      void,
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getTotpDisableApiV1AuthTotpDisableDeleteMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
 }

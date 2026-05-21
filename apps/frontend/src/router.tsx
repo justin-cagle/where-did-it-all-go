@@ -104,6 +104,16 @@ export const router = createBrowserRouter([
   { path: '/register/totp-setup', element: <TotpSetupPage /> },
   { path: '/invite/:token', element: <InviteAcceptPage /> },
 
+  /* Authed — standalone wizard pages (no AppShell) */
+  {
+    path: '/settings/totp-setup',
+    element: (
+      <AuthGuard requireHousehold={false}>
+        <TotpSetupPage />
+      </AuthGuard>
+    ),
+  },
+
   /* Authed — no AppShell, no household required */
   {
     path: '/onboarding',

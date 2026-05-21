@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.13
+ * OpenAPI spec version: 0.2.14
  */
 
 /**
@@ -11,4 +11,5 @@
  */
 export interface TotpSetupOut {
   provisioning_uri: string
+  secret: string
 }
