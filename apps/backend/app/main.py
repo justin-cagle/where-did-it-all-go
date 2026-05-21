@@ -61,7 +61,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="WDIAG — Where Did It All Go",
         description="Personal finance budgeting and intelligence",
-        version="0.1.0",
+        version=settings.app_version,
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",

@@ -2,10 +2,17 @@
 
 import hashlib
 from functools import lru_cache
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from typing import Self
 
 from pydantic import AnyUrl, PostgresDsn, RedisDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    _PACKAGE_VERSION: str = _pkg_version("wdiag-backend")
+except PackageNotFoundError:
+    _PACKAGE_VERSION = "0.0.0-dev"
 
 
 class Settings(BaseSettings):
@@ -71,8 +78,8 @@ class Settings(BaseSettings):
     # AIO — set by entrypoint.sh; signals demo-mode banner on login page
     aio_mode: bool = False
 
-    # Version — keep in sync with git tags; bumped manually per release
-    app_version: str = "0.3.1"
+    # Version — from package metadata (pyproject.toml); overridable via APP_VERSION env var
+    app_version: str = _PACKAGE_VERSION
 
     @model_validator(mode="after")
     def _derive_jwt_secret(self) -> Self:
