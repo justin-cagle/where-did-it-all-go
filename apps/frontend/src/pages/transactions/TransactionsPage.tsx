@@ -1,6 +1,15 @@
 import { useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Plus, Inbox, RefreshCw, SlidersHorizontal, X, MessageSquare } from 'lucide-react'
+import {
+  Plus,
+  Inbox,
+  RefreshCw,
+  SlidersHorizontal,
+  X,
+  MessageSquare,
+  Wallet,
+  Search,
+} from 'lucide-react'
 import { useListTransactionsCrossAccountApiV1HouseholdsHouseholdIdTransactionsGet } from '@/api/generated/transactions/transactions'
 import { useListAccountsApiV1HouseholdsHouseholdIdAccountsGet } from '@/api/generated/accounts/accounts'
 import type { TransactionOut } from '@/api/generated/model/transactionOut'
@@ -713,7 +722,9 @@ function EmptyState({
         textAlign: 'center' as const,
       }}
     >
-      <div style={{ fontSize: 40 }}>{filtered ? '&#128269;' : '&#128184;'}</div>
+      <div style={{ color: 'var(--fg-muted)' }}>
+        {filtered ? <Search size={40} /> : <Wallet size={40} />}
+      </div>
       <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--fg-primary)' }}>
         {filtered ? 'No transactions match your filters' : 'No transactions yet'}
       </div>

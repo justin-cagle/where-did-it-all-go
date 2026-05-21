@@ -5,6 +5,7 @@ import {
   getMeApiV1AuthMeGetQueryKey,
 } from '@/api/generated/households/households'
 import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/store'
 
 function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
   const [editing, setEditing] = useState(false)
@@ -142,6 +143,7 @@ export function ProfilePage() {
   const qc = useQueryClient()
   const { data: me, isLoading } = useMeApiV1AuthMeGet()
   const updateMe = useUpdateMeApiV1AuthMePatch()
+  const { currentUser, setUser } = useAuthStore()
 
   if (isLoading) {
     return <div style={{ color: 'var(--fg-muted)', fontSize: 13 }}>Loading...</div>
@@ -152,6 +154,9 @@ export function ProfilePage() {
   const handleSaveName = async (display_name: string) => {
     await updateMe.mutateAsync({ data: { display_name } })
     await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
+    if (currentUser) {
+      setUser({ ...currentUser, display_name })
+    }
   }
 
   return (

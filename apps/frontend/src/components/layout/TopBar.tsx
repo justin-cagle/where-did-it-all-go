@@ -86,7 +86,13 @@ export function TopBar({ householdName }: TopBarProps) {
           aria-label={`Privacy: ${privacyMode}`}
           title={`Privacy mode: ${privacyMode}`}
         >
-          {privacyMode === 'off' ? <EyeIcon /> : <EyeOffIcon />}
+          {privacyMode === 'off' ? (
+            <EyeIcon />
+          ) : privacyMode === 'partial_blur' ? (
+            <EyePartialIcon />
+          ) : (
+            <EyeOffIcon />
+          )}
         </IconButton>
 
         {/* Theme toggle */}
@@ -262,6 +268,24 @@ function EyeIcon() {
     >
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+function EyePartialIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" strokeDasharray="2 1.5" />
     </svg>
   )
 }
