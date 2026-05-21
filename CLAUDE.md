@@ -14,6 +14,39 @@ These files exist for human design reference only. Do not load, reference, or su
 
 ---
 
+## Session-Start Protocol (run before any commit work)
+
+```bash
+git fetch origin
+git log --oneline origin/main..HEAD   # any commits not yet in main?
+```
+
+If **all commits are already merged** (or HEAD is behind main):
+```bash
+git reset --hard origin/main          # discard merged commits, start clean
+```
+
+Then bump the version **in the same commit as the feature**, not a separate one:
+- `apps/backend/pyproject.toml` — `version = "X.Y.Z"`
+- `apps/frontend/package.json` — `"version": "X.Y.Z"`
+- `apps/backend/uv.lock` — `uv lock` to regenerate
+
+After any backend schema change, regenerate openapi + client in one shot:
+```bash
+DATABASE_URL=postgresql+asyncpg://x:x@localhost/x \
+SECRET_KEY=<64-char-hex> \
+MASTER_KEY=<64-char-hex> \
+  uv run --directory apps/backend python -c \
+  "import sys, json; from app.main import app; json.dump(app.openapi(), sys.stdout, indent=2)" \
+  > packages/openapi/openapi.json
+
+cd apps/frontend && pnpm generate-api
+```
+
+Stage the generated files before committing — prettier hook will reformat `openapi.json`; re-stage it if modified.
+
+---
+
 ## Always Read Before Writing Any Code
 
 ```
