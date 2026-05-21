@@ -17,7 +17,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.admin.enums import BackupStatus, BackupTrigger, NotificationType
+from app.admin.enums import BackupStatus, BackupTrigger, NotificationType, SmtpTlsMode
 from app.admin.models import (
     AdminNotification,
     AdminSetting,
@@ -231,7 +231,7 @@ async def upsert_smtp_config(
     username: str,
     password: str,
     from_address: str,
-    use_tls: bool,
+    tls_mode: SmtpTlsMode,
     configured_by_id: uuid.UUID,
 ) -> SMTPConfig:
     master_key = get_settings().master_key
@@ -243,7 +243,7 @@ async def upsert_smtp_config(
             username_enc=encrypt_field(username, master_key),
             password_enc=encrypt_field(password, master_key),
             from_address=from_address,
-            use_tls=use_tls,
+            tls_mode=str(tls_mode),
             configured_by_id=configured_by_id,
         )
         session.add(cfg)
@@ -254,7 +254,7 @@ async def upsert_smtp_config(
         cfg.username_enc = encrypt_field(username, master_key)
         cfg.password_enc = encrypt_field(password, master_key)
         cfg.from_address = from_address
-        cfg.use_tls = use_tls
+        cfg.tls_mode = str(tls_mode)
         cfg.configured_at = utcnow()
         cfg.configured_by_id = configured_by_id
     await session.flush()
@@ -310,14 +310,35 @@ async def send_email(
         msg["From"] = cfg.from_address
         msg["To"] = to
 
-        await aiosmtplib.send(  # type: ignore[misc]
-            msg,
-            hostname=host,
-            port=cfg.port,
-            username=username,
-            password=password,
-            use_tls=cfg.use_tls,
-        )
+        tls_mode = SmtpTlsMode(cfg.tls_mode)
+        if tls_mode == SmtpTlsMode.SSL:
+            await aiosmtplib.send(  # type: ignore[misc]
+                msg,
+                hostname=host,
+                port=cfg.port,
+                username=username,
+                password=password,
+                use_tls=True,
+            )
+        elif tls_mode == SmtpTlsMode.STARTTLS:
+            await aiosmtplib.send(  # type: ignore[misc]
+                msg,
+                hostname=host,
+                port=cfg.port,
+                username=username,
+                password=password,
+                use_tls=False,
+                start_tls=True,
+            )
+        else:
+            await aiosmtplib.send(  # type: ignore[misc]
+                msg,
+                hostname=host,
+                port=cfg.port,
+                username=username,
+                password=password,
+                use_tls=False,
+            )
         return True, None
     except Exception as exc:
         logger.warning("send_email.failed", to=to, error=str(exc))

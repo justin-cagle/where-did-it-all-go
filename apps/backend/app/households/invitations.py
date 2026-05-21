@@ -17,6 +17,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.admin import service as admin_service
 from app.audit import ActorType, AuditOperation
 from app.audit import service as audit_service
 from app.config import get_settings, smtp_configured
@@ -113,17 +114,38 @@ async def create_invitation(
     await session.flush()
 
     # Attempt email delivery — never raises
-    if smtp_configured():
+    db_smtp = await admin_service.smtp_configured(session)
+    if db_smtp or smtp_configured():
         household = await session.get(Household, household_id)
         inviter = await session.get(User, invited_by_id)
         hh_name = household.name if household else "the household"
         inviter_name = inviter.display_name if inviter else "Someone"
-        sent, error = await _send_invite_email(
-            to_address=email_lower,
-            inviter_name=inviter_name,
-            household_name=hh_name,
-            invite_url=get_invite_url(token),
-        )
+        if db_smtp:
+            subject = f"{inviter_name} invited you to join {hh_name} on WDIAG"
+            body_text = (
+                f"{inviter_name} has invited you to join their household "
+                f'"{hh_name}" on WDIAG - Where Did It All Go.\n\n'
+                f"Accept this invitation:\n{get_invite_url(token)}\n\n"
+                f"This link expires in 72 hours and can only be used once.\n\n"
+                f"If you don't have a WDIAG account, you'll be prompted to create one "
+                f"with this email address ({email_lower}). You can update your email "
+                f"after joining in Settings -> Profile.\n\n"
+                f"If you weren't expecting this invitation, you can ignore this email."
+            )
+            sent, error = await admin_service.send_email(
+                session,
+                to=email_lower,
+                subject=subject,
+                body_text=body_text,
+                body_html=body_text.replace("\n", "<br>"),
+            )
+        else:
+            sent, error = await _send_invite_email(
+                to_address=email_lower,
+                inviter_name=inviter_name,
+                household_name=hh_name,
+                invite_url=get_invite_url(token),
+            )
         invite.email_sent = sent
         invite.email_error = error
         if sent:
@@ -315,17 +337,38 @@ async def resend_invite(
     now = datetime.now(tz=UTC)
     invite.expires_at = now + _INVITE_TTL
 
-    if smtp_configured():
+    db_smtp = await admin_service.smtp_configured(session)
+    if db_smtp or smtp_configured():
         household = await session.get(Household, invite.household_id)
         resender = await session.get(User, resent_by_id)
         hh_name = household.name if household else "the household"
         resender_name = resender.display_name if resender else "Someone"
-        sent, error = await _send_invite_email(
-            to_address=invite.invited_email,
-            inviter_name=resender_name,
-            household_name=hh_name,
-            invite_url=get_invite_url(invite.token),
-        )
+        if db_smtp:
+            subject = f"{resender_name} invited you to join {hh_name} on WDIAG"
+            body_text = (
+                f"{resender_name} has invited you to join their household "
+                f'"{hh_name}" on WDIAG - Where Did It All Go.\n\n'
+                f"Accept this invitation:\n{get_invite_url(invite.token)}\n\n"
+                f"This link expires in 72 hours and can only be used once.\n\n"
+                f"If you don't have a WDIAG account, you'll be prompted to create one "
+                f"with this email address ({invite.invited_email}). You can update your email "
+                f"after joining in Settings -> Profile.\n\n"
+                f"If you weren't expecting this invitation, you can ignore this email."
+            )
+            sent, error = await admin_service.send_email(
+                session,
+                to=invite.invited_email,
+                subject=subject,
+                body_text=body_text,
+                body_html=body_text.replace("\n", "<br>"),
+            )
+        else:
+            sent, error = await _send_invite_email(
+                to_address=invite.invited_email,
+                inviter_name=resender_name,
+                household_name=hh_name,
+                invite_url=get_invite_url(invite.token),
+            )
         invite.email_sent = sent
         invite.email_error = error
         if sent:

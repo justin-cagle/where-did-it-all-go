@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.15
+ * OpenAPI spec version: 0.2.16
  */
 
 export * from './acceptInviteResponse'
@@ -547,6 +547,7 @@ export * from './setReadOnlyInReason'
 export * from './simplefinAccountPreview'
 export * from './simplefinAccountPreviewAccountNumberLast4'
 export * from './smtpStatusResponse'
+export * from './smtpTlsMode'
 export * from './splitAllocationIn'
 export * from './splitAllocationInAmount'
 export * from './splitAllocationInAttributedToUserId'

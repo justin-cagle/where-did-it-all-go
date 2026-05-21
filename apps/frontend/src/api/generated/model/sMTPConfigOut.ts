@@ -3,8 +3,9 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.15
+ * OpenAPI spec version: 0.2.16
  */
+import type { SmtpTlsMode } from './smtpTlsMode'
 import type { SMTPConfigOutLastTestSuccess } from './sMTPConfigOutLastTestSuccess'
 import type { SMTPConfigOutLastTestError } from './sMTPConfigOutLastTestError'
 import type { SMTPConfigOutLastTestAt } from './sMTPConfigOutLastTestAt'
@@ -15,7 +16,7 @@ export interface SMTPConfigOut {
   port: number
   username: string
   from_address: string
-  use_tls: boolean
+  tls_mode: SmtpTlsMode
   configured_at: string
   smtp_configured: boolean
   last_test_success: SMTPConfigOutLastTestSuccess

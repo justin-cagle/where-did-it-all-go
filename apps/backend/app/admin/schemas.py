@@ -7,7 +7,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
-from app.admin.enums import BackupStatus, BackupTrigger, NotificationType
+from app.admin.enums import BackupStatus, BackupTrigger, NotificationType, SmtpTlsMode
 from app.households.enums import HouseholdRole
 
 # ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ class SMTPConfigIn(BaseModel):
     username: str
     password: str
     from_address: str
-    use_tls: bool = True
+    tls_mode: SmtpTlsMode = SmtpTlsMode.SSL
 
 
 class SMTPConfigOut(BaseModel):
@@ -53,7 +53,7 @@ class SMTPConfigOut(BaseModel):
     port: int
     username: str
     from_address: str
-    use_tls: bool
+    tls_mode: SmtpTlsMode
     configured_at: datetime
     smtp_configured: bool
     last_test_success: bool | None

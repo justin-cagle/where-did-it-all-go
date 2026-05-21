@@ -3,6 +3,12 @@
 from enum import StrEnum
 
 
+class SmtpTlsMode(StrEnum):
+    NONE = "none"
+    SSL = "ssl"
+    STARTTLS = "starttls"
+
+
 class NotificationType(StrEnum):
     UNASSIGNED_REGISTRATION = "unassigned_registration"
     SYSTEM_ERROR = "system_error"
