@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.13
+ * OpenAPI spec version: 0.2.14
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
@@ -610,7 +610,7 @@ export const useUpdateMeApiV1AuthMePatch = <TError = HTTPValidationError, TConte
   return useMutation(mutationOptions, queryClient)
 }
 /**
- * Begin TOTP enrollment — returns a provisioning URI for QR-code display.
+ * Begin TOTP enrollment — returns a provisioning URI and raw secret for QR-code display.
  * @summary Totp Setup
  */
 export const totpSetupApiV1AuthTotpSetupPost = (signal?: AbortSignal) => {
