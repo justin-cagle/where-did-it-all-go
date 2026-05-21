@@ -106,6 +106,7 @@ jobs:
     name: Deploy to homelab
     runs-on: self-hosted
     needs: build-and-push
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     environment: homelab
     concurrency:
       group: deploy-homelab
