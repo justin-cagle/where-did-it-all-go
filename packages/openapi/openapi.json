@@ -270,6 +270,20 @@
         }
       }
     },
+    "/api/v1/auth/totp/disable": {
+      "delete": {
+        "tags": ["households", "auth"],
+        "summary": "Totp Disable",
+        "description": "Disable TOTP for the current user.",
+        "operationId": "totp_disable_api_v1_auth_totp_disable_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [{ "cookieAuth": [] }]
+      }
+    },
     "/api/v1/auth/sessions": {
       "get": {
         "tags": ["households", "auth"],
@@ -21460,10 +21474,14 @@
           "provisioning_uri": {
             "type": "string",
             "title": "Provisioning Uri"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret"
           }
         },
         "type": "object",
-        "required": ["provisioning_uri"],
+        "required": ["provisioning_uri", "secret"],
         "title": "TotpSetupOut",
         "description": "TOTP enrollment response."
       },

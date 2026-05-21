@@ -349,13 +349,13 @@ async def step_up_auth(
 # ---------------------------------------------------------------------------
 
 
-async def setup_totp(session: AsyncSession, *, user: User) -> str:
-    """Generate a TOTP secret and store it (not yet enabled). Returns provisioning URI."""
+async def setup_totp(session: AsyncSession, *, user: User) -> tuple[str, str]:
+    """Generate a TOTP secret and store it (not yet enabled). Returns (provisioning_uri, secret)."""
     secret = totp_service.generate_secret()
     user.totp_secret = secret
     user.totp_enabled = False
     await session.flush()
-    return totp_service.provisioning_uri(secret, user.email)
+    return totp_service.provisioning_uri(secret, user.email), secret
 
 
 async def confirm_totp(session: AsyncSession, *, user: User, code: str) -> None:
@@ -365,6 +365,13 @@ async def confirm_totp(session: AsyncSession, *, user: User, code: str) -> None:
     if not totp_service.verify_code(user.totp_secret, code):
         raise AuthenticationError("invalid TOTP code")
     user.totp_enabled = True
+    await session.flush()
+
+
+async def disable_totp(session: AsyncSession, *, user: User) -> None:
+    """Disable TOTP for the user, clearing the stored secret."""
+    user.totp_enabled = False
+    user.totp_secret = None
     await session.flush()
 
 

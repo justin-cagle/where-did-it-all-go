@@ -42,6 +42,7 @@ interface LoginResponse {
   email: string
   display_name: string
   is_app_admin: boolean
+  totp_enabled: boolean
 }
 
 export function LoginPage() {

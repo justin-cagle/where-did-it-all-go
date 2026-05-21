@@ -11,4 +11,5 @@
  */
 export interface TotpSetupOut {
   provisioning_uri: string
+  secret: string
 }

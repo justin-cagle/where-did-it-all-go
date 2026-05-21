@@ -764,6 +764,76 @@ export const useTotpConfirmApiV1AuthTotpConfirmPost = <
   return useMutation(mutationOptions, queryClient)
 }
 /**
+ * Disable TOTP for the current user.
+ * @summary Totp Disable
+ */
+export const totpDisableApiV1AuthTotpDisableDelete = () => {
+  return customInstance<void>({ url: `/api/v1/auth/totp/disable`, method: 'DELETE' })
+}
+
+export const getTotpDisableApiV1AuthTotpDisableDeleteMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+    TError,
+    void,
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ['totpDisableApiV1AuthTotpDisableDelete']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+    void
+  > = () => {
+    return totpDisableApiV1AuthTotpDisableDelete()
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type TotpDisableApiV1AuthTotpDisableDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>
+>
+
+export type TotpDisableApiV1AuthTotpDisableDeleteMutationError = unknown
+
+/**
+ * @summary Totp Disable
+ */
+export const useTotpDisableApiV1AuthTotpDisableDelete = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+      TError,
+      void,
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof totpDisableApiV1AuthTotpDisableDelete>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getTotpDisableApiV1AuthTotpDisableDeleteMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
  * Return all active refresh tokens (sessions) for the current user.
  * @summary List Sessions
  */

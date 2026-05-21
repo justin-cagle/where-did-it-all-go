@@ -206,6 +206,7 @@ export function HouseholdPage() {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [pendingCurrency, setPendingCurrency] = useState<string | null>(null)
+  const [pendingVisibility, setPendingVisibility] = useState<VisibilityMode | null>(null)
   const [recomputing, setRecomputing] = useState(false)
 
   useEffect(() => {
@@ -266,11 +267,19 @@ export function HouseholdPage() {
     })
   }
 
-  const handleVisibilityChange = async (mode: VisibilityMode) => {
+  const handleVisibilityChange = (mode: VisibilityMode) => {
+    if (mode !== household?.visibility_mode) {
+      setPendingVisibility(mode)
+    }
+  }
+
+  const confirmVisibilityChange = async () => {
+    if (!pendingVisibility) return
     await updateHousehold.mutateAsync({
       householdId: hid,
-      data: { visibility_mode: mode },
+      data: { visibility_mode: pendingVisibility },
     })
+    setPendingVisibility(null)
     await qc.invalidateQueries({
       queryKey: getGetHouseholdApiV1HouseholdsHouseholdIdGetQueryKey(hid),
     })
@@ -445,6 +454,84 @@ export function HouseholdPage() {
         </div>
       )}
 
+      {pendingVisibility && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '24px 28px',
+              maxWidth: 400,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <AlertTriangle size={18} style={{ flexShrink: 0, color: '#f59e0b', marginTop: 1 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg-primary)' }}>
+                  Change visibility mode?
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+                  This affects what all household members can see. Switching modes may expose or
+                  hide transactions for existing members.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setPendingVisibility(null)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  background: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--fg-muted)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmVisibilityChange()}
+                disabled={updateHousehold.isPending}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  background: 'var(--accent)',
+                  color: 'var(--accent-fg)',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  opacity: updateHousehold.isPending ? 0.6 : 1,
+                }}
+              >
+                {updateHousehold.isPending ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SettingRow label="Household name">
         <InlineEdit value={household.name} onSave={handleSaveName} />
       </SettingRow>
@@ -466,7 +553,7 @@ export function HouseholdPage() {
               key={opt.value}
               type="button"
               title={opt.description}
-              onClick={() => void handleVisibilityChange(opt.value as VisibilityMode)}
+              onClick={() => handleVisibilityChange(opt.value as VisibilityMode)}
               style={{
                 padding: '5px 12px',
                 fontSize: 12,

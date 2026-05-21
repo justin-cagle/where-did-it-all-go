@@ -7,6 +7,7 @@ interface User {
   email: string
   display_name: string
   is_app_admin: boolean
+  totp_enabled: boolean
 }
 
 interface AuthState {

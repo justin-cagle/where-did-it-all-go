@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import QRCode from 'qrcode'
 import { useAuthStore } from '@/store'
-import { customInstance, ApiError } from '@/api/client'
+import {
+  useTotpSetupApiV1AuthTotpSetupPost,
+  useTotpConfirmApiV1AuthTotpConfirmPost,
+} from '@/api/generated/households/households'
+import { getMeApiV1AuthMeGetQueryKey } from '@/api/generated/households/households'
+import { useQueryClient } from '@tanstack/react-query'
 import { AuthLayout } from './LoginPage'
 
 const schema = z.object({
@@ -12,23 +18,20 @@ const schema = z.object({
 })
 type Fields = z.infer<typeof schema>
 
-interface SetupResponse {
-  qr_code_url: string
-  secret: string
-}
-
-interface ConfirmResponse {
-  id: string
-  email: string
-  display_name: string
-  is_app_admin: boolean
-}
-
 export function TotpSetupPage() {
-  const { setUser } = useAuthStore()
+  const { currentUser, setUser } = useAuthStore()
   const navigate = useNavigate()
-  const [setup, setSetup] = useState<SetupResponse | null>(null)
+  const location = useLocation()
+  const qc = useQueryClient()
+  const returnTo: string =
+    (location.state as { returnTo?: string } | null)?.returnTo ?? '/onboarding'
+
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [secret, setSecret] = useState<string | null>(null)
   const [loadError, setLoadError] = useState('')
+
+  const setupMutation = useTotpSetupApiV1AuthTotpSetupPost()
+  const confirmMutation = useTotpConfirmApiV1AuthTotpConfirmPost()
 
   const {
     register,
@@ -38,26 +41,28 @@ export function TotpSetupPage() {
   } = useForm<Fields>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
-    customInstance<SetupResponse>({ url: '/api/v1/auth/totp/setup', method: 'GET' })
-      .then(setSetup)
+    setupMutation
+      .mutateAsync()
+      .then(async (data) => {
+        setSecret(data.secret)
+        const url = await QRCode.toDataURL(data.provisioning_uri, { width: 160, margin: 1 })
+        setQrDataUrl(url)
+      })
       .catch(() => setLoadError('Failed to load QR code. Reload to retry.'))
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onSubmit = async (data: Fields) => {
     try {
-      const user = await customInstance<ConfirmResponse>({
-        url: '/api/v1/auth/totp/confirm',
-        method: 'POST',
-        data: { code: data.code },
-      })
-      setUser(user)
-      navigate('/onboarding', { replace: true })
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 422) {
-        setError('code', { message: 'Invalid code. Try again.' })
-      } else {
-        setError('root', { message: 'Something went wrong. Try again.' })
+      await confirmMutation.mutateAsync({ data: { totp_code: data.code } })
+      if (currentUser) {
+        setUser({ ...currentUser, totp_enabled: true })
       }
+      await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
+      navigate(returnTo, { replace: true })
+    } catch {
+      setError('code', { message: 'Invalid code. Try again.' })
     }
   }
 
@@ -74,7 +79,6 @@ export function TotpSetupPage() {
 
       {loadError && <p style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>{loadError}</p>}
 
-      {/* QR code */}
       <div
         style={{
           display: 'flex',
@@ -85,9 +89,9 @@ export function TotpSetupPage() {
           border: '1px solid var(--border)',
         }}
       >
-        {setup ? (
+        {qrDataUrl ? (
           <img
-            src={setup.qr_code_url}
+            src={qrDataUrl}
             alt="TOTP QR code"
             width={160}
             height={160}
@@ -106,7 +110,7 @@ export function TotpSetupPage() {
         ) : null}
       </div>
 
-      {setup && (
+      {secret && (
         <p
           style={{
             fontSize: 11,
@@ -116,7 +120,7 @@ export function TotpSetupPage() {
             textAlign: 'center',
           }}
         >
-          Manual key: <span style={{ fontFamily: 'var(--font-mono)' }}>{setup.secret}</span>
+          Manual key: <span style={{ fontFamily: 'var(--font-mono)' }}>{secret}</span>
         </p>
       )}
 
@@ -162,7 +166,7 @@ export function TotpSetupPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting || !setup}
+          disabled={isSubmitting || !qrDataUrl}
           style={{
             height: 40,
             borderRadius: 8,
@@ -173,10 +177,10 @@ export function TotpSetupPage() {
             fontWeight: 600,
             cursor: 'pointer',
             fontFamily: 'var(--font-sans)',
-            opacity: isSubmitting || !setup ? 0.6 : 1,
+            opacity: isSubmitting || !qrDataUrl ? 0.6 : 1,
           }}
         >
-          {isSubmitting ? 'Verifying...' : 'Verify and continue'}
+          {isSubmitting ? 'Verifying...' : 'Verify and enable'}
         </button>
       </form>
     </AuthLayout>
