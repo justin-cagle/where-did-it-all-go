@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.6
+ * OpenAPI spec version: 0.2.7
  */
 import type { DebtPlanUpdateName } from './debtPlanUpdateName'
 import type { DebtPlanUpdateMethod } from './debtPlanUpdateMethod'
