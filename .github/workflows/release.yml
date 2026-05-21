@@ -44,3 +44,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.ver.outputs.tag }}
         run: gh release create "$TAG" --generate-notes --title "$TAG"
+
+      - name: Trigger deploy workflow at tag ref
+        if: steps.tag.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: gh workflow run deploy.yml --ref "$TAG"
