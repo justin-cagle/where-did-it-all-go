@@ -128,10 +128,6 @@ jobs:
   docker-build:
     name: Docker image build
     runs-on: self-hosted
-    if: |
-      contains(github.event.pull_request.changed_files, 'apps/backend/Dockerfile') ||
-      contains(github.event.pull_request.changed_files, 'docker-compose.yml') ||
-      github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
