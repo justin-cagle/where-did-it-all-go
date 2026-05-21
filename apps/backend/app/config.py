@@ -9,10 +9,15 @@ from typing import Self
 from pydantic import AnyUrl, PostgresDsn, RedisDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-try:
-    _PACKAGE_VERSION: str = _pkg_version("wdiag-backend")
-except PackageNotFoundError:
-    _PACKAGE_VERSION = "0.0.0-dev"
+
+def _get_package_version() -> str:
+    try:
+        return _pkg_version("wdiag-backend")
+    except PackageNotFoundError:
+        return "0.0.0-dev"
+
+
+_PACKAGE_VERSION: str = _get_package_version()
 
 
 class Settings(BaseSettings):
