@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.9
+ * OpenAPI spec version: 0.2.10
  */
 import type { RecommendationSource } from './recommendationSource'
 import type { RecommendationStatus } from './recommendationStatus'
