@@ -140,6 +140,7 @@ jobs:
           OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
           FRONTEND_PORT: ${{ vars.FRONTEND_PORT }}
         run: |
+          [ -z "$FRONTEND_PORT" ] && unset FRONTEND_PORT
           docker compose pull
           docker compose up -d --remove-orphans
         working-directory: ${{ vars.DEPLOY_PATH }}
