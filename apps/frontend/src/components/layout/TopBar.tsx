@@ -285,7 +285,7 @@ function EyePartialIcon() {
       strokeLinejoin="round"
     >
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" strokeDasharray="2 1.5" />
+      <path d="M9 12a3 3 0 0 1 6 0" />
     </svg>
   )
 }
