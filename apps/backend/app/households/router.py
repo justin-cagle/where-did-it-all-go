@@ -826,9 +826,14 @@ async def decline_invitation(
 
 
 @router.get("/settings/smtp-status", response_model=SmtpStatusResponse)
-async def get_smtp_status() -> SmtpStatusResponse:
-    """Return SMTP configuration status (no auth required, non-sensitive)."""
-    return SmtpStatusResponse(smtp_configured=smtp_configured())
+async def get_smtp_status(session: _DbSession) -> SmtpStatusResponse:
+    """Return SMTP configuration status (no auth required, non-sensitive).
+
+    Checks DB-stored config first, then falls back to env-var SMTP settings.
+    """
+    result = await session.execute(sa.text("SELECT 1 FROM admin_smtp_config LIMIT 1"))
+    db_configured = result.scalar_one_or_none() is not None
+    return SmtpStatusResponse(smtp_configured=db_configured or smtp_configured())
 
 
 @router.get("/settings/registration", include_in_schema=True)

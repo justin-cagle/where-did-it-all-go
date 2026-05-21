@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.15"
+    "version": "0.2.16"
   },
   "paths": {
     "/api/v1/auth/register": {
@@ -1039,7 +1039,7 @@
       "get": {
         "tags": ["households", "auth"],
         "summary": "Get Smtp Status",
-        "description": "Return SMTP configuration status (no auth required, non-sensitive).",
+        "description": "Return SMTP configuration status (no auth required, non-sensitive).\n\nChecks DB-stored config first, then falls back to env-var SMTP settings.",
         "operationId": "get_smtp_status_api_v1_settings_smtp_status_get",
         "responses": {
           "200": {
@@ -19978,10 +19978,9 @@
             "type": "string",
             "title": "From Address"
           },
-          "use_tls": {
-            "type": "boolean",
-            "title": "Use Tls",
-            "default": true
+          "tls_mode": {
+            "$ref": "#/components/schemas/SmtpTlsMode",
+            "default": "ssl"
           }
         },
         "type": "object",
@@ -20011,9 +20010,8 @@
             "type": "string",
             "title": "From Address"
           },
-          "use_tls": {
-            "type": "boolean",
-            "title": "Use Tls"
+          "tls_mode": {
+            "$ref": "#/components/schemas/SmtpTlsMode"
           },
           "configured_at": {
             "type": "string",
@@ -20066,7 +20064,7 @@
           "port",
           "username",
           "from_address",
-          "use_tls",
+          "tls_mode",
           "configured_at",
           "smtp_configured",
           "last_test_success",
@@ -20512,6 +20510,11 @@
         "required": ["smtp_configured"],
         "title": "SmtpStatusResponse",
         "description": "SMTP configuration status (non-sensitive bool)."
+      },
+      "SmtpTlsMode": {
+        "type": "string",
+        "enum": ["none", "ssl", "starttls"],
+        "title": "SmtpTlsMode"
       },
       "SplitAllocationIn": {
         "properties": {

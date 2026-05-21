@@ -72,7 +72,7 @@ class SMTPConfig(Base):
         comment='encrypted as {"_enc": "<fernet_token>"}',
     )
     from_address: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    use_tls: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)
+    tls_mode: Mapped[str] = mapped_column(sa.Text, nullable=False, default="ssl")
     configured_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), nullable=False, default=utcnow
     )

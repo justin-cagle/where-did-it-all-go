@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.15
+ * OpenAPI spec version: 0.2.16
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
@@ -2735,6 +2735,8 @@ export const useDeclineInvitationApiV1InvitationsTokenDeclinePost = <
 }
 /**
  * Return SMTP configuration status (no auth required, non-sensitive).
+
+Checks DB-stored config first, then falls back to env-var SMTP settings.
  * @summary Get Smtp Status
  */
 export const getSmtpStatusApiV1SettingsSmtpStatusGet = (signal?: AbortSignal) => {

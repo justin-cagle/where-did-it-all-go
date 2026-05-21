@@ -3,8 +3,9 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.15
+ * OpenAPI spec version: 0.2.16
  */
+import type { SmtpTlsMode } from './smtpTlsMode'
 
 export interface SMTPConfigIn {
   host: string
@@ -12,5 +13,5 @@ export interface SMTPConfigIn {
   username: string
   password: string
   from_address: string
-  use_tls?: boolean
+  tls_mode?: SmtpTlsMode
 }

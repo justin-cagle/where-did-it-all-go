@@ -441,7 +441,7 @@ class TestSMTP:
                 username="user@example.com",
                 password="secret123",  # pragma: allowlist secret
                 from_address="noreply@example.com",
-                use_tls=True,
+                tls_mode="ssl",
                 configured_by_id=admin.id,
             )
 
@@ -477,7 +477,7 @@ class TestSMTP:
                 username="u",
                 password="p",  # pragma: allowlist secret
                 from_address="f@test.com",
-                use_tls=True,
+                tls_mode="ssl",
                 configured_by_id=admin.id,
             )
         assert await smtp_configured(session) is True

@@ -23,13 +23,21 @@ const A = {
   success: '#10b981',
 }
 
+const TLS_MODES = [
+  { value: 'ssl', label: 'SSL/TLS', description: 'Implicit TLS (port 465)' },
+  { value: 'starttls', label: 'STARTTLS', description: 'Upgrade to TLS (port 587)' },
+  { value: 'none', label: 'None', description: 'No encryption (not recommended)' },
+] as const
+
+type TlsMode = 'ssl' | 'starttls' | 'none'
+
 const smtpSchema = z.object({
   host: z.string().min(1, 'Required'),
   port: z.coerce.number().default(587),
   username: z.string().min(1, 'Required'),
   password: z.string().min(1, 'Required'),
   from_address: z.string().email('Valid email required'),
-  use_tls: z.boolean().default(true),
+  tls_mode: z.enum(['ssl', 'starttls', 'none']).default('ssl'),
 })
 type SMTPFormData = z.infer<typeof smtpSchema>
 
@@ -89,7 +97,7 @@ export function AdminSMTPPage() {
       username: smtp?.username ?? '',
       password: '',
       from_address: smtp?.from_address ?? '',
-      use_tls: smtp?.use_tls ?? true,
+      tls_mode: (smtp?.tls_mode as TlsMode | undefined) ?? 'ssl',
     },
   })
 
@@ -114,6 +122,7 @@ export function AdminSMTPPage() {
     try {
       const result = await testSMTP.mutateAsync()
       setTestResult({ success: result.success, detail: result.error_detail ?? null })
+      invalidate()
     } catch {
       setTestResult({ success: false, detail: 'Request failed' })
     } finally {
@@ -262,18 +271,23 @@ export function AdminSMTPPage() {
               <span style={{ fontSize: 13, color: A.fg }}>{smtp?.username}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: A.fgMuted }}>TLS</span>
+              <span style={{ fontSize: 13, color: A.fgMuted }}>TLS mode</span>
               <span
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
                   padding: '1px 6px',
                   borderRadius: 99,
-                  background: smtp?.use_tls ? `rgba(16,185,129,0.15)` : `rgba(239,68,68,0.15)`,
-                  color: smtp?.use_tls ? A.success : A.danger,
+                  background:
+                    smtp?.tls_mode === 'none' ? `rgba(239,68,68,0.15)` : `rgba(16,185,129,0.15)`,
+                  color: smtp?.tls_mode === 'none' ? A.danger : A.success,
                 }}
               >
-                {smtp?.use_tls ? 'Enabled' : 'Disabled'}
+                {smtp?.tls_mode === 'ssl'
+                  ? 'SSL/TLS'
+                  : smtp?.tls_mode === 'starttls'
+                    ? 'STARTTLS'
+                    : 'None'}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -427,17 +441,37 @@ export function AdminSMTPPage() {
             placeholder="noreply@example.com"
           />
         </Field>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            {...register('use_tls')}
-            type="checkbox"
-            id="use_tls"
-            style={{ width: 14, height: 14, accentColor: A.accent }}
-          />
-          <label htmlFor="use_tls" style={{ fontSize: 13, color: A.fg, cursor: 'pointer' }}>
-            Use TLS
-          </label>
-        </div>
+        <Field label="TLS mode">
+          <div style={{ display: 'flex', gap: 6 }}>
+            {TLS_MODES.map((mode) => (
+              <label
+                key={mode.value}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  flex: 1,
+                  padding: '8px 10px',
+                  borderRadius: 6,
+                  border: `1px solid ${A.border}`,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    {...register('tls_mode')}
+                    type="radio"
+                    value={mode.value}
+                    style={{ accentColor: A.accent }}
+                  />
+                  <span style={{ color: A.fg, fontWeight: 500 }}>{mode.label}</span>
+                </div>
+                <span style={{ color: A.fgMuted, paddingLeft: 18 }}>{mode.description}</span>
+              </label>
+            ))}
+          </div>
+        </Field>
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button
             type="submit"

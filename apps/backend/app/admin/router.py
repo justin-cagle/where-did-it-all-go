@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin import service
+from app.admin.enums import SmtpTlsMode
 from app.admin.schemas import (
     AdminHouseholdDetailOut,
     AdminHouseholdListOut,
@@ -294,7 +295,7 @@ async def get_smtp(
         port=cfg.port,
         username=service.decrypt_field(cfg.username_enc, master_key),
         from_address=cfg.from_address,
-        use_tls=cfg.use_tls,
+        tls_mode=SmtpTlsMode(cfg.tls_mode),
         configured_at=cfg.configured_at,
         smtp_configured=True,
         last_test_success=cfg.last_test_success,
@@ -317,7 +318,7 @@ async def upsert_smtp(
         username=body.username,
         password=body.password,
         from_address=body.from_address,
-        use_tls=body.use_tls,
+        tls_mode=body.tls_mode,
         configured_by_id=current_admin.id,
     )
     await session.commit()
@@ -327,7 +328,7 @@ async def upsert_smtp(
         port=cfg.port,
         username=body.username,
         from_address=cfg.from_address,
-        use_tls=cfg.use_tls,
+        tls_mode=SmtpTlsMode(cfg.tls_mode),
         configured_at=cfg.configured_at,
         smtp_configured=True,
         last_test_success=cfg.last_test_success,
