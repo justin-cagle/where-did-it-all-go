@@ -83,7 +83,7 @@ jobs:
 
   integration-tests:
     name: Integration tests (${{ matrix.group }}/3)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -110,7 +110,7 @@ jobs:
 
   migration-test:
     name: Migration test (forward / downgrade / re-upgrade)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16
