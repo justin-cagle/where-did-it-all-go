@@ -364,7 +364,7 @@ export function AdminOverviewPage() {
                   await doUpdateReg(true, limit, regSettings.unassigned_account_ttl_days)
                 }}
                 style={{
-                  width: 80,
+                  width: 96,
                   padding: '4px 8px',
                   borderRadius: 6,
                   fontSize: 13,
