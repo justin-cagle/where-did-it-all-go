@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -79,8 +79,10 @@ export function AdminSMTPPage() {
   )
   const [testing, setTesting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const { data: smtp } = useGetSmtpApiV1AdminSmtpGet()
+  const { data: smtp } = useGetSmtpApiV1AdminSmtpGet({ query: { retry: false } })
   const upsert = useUpsertSmtpApiV1AdminSmtpPost()
   const deleteSMTP = useDeleteSmtpApiV1AdminSmtpDelete()
   const testSMTP = useTestSmtpApiV1AdminSmtpTestPost()
@@ -89,25 +91,46 @@ export function AdminSMTPPage() {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<SMTPFormData>({
     resolver: zodResolver(smtpSchema),
     defaultValues: {
-      host: smtp?.host ?? '',
-      port: smtp?.port ?? 587,
-      username: smtp?.username ?? '',
+      host: '',
+      port: 587,
+      username: '',
       password: '',
-      from_address: smtp?.from_address ?? '',
-      tls_mode: (smtp?.tls_mode as TlsMode | undefined) ?? 'ssl',
+      from_address: '',
+      tls_mode: 'ssl',
     },
   })
+
+  useEffect(() => {
+    if (smtp) {
+      reset({
+        host: smtp.host,
+        port: smtp.port,
+        username: smtp.username,
+        password: '',
+        from_address: smtp.from_address,
+        tls_mode: smtp.tls_mode as TlsMode,
+      })
+    }
+  }, [smtp, reset])
 
   function invalidate() {
     void qc.invalidateQueries({ queryKey: getGetSmtpApiV1AdminSmtpGetQueryKey() })
   }
 
   async function doSave(data: SMTPFormData) {
-    await upsert.mutateAsync({ data })
-    invalidate()
+    setSaveError(null)
+    setSaveSuccess(false)
+    try {
+      await upsert.mutateAsync({ data })
+      setSaveSuccess(true)
+      invalidate()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed')
+    }
   }
 
   async function doDelete() {
@@ -472,7 +495,7 @@ export function AdminSMTPPage() {
             ))}
           </div>
         </Field>
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
           <button
             type="submit"
             style={{
@@ -505,6 +528,8 @@ export function AdminSMTPPage() {
               Delete config
             </button>
           )}
+          {saveSuccess && <span style={{ fontSize: 13, color: A.success }}>Saved</span>}
+          {saveError && <span style={{ fontSize: 13, color: A.danger }}>{saveError}</span>}
         </div>
       </form>
     </div>
