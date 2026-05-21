@@ -11,6 +11,7 @@ Routes:
     PATCH  /api/v1/auth/me
     POST   /api/v1/auth/totp/setup
     POST   /api/v1/auth/totp/confirm
+    DELETE /api/v1/auth/totp/disable
     GET    /api/v1/auth/sessions
     DELETE /api/v1/auth/sessions/{token_id}
     POST   /api/v1/auth/change-password
@@ -174,6 +175,11 @@ async def login(
             password=body.password,
             totp_code=body.totp_code,
         )
+    except service.TotpRequiredError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="totp_required",
+        ) from None
     except service.AuthenticationError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

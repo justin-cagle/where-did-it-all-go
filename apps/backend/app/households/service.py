@@ -38,6 +38,10 @@ class AuthenticationError(Exception):
     """Raised when credentials are invalid or session is expired."""
 
 
+class TotpRequiredError(Exception):
+    """Password verified but TOTP code was not provided."""
+
+
 class NotFoundError(Exception):
     """Raised when a requested entity does not exist or is not visible."""
 
@@ -183,6 +187,14 @@ async def authenticate_local(
         # Constant-time dummy verify to prevent user-enumeration via timing
         pwd_service.verify_password(password, _DUMMY_HASH)
         raise AuthenticationError("invalid credentials")
+
+    # Two-phase check: if TOTP is enabled but no code provided, verify the
+    # password first so we only reveal that TOTP is required to users who
+    # already know the correct password.
+    if user.totp_enabled and totp_code is None:
+        if not pwd_service.verify_password(password, user.password_hash):
+            raise AuthenticationError("invalid credentials")
+        raise TotpRequiredError("totp_required")
 
     pm = auth_hooks.get_plugin_manager()
     # firstresult=True → pluggy returns the first non-None result directly, not a list

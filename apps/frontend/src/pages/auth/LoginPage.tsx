@@ -35,7 +35,12 @@ const schema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
+const totpSchema = z.object({
+  code: z.string().length(6, 'Enter the 6-digit code').regex(/^\d+$/, 'Digits only'),
+})
+
 type Fields = z.infer<typeof schema>
+type TotpFields = z.infer<typeof totpSchema>
 
 interface LoginResponse {
   id: string
@@ -50,6 +55,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const redirectTo = safeRedirect(new URLSearchParams(window.location.search).get('redirect'))
   const [instanceInfo, setInstanceInfo] = useState<InstanceInfo | null>(null)
+  const [pendingCreds, setPendingCreds] = useState<{ email: string; password: string } | null>(null)
 
   useEffect(() => {
     fetchInstanceInfo().then(setInstanceInfo)
@@ -63,28 +69,119 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<Fields>({ resolver: zodResolver(schema) })
 
+  const {
+    register: registerTotp,
+    handleSubmit: handleSubmitTotp,
+    setError: setTotpError,
+    formState: { errors: totpErrors, isSubmitting: totpSubmitting },
+  } = useForm<TotpFields>({ resolver: zodResolver(totpSchema) })
+
   useEffect(() => {
     if (instanceInfo?.aio_mode && instanceInfo.demo_credentials) {
       setValue('email', instanceInfo.demo_credentials.email)
     }
   }, [instanceInfo, setValue])
 
+  const doLogin = async (email: string, password: string, totp_code?: string) => {
+    const user = await customInstance<LoginResponse>({
+      url: '/api/v1/auth/login',
+      method: 'POST',
+      data: { email, password, totp_code: totp_code ?? null },
+    })
+    setUser(user)
+    navigate(redirectTo, { replace: true })
+  }
+
   const onSubmit = async (data: Fields) => {
     try {
-      const user = await customInstance<LoginResponse>({
-        url: '/api/v1/auth/login',
-        method: 'POST',
-        data: { email: data.email, password: data.password },
-      })
-      setUser(user)
-      navigate(redirectTo, { replace: true })
+      await doLogin(data.email, data.password)
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError('root', { message: 'Invalid email or password' })
+        if (err.message === 'totp_required') {
+          setPendingCreds({ email: data.email, password: data.password })
+        } else {
+          setError('root', { message: 'Invalid email or password' })
+        }
       } else {
         setError('root', { message: 'Something went wrong. Try again.' })
       }
     }
+  }
+
+  const onTotpSubmit = async (data: TotpFields) => {
+    if (!pendingCreds) return
+    try {
+      await doLogin(pendingCreds.email, pendingCreds.password, data.code)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setTotpError('code', { message: 'Invalid code. Try again.' })
+      } else {
+        setTotpError('root', { message: 'Something went wrong. Try again.' })
+      }
+    }
+  }
+
+  if (pendingCreds) {
+    return (
+      <AuthLayout demoBanner={null}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <h1 style={styles.heading}>Two-factor authentication</h1>
+          <p style={{ fontSize: 13, color: 'var(--fg-muted)', margin: 0 }}>
+            Enter the 6-digit code from your authenticator app.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmitTotp(onTotpSubmit)} noValidate style={styles.form}>
+          <Field label="Verification code" error={totpErrors.code?.message}>
+            <input
+              {...registerTotp('code')}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              placeholder="000000"
+              style={{
+                ...inputStyle(!!totpErrors.code),
+                fontSize: 24,
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.3em',
+                textAlign: 'center',
+                height: 48,
+              }}
+            />
+          </Field>
+
+          {totpErrors.root && (
+            <p style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>
+              {totpErrors.root.message}
+            </p>
+          )}
+
+          <button type="submit" disabled={totpSubmitting} style={styles.submitButton}>
+            {totpSubmitting ? 'Verifying...' : 'Verify'}
+          </button>
+        </form>
+
+        <p style={styles.footer}>
+          <button
+            type="button"
+            onClick={() => setPendingCreds(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontFamily: 'var(--font-sans)',
+              padding: 0,
+            }}
+          >
+            Back to sign in
+          </button>
+        </p>
+      </AuthLayout>
+    )
   }
 
   return (
