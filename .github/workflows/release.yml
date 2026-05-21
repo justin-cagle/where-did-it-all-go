@@ -22,15 +22,25 @@ jobs:
           echo "Detected version: v${v}"
 
       - name: Create tag if new
+        id: tag
         env:
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
           if git ls-remote --tags origin "$TAG" | grep -q .; then
             echo "Tag $TAG already exists — skipping."
+            echo "created=false" >> "$GITHUB_OUTPUT"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag "$TAG"
             git push origin "$TAG"
             echo "Tagged and pushed $TAG"
+            echo "created=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Create GitHub Release
+        if: steps.tag.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: gh release create "$TAG" --generate-notes --title "$TAG"
