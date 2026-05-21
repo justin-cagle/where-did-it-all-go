@@ -101,6 +101,30 @@ jobs:
           severity: "CRITICAL,HIGH"
           exit-code: "1"
 
+  version-bump-check:
+    name: Version bump required
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify version bumped vs main
+        run: |
+          PR_VER=$(grep '^version = ' apps/backend/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          MAIN_VER=$(git show origin/main:apps/backend/pyproject.toml | grep '^version = ' | sed 's/version = "\(.*\)"/\1/')
+          PKG_VER=$(node -p "require('./apps/frontend/package.json').version")
+          echo "main: $MAIN_VER  pr: $PR_VER  package.json: $PKG_VER"
+          if [ "$PR_VER" = "$MAIN_VER" ]; then
+            echo "::error::Version not bumped. Bump version in apps/backend/pyproject.toml and apps/frontend/package.json before merging."
+            exit 1
+          fi
+          if [ "$PR_VER" != "$PKG_VER" ]; then
+            echo "::error::Version mismatch: pyproject.toml=$PR_VER but package.json=$PKG_VER. Keep them in sync."
+            exit 1
+          fi
+
   docker-build:
     name: Docker image build
     runs-on: self-hosted
