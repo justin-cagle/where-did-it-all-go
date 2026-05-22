@@ -71,8 +71,8 @@ export function SettingsLayout() {
       {/* Sidebar */}
       <nav
         style={{
-          width: 220,
-          minWidth: 220,
+          width: 180,
+          minWidth: 180,
           borderRight: '1px solid var(--border)',
           padding: '20px 12px',
           display: 'flex',

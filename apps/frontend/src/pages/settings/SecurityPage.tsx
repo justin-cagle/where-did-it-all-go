@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -162,6 +163,7 @@ function SessionsList() {
 export function SecurityPage() {
   const qc = useQueryClient()
   const changePassword = useChangePasswordApiV1AuthChangePasswordPost()
+  const [passwordSaved, setPasswordSaved] = useState(false)
 
   const {
     register,
@@ -182,6 +184,8 @@ export function SecurityPage() {
         },
       })
       reset()
+      setPasswordSaved(true)
+      setTimeout(() => setPasswordSaved(false), 3000)
       await qc.invalidateQueries({ queryKey: getListSessionsApiV1AuthSessionsGetQueryKey() })
     } catch (err: unknown) {
       if (err instanceof ApiError && (err.status === 400 || err.status === 401)) {
@@ -271,7 +275,7 @@ export function SecurityPage() {
             <FieldError message={errors.confirm_password?.message} />
           </div>
 
-          <div style={{ paddingTop: 4 }}>
+          <div style={{ paddingTop: 4, display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               type="submit"
               disabled={isSubmitting || changePassword.isPending}
@@ -290,6 +294,9 @@ export function SecurityPage() {
             >
               {isSubmitting || changePassword.isPending ? 'Updating...' : 'Update password'}
             </button>
+            {passwordSaved && (
+              <span style={{ fontSize: 13, color: 'var(--success)' }}>Password updated</span>
+            )}
           </div>
         </form>
       </div>

@@ -18,6 +18,15 @@ export default defineConfig({
         // No precaching of authenticated content.
         runtimeCaching: [
           {
+            // Auth routes: network-first (security-sensitive — never serve stale session data)
+            urlPattern: /^\/api\/v1\/auth\//i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'auth-api-cache',
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
             urlPattern: /^\/api\/v1\//i,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -45,7 +54,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8111',
+        target: process.env['VITE_BACKEND_URL'] ?? 'http://localhost:8111',
         changeOrigin: true,
         cookieDomainRewrite: '',
       },

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { useTheme } from '@/providers/ThemeProvider'
@@ -11,23 +11,17 @@ interface TopBarProps {
 
 export function TopBar({ householdName }: TopBarProps) {
   const { currentUser, privacyMode, setPrivacyMode, clearUser } = useAuthStore()
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const themeMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
   const cyclePrivacy = () => {
     const order: PrivacyMode[] = ['off', 'partial_blur', 'full_blur']
     const next = order[(order.indexOf(privacyMode) + 1) % order.length] ?? 'off'
     setPrivacyMode(next)
-  }
-
-  const toggleTheme = () => {
-    if (theme === 'system') {
-      setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
-    } else {
-      setTheme(theme === 'dark' ? 'light' : 'dark')
-    }
   }
 
   const handleLogout = async () => {
@@ -44,6 +38,9 @@ export function TopBar({ householdName }: TopBarProps) {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false)
+      }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) {
+        setThemeMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -95,10 +92,63 @@ export function TopBar({ householdName }: TopBarProps) {
           )}
         </IconButton>
 
-        {/* Theme toggle */}
-        <IconButton onClick={toggleTheme} aria-label="Toggle theme">
-          {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-        </IconButton>
+        {/* Separator */}
+        <div
+          style={{
+            width: 1,
+            height: 18,
+            background: 'var(--border)',
+            margin: '0 2px',
+            flexShrink: 0,
+          }}
+        />
+
+        {/* Theme dropdown */}
+        <div ref={themeMenuRef} style={{ position: 'relative' }}>
+          <IconButton
+            onClick={() => setThemeMenuOpen((v) => !v)}
+            aria-label={`Theme: ${theme}`}
+            title={`Theme: ${theme}`}
+          >
+            {theme === 'dark' ? <MoonIcon /> : theme === 'light' ? <SunIcon /> : <MonitorIcon />}
+          </IconButton>
+          {themeMenuOpen && (
+            <div
+              role="menu"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                right: 0,
+                minWidth: 130,
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                boxShadow: 'var(--shadow)',
+                padding: '4px',
+                zIndex: 50,
+              }}
+            >
+              {(
+                [
+                  { value: 'system', label: 'System', icon: <MonitorIcon /> },
+                  { value: 'light', label: 'Light', icon: <SunIcon /> },
+                  { value: 'dark', label: 'Dark', icon: <MoonIcon /> },
+                ] as const
+              ).map(({ value, label, icon }) => (
+                <ThemeMenuItem
+                  key={value}
+                  label={label}
+                  icon={icon}
+                  active={theme === value}
+                  onClick={() => {
+                    setTheme(value)
+                    setThemeMenuOpen(false)
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* User menu */}
         <div ref={menuRef} style={{ position: 'relative' }}>
@@ -245,6 +295,43 @@ function MenuItem({
   )
 }
 
+function ThemeMenuItem({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string
+  icon: React.ReactNode
+  active: boolean
+  onClick: () => void
+}) {
+  const style: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    padding: '7px 10px',
+    background: active ? 'color-mix(in oklch, var(--accent) 10%, transparent)' : 'transparent',
+    border: 'none',
+    borderRadius: 6,
+    fontSize: 13,
+    color: active ? 'var(--accent)' : 'var(--fg-primary)',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-sans)',
+    textAlign: 'left',
+  }
+  return (
+    <button role="menuitem" onClick={onClick} style={style}>
+      <span style={{ color: active ? 'var(--accent)' : 'var(--fg-muted)' }}>{icon}</span>
+      {label}
+      {active && (
+        <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 11 }}>&#10003;</span>
+      )}
+    </button>
+  )
+}
+
 function initials(name: string): string {
   return name
     .split(' ')
@@ -304,6 +391,25 @@ function EyeOffIcon() {
     >
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  )
+}
+
+function MonitorIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
     </svg>
   )
 }
