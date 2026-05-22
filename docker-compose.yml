@@ -93,6 +93,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RUN_MIGRATIONS: "false"
 
   worker-slow:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
@@ -113,6 +114,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RUN_MIGRATIONS: "false"
 
   frontend:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-frontend:${IMAGE_TAG:-latest}
