@@ -78,12 +78,19 @@ function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => P
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const handleSave = async () => {
     setSaving(true)
+    setSaveError(null)
     try {
       await onSave(draft)
       setEditing(false)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed')
     } finally {
       setSaving(false)
     }
@@ -93,11 +100,13 @@ function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => P
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 14, color: 'var(--fg-primary)' }}>{value}</span>
+        {saved && <span style={{ fontSize: 12, color: 'var(--success)' }}>Saved</span>}
         <button
           type="button"
           onClick={() => {
             setDraft(value)
             setEditing(true)
+            setSaved(false)
           }}
           style={{
             fontSize: 12,
@@ -116,56 +125,62 @@ function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => P
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        autoFocus
-        style={{
-          padding: '6px 10px',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-secondary)',
-          color: 'var(--fg-primary)',
-          fontSize: 13,
-          outline: 'none',
-          minWidth: 200,
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => void handleSave()}
-        disabled={saving}
-        style={{
-          padding: '6px 14px',
-          background: 'var(--accent)',
-          color: 'var(--accent-fg)',
-          border: 'none',
-          borderRadius: 8,
-          fontSize: 12,
-          fontWeight: 500,
-          cursor: 'pointer',
-          fontFamily: 'var(--font-sans)',
-        }}
-      >
-        {saving ? 'Saving...' : 'Save'}
-      </button>
-      <button
-        type="button"
-        onClick={() => setEditing(false)}
-        style={{
-          padding: '6px 14px',
-          background: 'none',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          fontSize: 12,
-          color: 'var(--fg-muted)',
-          cursor: 'pointer',
-          fontFamily: 'var(--font-sans)',
-        }}
-      >
-        Cancel
-      </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          autoFocus
+          style={{
+            padding: '6px 10px',
+            borderRadius: 8,
+            border: `1px solid ${saveError ? 'var(--danger)' : 'var(--border)'}`,
+            background: 'var(--bg-secondary)',
+            color: 'var(--fg-primary)',
+            fontSize: 13,
+            outline: 'none',
+            minWidth: 200,
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving}
+          style={{
+            padding: '6px 14px',
+            background: 'var(--accent)',
+            color: 'var(--accent-fg)',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false)
+            setSaveError(null)
+          }}
+          style={{
+            padding: '6px 14px',
+            background: 'none',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: 'var(--fg-muted)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+      {saveError && <div style={{ fontSize: 12, color: 'var(--danger)' }}>{saveError}</div>}
     </div>
   )
 }
