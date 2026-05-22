@@ -83,7 +83,7 @@ async def register_user(
     if invite_token is None:
         from app.config import get_settings
 
-        allow_reg, reg_limit = await _get_effective_registration_settings(session, get_settings())
+        allow_reg, reg_limit = await get_effective_registration_settings(session, get_settings())
         if not allow_reg:
             raise RegistrationClosedError("registration is closed")
         if reg_limit is not None:
@@ -106,7 +106,7 @@ async def _count_active_users(session: AsyncSession) -> int:
     return result.scalar_one()
 
 
-async def _get_effective_registration_settings(
+async def get_effective_registration_settings(
     session: AsyncSession,
     settings: "Settings",
 ) -> tuple[bool, int | None]:

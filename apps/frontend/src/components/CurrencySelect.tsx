@@ -49,46 +49,114 @@ export function CurrencySelect({
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className="border-input bg-background ring-offset-background focus:ring-ring flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '8px 12px',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-primary)',
+          color: selected ? 'var(--fg-primary)' : 'var(--fg-muted)',
+          fontSize: 14,
+          fontFamily: 'var(--font-sans)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+          gap: 8,
+        }}
       >
-        <span className={selected ? '' : 'text-muted-foreground'}>
-          {selected ? `${selected.code} — ${selected.name}` : placeholder}
-        </span>
-        <ChevronDown className="h-4 w-4 opacity-50" />
+        <span>{selected ? `${selected.code} — ${selected.name}` : placeholder}</span>
+        <ChevronDown style={{ width: 16, height: 16, flexShrink: 0, opacity: 0.5 }} />
       </button>
 
       {open && (
-        <div className="bg-popover absolute z-50 mt-1 w-full rounded-md border shadow-md">
-          <div className="flex items-center border-b px-3 py-2">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            boxShadow: 'var(--shadow)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <Search style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--fg-muted)' }} />
             <input
               autoFocus
-              className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontSize: 13,
+                color: 'var(--fg-primary)',
+                fontFamily: 'var(--font-sans)',
+              }}
               placeholder="Search currencies..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="max-h-60 overflow-y-auto py-1">
+          <div style={{ maxHeight: 240, overflowY: 'auto', padding: '4px 0' }}>
             {filtered.length === 0 ? (
-              <div className="text-muted-foreground px-3 py-2 text-sm">No currencies found</div>
+              <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fg-muted)' }}>
+                No currencies found
+              </div>
             ) : (
               filtered.map((c) => (
                 <button
                   key={c.code}
                   type="button"
                   onClick={() => select(c.code)}
-                  className={`hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-sm ${
-                    c.code === value ? 'bg-accent font-medium' : ''
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    width: '100%',
+                    padding: '8px 12px',
+                    background:
+                      c.code === value
+                        ? 'color-mix(in oklch, var(--accent) 12%, transparent)'
+                        : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: 13,
+                    color: 'var(--fg-primary)',
+                    fontFamily: 'var(--font-sans)',
+                  }}
                 >
-                  <span className="w-8 font-mono text-xs font-semibold">{c.code}</span>
-                  <span className="text-muted-foreground">{c.name}</span>
+                  <span
+                    style={{
+                      width: 32,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {c.code}
+                  </span>
+                  <span style={{ color: 'var(--fg-muted)' }}>{c.name}</span>
                 </button>
               ))
             )}
