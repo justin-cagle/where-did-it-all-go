@@ -1,16 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useMeApiV1AuthMeGet } from '@/api/generated/households/households'
-import {
-  User,
-  Home,
-  Tag,
-  Sparkles,
-  Shield,
-  AlertTriangle,
-  Link2,
-  ArrowUpCircle,
-  Info,
-} from 'lucide-react'
+import { User, Home, Tag, Shield, AlertTriangle, Link2, ArrowUpCircle, Info } from 'lucide-react'
 import { useVersionCheck } from '@/hooks/use-version'
 
 const NAV_ITEMS = [
@@ -32,12 +22,6 @@ const NAV_ITEMS = [
     label: 'Classification',
     icon: Tag,
     description: 'Categories, tags, rules',
-  },
-  {
-    to: '/settings/insights',
-    label: 'Insights',
-    icon: Sparkles,
-    description: 'AI providers and budget',
   },
   {
     to: '/settings/security',

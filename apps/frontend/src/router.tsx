@@ -27,7 +27,7 @@ import { ClassificationPage } from '@/pages/classification/ClassificationPage'
 import { SettingsLayout } from '@/pages/settings/SettingsPage'
 import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { HouseholdPage } from '@/pages/settings/HouseholdPage'
-import { InsightsSettingsPage } from '@/pages/settings/InsightsSettingsPage'
+
 import { SecurityPage } from '@/pages/settings/SecurityPage'
 import { IngestPage } from '@/pages/ingest/IngestPage'
 import { ConnectPage } from '@/pages/ingest/ConnectPage'
@@ -43,6 +43,7 @@ import { AdminSystemPage } from '@/pages/admin/AdminSystemPage'
 import { AdminSMTPPage } from '@/pages/admin/AdminSMTPPage'
 import { AdminBackupPage } from '@/pages/admin/AdminBackupPage'
 import { AdminEmergencyPage } from '@/pages/admin/AdminEmergencyPage'
+import { AdminAIPage } from '@/pages/admin/AdminAIPage'
 
 const ProjectionsPage = lazy(() =>
   import('@/pages/projections/ProjectionsPage').then((m) => ({ default: m.ProjectionsPage }))
@@ -253,7 +254,6 @@ export const router = createBrowserRouter([
       { path: 'household', element: <HouseholdPage /> },
       { path: 'ingest', element: <IngestPage /> },
       { path: 'classification', element: <ClassificationPage /> },
-      { path: 'insights', element: <InsightsSettingsPage /> },
       { path: 'security', element: <SecurityPage /> },
     ],
   },
@@ -362,6 +362,14 @@ export const router = createBrowserRouter([
     element: (
       <AuthedAdmin>
         <AdminEmergencyPage />
+      </AuthedAdmin>
+    ),
+  },
+  {
+    path: '/admin/ai',
+    element: (
+      <AuthedAdmin>
+        <AdminAIPage />
       </AuthedAdmin>
     ),
   },

@@ -277,6 +277,7 @@ function ProviderRow({
 
   const isLocal = LOCAL_TYPES.has(provider.provider)
   const isOllama = provider.provider === 'local_ollama'
+  const isDisabled = provider.provider === 'disabled'
 
   const runTest = async () => {
     setConnStatus({ state: 'testing' })
@@ -391,121 +392,131 @@ function ProviderRow({
           >
             <div style={{ paddingTop: 12 }} />
 
-            {/* Connection test bar */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 10px',
-                background: 'var(--bg-secondary)',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-              }}
-            >
-              <StatusDot status={connStatus} />
-              <span style={{ flex: 1, fontSize: 12 }}>
-                <ConnectionStatusLabel status={connStatus} />
-              </span>
-              <button
-                type="button"
-                onClick={() => void runTest()}
-                disabled={connStatus.state === 'testing'}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '3px 8px',
-                  fontSize: 11,
-                  background: 'none',
-                  border: '1px solid var(--border)',
-                  borderRadius: 5,
-                  cursor: 'pointer',
-                  color: 'var(--fg-secondary)',
-                  fontFamily: 'var(--font-sans)',
-                  opacity: connStatus.state === 'testing' ? 0.5 : 1,
-                }}
-              >
-                {connStatus.state === 'testing' ? (
-                  <Loader size={11} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Wifi size={11} />
-                )}
-                Test connection
-              </button>
-            </div>
-
-            {isLocal && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Base URL</label>
-                <input
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
-              {isOllama ? (
-                <OllamaModelSelector
-                  householdId={householdId}
-                  modelName={modelName}
-                  onChange={setModelName}
-                  onManage={() => setShowModelManager(true)}
-                />
-              ) : (
-                <input
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value)}
-                  placeholder={
-                    provider.provider === 'local_llamacpp'
-                      ? 'e.g. mistral-7b-v0.1'
-                      : 'e.g. gpt-4o, claude-opus-4-7'
-                  }
-                  style={inputStyle}
-                />
-              )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
-              {AI_DATA_SHARING_OPTIONS.filter((o) => isLocal || o.value !== 'full').map((opt) => (
-                <label
-                  key={opt.value}
+            {!isDisabled && (
+              <>
+                {/* Connection test bar */}
+                <div
                   style={{
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     gap: 8,
-                    cursor: 'pointer',
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    background:
-                      sharing === opt.value
-                        ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
-                        : 'transparent',
-                    border: `1px solid ${sharing === opt.value ? 'color-mix(in oklch, var(--accent) 25%, transparent)' : 'transparent'}`,
+                    padding: '8px 10px',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
                   }}
                 >
-                  <input
-                    type="radio"
-                    name={`sharing-${provider.id}`}
-                    value={opt.value}
-                    checked={sharing === opt.value}
-                    onChange={() => setSharing(opt.value)}
-                    style={{ marginTop: 1, flexShrink: 0 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)' }}>
-                      {opt.label}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>{opt.description}</div>
+                  <StatusDot status={connStatus} />
+                  <span style={{ flex: 1, fontSize: 12 }}>
+                    <ConnectionStatusLabel status={connStatus} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void runTest()}
+                    disabled={connStatus.state === 'testing'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      borderRadius: 5,
+                      cursor: 'pointer',
+                      color: 'var(--fg-secondary)',
+                      fontFamily: 'var(--font-sans)',
+                      opacity: connStatus.state === 'testing' ? 0.5 : 1,
+                    }}
+                  >
+                    {connStatus.state === 'testing' ? (
+                      <Loader size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <Wifi size={11} />
+                    )}
+                    Test connection
+                  </button>
+                </div>
+
+                {isLocal && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Base URL</label>
+                    <input
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="http://localhost:11434"
+                      style={inputStyle}
+                    />
                   </div>
-                </label>
-              ))}
-            </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
+                  {isOllama ? (
+                    <OllamaModelSelector
+                      householdId={householdId}
+                      modelName={modelName}
+                      onChange={setModelName}
+                      onManage={() => setShowModelManager(true)}
+                    />
+                  ) : (
+                    <input
+                      value={modelName}
+                      onChange={(e) => setModelName(e.target.value)}
+                      placeholder={
+                        provider.provider === 'local_llamacpp'
+                          ? 'e.g. mistral-7b-v0.1'
+                          : 'e.g. gpt-4o, claude-opus-4-7'
+                      }
+                      style={inputStyle}
+                    />
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
+                  {AI_DATA_SHARING_OPTIONS.filter((o) => isLocal || o.value !== 'full').map(
+                    (opt) => (
+                      <label
+                        key={opt.value}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          cursor: 'pointer',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          background:
+                            sharing === opt.value
+                              ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
+                              : 'transparent',
+                          border: `1px solid ${sharing === opt.value ? 'color-mix(in oklch, var(--accent) 25%, transparent)' : 'transparent'}`,
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`sharing-${provider.id}`}
+                          value={opt.value}
+                          checked={sharing === opt.value}
+                          onChange={() => setSharing(opt.value)}
+                          style={{ marginTop: 1, flexShrink: 0 }}
+                        />
+                        <div>
+                          <div
+                            style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)' }}
+                          >
+                            {opt.label}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+                            {opt.description}
+                          </div>
+                        </div>
+                      </label>
+                    )
+                  )}
+                </div>
+              </>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <label
@@ -665,6 +676,7 @@ function AddProviderModal({
   const create = useCreateProviderApiV1HouseholdsHouseholdIdInsightsProvidersPost()
   const isLocal = LOCAL_TYPES.has(providerType)
   const isOllama = providerType === 'local_ollama'
+  const isDisabledType = providerType === 'disabled'
 
   const handleSave = async () => {
     setSaving(true)
@@ -782,79 +794,85 @@ function AddProviderModal({
               </select>
             </div>
 
-            {isLocal && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Base URL</label>
-                <input
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--fg-primary)',
-                    fontSize: 13,
-                    outline: 'none',
-                  }}
-                />
-              </div>
+            {!isDisabledType && (
+              <>
+                {isLocal && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Base URL</label>
+                    <input
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="http://localhost:11434"
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--fg-primary)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
+                  {isOllama && baseUrl ? (
+                    <OllamaModelSelector
+                      householdId={householdId}
+                      modelName={modelName}
+                      onChange={setModelName}
+                      onManage={() => setShowModelManager(true)}
+                    />
+                  ) : (
+                    <input
+                      value={modelName}
+                      onChange={(e) => setModelName(e.target.value)}
+                      placeholder={
+                        providerType === 'local_llamacpp'
+                          ? 'e.g. mistral-7b-v0.1'
+                          : 'e.g. llama3, gpt-4o, claude-opus-4-7'
+                      }
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--fg-primary)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
+                  <select
+                    value={sharing}
+                    onChange={(e) => setSharing(e.target.value)}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--fg-primary)',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {AI_DATA_SHARING_OPTIONS.filter((o) => isLocal || o.value !== 'full').map(
+                      (opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label} — {opt.description}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+              </>
             )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
-              {isOllama && baseUrl ? (
-                <OllamaModelSelector
-                  householdId={householdId}
-                  modelName={modelName}
-                  onChange={setModelName}
-                  onManage={() => setShowModelManager(true)}
-                />
-              ) : (
-                <input
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value)}
-                  placeholder={
-                    providerType === 'local_llamacpp'
-                      ? 'e.g. mistral-7b-v0.1'
-                      : 'e.g. llama3, gpt-4o, claude-opus-4-7'
-                  }
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--fg-primary)',
-                    fontSize: 13,
-                    outline: 'none',
-                  }}
-                />
-              )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
-              <select
-                value={sharing}
-                onChange={(e) => setSharing(e.target.value)}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-secondary)',
-                  color: 'var(--fg-primary)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                {AI_DATA_SHARING_OPTIONS.filter((o) => isLocal || o.value !== 'full').map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label} — {opt.description}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             {saveError && (
               <div
