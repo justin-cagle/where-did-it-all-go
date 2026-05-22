@@ -781,21 +781,30 @@ function TokenBudgetWidget({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {tokenLimit != null && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: 12,
-                color: 'var(--fg-muted)',
-              }}
-            >
-              <span>Tokens this month</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: 'var(--fg-muted)',
+            }}
+          >
+            <span>Tokens this month</span>
+            {tokenLimit != null ? (
               <span style={{ fontFamily: 'var(--font-mono)' }}>
                 {tokensUsed.toLocaleString()} / {tokenLimit.toLocaleString()}
               </span>
-            </div>
+            ) : (
+              <span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>
+                  {tokensUsed.toLocaleString()}
+                </span>
+                <span style={{ fontStyle: 'italic', marginLeft: 4 }}>/ No limit</span>
+              </span>
+            )}
+          </div>
+          {tokenLimit != null && (
             <div
               style={{
                 height: 6,
@@ -818,8 +827,8 @@ function TokenBudgetWidget({
                 }}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div>
@@ -830,16 +839,20 @@ function TokenBudgetWidget({
               {formatAmount(costUsed, { currency })}
             </div>
           </div>
-          {costLimit != null && (
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>Cost limit</div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>Cost limit</div>
+            {costLimit != null ? (
               <div
                 style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--fg-primary)' }}
               >
                 {formatAmount(costLimit, { currency })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--fg-muted)', fontStyle: 'italic' }}>
+                No limit
+              </div>
+            )}
+          </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>On overage</div>
             <div style={{ fontSize: 12, color: 'var(--fg-secondary)' }}>
