@@ -49,6 +49,7 @@ dependencies = [
     # Admin — backup and email
     "boto3>=1.34",
     "aiosmtplib>=3.0",
+    "starlette>=1.0.1",
 ]
 
 [project.scripts]
