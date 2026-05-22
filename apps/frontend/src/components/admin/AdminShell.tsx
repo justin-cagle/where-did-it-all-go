@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useState, useEffect } from 'react'
-import { NavLink, Link, useNavigate } from 'react-router-dom'
+import { NavLink, Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { customInstance } from '@/api/client'
 import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
@@ -198,38 +198,7 @@ export function AdminShell({ children }: AdminShellProps) {
   const isMobile = useIsMobile()
 
   if (isMobile) {
-    return (
-      <div
-        style={{
-          minHeight: '100dvh',
-          background: A.bg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320 }}>
-          <AlertTriangleIcon />
-          <div style={{ fontSize: 16, fontWeight: 600, color: A.fg }}>Desktop only</div>
-          <div style={{ fontSize: 13, color: A.fgMuted }}>
-            The admin panel is only available on desktop screens.
-          </div>
-          <Link
-            to="/dashboard"
-            style={{
-              marginTop: 8,
-              fontSize: 13,
-              color: A.accent,
-              textDecoration: 'none',
-            }}
-          >
-            Back to app
-          </Link>
-        </div>
-      </div>
-    )
+    return <Navigate to="/dashboard" replace />
   }
 
   return (

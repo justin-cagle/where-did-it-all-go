@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   useListUsersApiV1AdminUsersGet,
   getListUsersApiV1AdminUsersGetQueryKey,
+  getGetOverviewApiV1AdminOverviewGetQueryKey,
   useDeleteUserApiV1AdminUsersUserIdDelete,
   usePromoteUserApiV1AdminUsersUserIdPromotePost,
   useDemoteUserApiV1AdminUsersUserIdDemotePost,
@@ -219,6 +220,7 @@ export function AdminUsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; email: string } | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [assignUser, setAssignUser] = useState<string | null>(null)
+  const [assignSuccess, setAssignSuccess] = useState<string | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const params = {
@@ -235,7 +237,8 @@ export function AdminUsersPage() {
   const forceLogout = useForceLogoutApiV1AdminUsersUserIdForceLogoutPost()
 
   function invalidate() {
-    void qc.invalidateQueries({ queryKey: getListUsersApiV1AdminUsersGetQueryKey(params) })
+    void qc.invalidateQueries({ queryKey: getListUsersApiV1AdminUsersGetQueryKey() })
+    void qc.invalidateQueries({ queryKey: getGetOverviewApiV1AdminOverviewGetQueryKey() })
   }
 
   async function executeAction(action: ActionPending) {
@@ -376,6 +379,8 @@ export function AdminUsersPage() {
             })
             setAssignUser(null)
             invalidate()
+            setAssignSuccess(`User assigned as ${role}.`)
+            setTimeout(() => setAssignSuccess(null), 3000)
           }}
         />
       )}
@@ -400,6 +405,21 @@ export function AdminUsersPage() {
         >
           {unassignedCount} account{unassignedCount !== 1 ? 's' : ''} waiting for household
           assignment
+        </div>
+      )}
+
+      {assignSuccess && (
+        <div
+          style={{
+            background: `rgba(16,185,129,0.1)`,
+            border: `1px solid ${A.success}`,
+            borderRadius: 8,
+            padding: '10px 14px',
+            fontSize: 13,
+            color: A.success,
+          }}
+        >
+          {assignSuccess}
         </div>
       )}
 

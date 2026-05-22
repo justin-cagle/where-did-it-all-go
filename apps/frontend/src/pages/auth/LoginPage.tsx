@@ -131,7 +131,12 @@ export function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmitTotp(onTotpSubmit)} noValidate style={styles.form}>
+        <form
+          onSubmit={handleSubmitTotp(onTotpSubmit)}
+          noValidate
+          autoComplete="off"
+          style={styles.form}
+        >
           <Field label="Verification code" error={totpErrors.code?.message}>
             <input
               {...registerTotp('code')}

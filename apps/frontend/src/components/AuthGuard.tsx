@@ -42,7 +42,7 @@ export function AuthGuard({ children, requireHousehold = true }: AuthGuardProps)
         })
 
         if (!cancelled && households.length === 0) {
-          navigate(user.is_app_admin ? '/admin' : '/waiting', { replace: true })
+          navigate(user.is_app_admin ? '/onboarding' : '/waiting', { replace: true })
         }
       })
       .catch((err: unknown) => {
