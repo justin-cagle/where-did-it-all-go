@@ -829,113 +829,131 @@ async def answer_question(
 
     Returns AnswerResult with answer=None and a reason string if unavailable.
     Never routes through HITL — direct synchronous response.
+    Never raises — all errors are caught and returned as reason strings.
     """
-    provider, config = await get_active_provider(session, household_id, master_key)
-    if provider is None or config is None:
-        # Distinguish disabled vs unavailable
-        any_config_result = await session.execute(
-            sa.select(InsightProviderConfig).where(
-                InsightProviderConfig.household_id == household_id,
-                InsightProviderConfig.archived_at.is_(None),
+    try:
+        provider, config = await get_active_provider(session, household_id, master_key)
+        if provider is None or config is None:
+            # Distinguish disabled vs unavailable
+            any_config_result = await session.execute(
+                sa.select(InsightProviderConfig).where(
+                    InsightProviderConfig.household_id == household_id,
+                    InsightProviderConfig.archived_at.is_(None),
+                )
             )
+            has_any = any_config_result.scalar_one_or_none() is not None
+            if not has_any:
+                return AnswerResult(answer=None, provider_used=None, reason="disabled")
+            return AnswerResult(answer=None, provider_used=None, reason="no_provider")
+
+        budget_ok = await check_budget(session, household_id, estimated_tokens=500)
+        if not budget_ok:
+            return AnswerResult(answer=None, provider_used=None, reason="budget_exceeded")
+
+        rows = await session.execute(
+            sa.text(
+                """
+                SELECT
+                    c.name AS category,
+                    t.currency,
+                    SUM(t.amount) AS total,
+                    COUNT(*) AS cnt,
+                    t.direction
+                FROM transactions_transaction t
+                JOIN classification_category c ON c.id = t.category_id
+                WHERE t.household_id = :hh_id
+                  AND t.posted_date >= CURRENT_DATE - INTERVAL '90 days'
+                  AND t.archived_at IS NULL
+                GROUP BY c.name, t.currency, t.direction
+                ORDER BY total DESC
+                LIMIT 50
+                """
+            ),
+            {"hh_id": household_id},
         )
-        has_any = any_config_result.scalar_one_or_none() is not None
-        if not has_any:
+        cat_rows = rows.fetchall()
+
+        period_today = date.today()
+        template_vars: dict[str, Any] = {
+            "period": {"year": period_today.year, "month": period_today.month},
+            "categories": [
+                {
+                    "name": row.category,
+                    "total": str(row.total),
+                    "count": row.cnt,
+                    "currency": row.currency,
+                    "direction": row.direction,
+                    "change_pct": None,
+                }
+                for row in cat_rows
+            ],
+            "transactions": [],
+            "accounts": [],
+            "income_sources": [],
+            "patterns": {},
+            "household_name": "",
+        }
+
+        qa_template = _QA_TEMPLATE
+        sharing_level = config.ai_data_sharing
+        try:
+            redacted_vars = redact(template_vars, sharing_level, household_salt=str(household_id))
+        except RedactionError:
             return AnswerResult(answer=None, provider_used=None, reason="disabled")
-        return AnswerResult(answer=None, provider_used=None, reason="no_provider")
 
-    budget_ok = await check_budget(session, household_id, estimated_tokens=500)
-    if not budget_ok:
-        return AnswerResult(answer=None, provider_used=None, reason="budget_exceeded")
+        rendered_data = json.dumps(redacted_vars, default=str, indent=2)
+        prompt = qa_template.format(data=rendered_data, question=question)
+        prompt_fingerprint = hashlib.sha256(prompt.encode()).hexdigest()
+        model_name = provider.get_model_name()
 
-    rows = await session.execute(
-        sa.text(
-            """
-            SELECT
-                c.name AS category,
-                t.currency,
-                SUM(t.amount) AS total,
-                COUNT(*) AS cnt,
-                t.direction
-            FROM transactions_transaction t
-            JOIN classification_category c ON c.id = t.category_id
-            WHERE t.household_id = :hh_id
-              AND t.posted_date >= CURRENT_DATE - INTERVAL '90 days'
-              AND t.archived_at IS NULL
-            GROUP BY c.name, t.currency, t.direction
-            ORDER BY total DESC
-            LIMIT 50
-            """
-        ),
-        {"hh_id": household_id},
-    )
-    cat_rows = rows.fetchall()
+        start = time.monotonic()
+        result: CompletionResult | None = None
+        error_detail: str | None = None
 
-    period_today = date.today()
-    template_vars: dict[str, Any] = {
-        "period": {"year": period_today.year, "month": period_today.month},
-        "categories": [
-            {
-                "name": row.category,
-                "total": str(row.total),
-                "count": row.cnt,
-                "currency": row.currency,
-                "direction": row.direction,
-                "change_pct": None,
-            }
-            for row in cat_rows
-        ],
-        "transactions": [],
-        "accounts": [],
-        "income_sources": [],
-        "patterns": {},
-        "household_name": "",
-    }
+        try:
+            result = await provider.complete(prompt, _SYSTEM_PROMPT, 1024)
+        except Exception as exc:
+            error_detail = str(exc)
+            logger.warning(
+                "insights.qa.provider_error",
+                household_id=str(household_id),
+                error=str(exc),
+            )
 
-    qa_template = _QA_TEMPLATE
-    sharing_level = config.ai_data_sharing
-    try:
-        redacted_vars = redact(template_vars, sharing_level, household_salt=str(household_id))
-    except RedactionError:
-        return AnswerResult(answer=None, provider_used=None, reason="disabled")
+        duration_ms = int((time.monotonic() - start) * 1000)
+        await _record_audit_and_update_budget(
+            session,
+            household_id=household_id,
+            config=config,
+            model_name=model_name,
+            prompt_template=qa_template,
+            prompt_fingerprint=prompt_fingerprint,
+            result=result,
+            insight_category=InsightCategory.QA,
+            duration_ms=duration_ms,
+            error_detail=error_detail,
+        )
 
-    rendered_data = json.dumps(redacted_vars, default=str, indent=2)
-    prompt = qa_template.format(data=rendered_data, question=question)
-    prompt_fingerprint = hashlib.sha256(prompt.encode()).hexdigest()
-    model_name = provider.get_model_name()
+        if result is None:
+            return AnswerResult(answer=None, provider_used=model_name, reason="no_provider")
 
-    start = time.monotonic()
-    result: CompletionResult | None = None
-    error_detail: str | None = None
+        return AnswerResult(answer=result.text, provider_used=model_name, reason=None)
 
-    try:
-        result = await provider.complete(prompt, _SYSTEM_PROMPT, 1024)
     except Exception as exc:
-        error_detail = str(exc)
-        logger.warning(
-            "insights.qa.provider_error",
+        logger.error(
+            "insights.qa.unexpected_error",
             household_id=str(household_id),
             error=str(exc),
         )
-
-    duration_ms = int((time.monotonic() - start) * 1000)
-    await _record_audit_and_update_budget(
-        session,
-        household_id=household_id,
-        config=config,
-        model_name=model_name,
-        prompt_template=qa_template,
-        prompt_fingerprint=prompt_fingerprint,
-        result=result,
-        insight_category=InsightCategory.QA,
-        duration_ms=duration_ms,
-        error_detail=error_detail,
-    )
-
-    if result is None:
-        return AnswerResult(answer=None, provider_used=model_name, reason="no_provider")
-
-    return AnswerResult(answer=result.text, provider_used=model_name, reason=None)
+        try:
+            await session.rollback()
+        except Exception as rollback_exc:
+            logger.warning(
+                "insights.qa.rollback_failed",
+                household_id=str(household_id),
+                error=str(rollback_exc),
+            )
+        return AnswerResult(answer=None, provider_used=None, reason="no_provider")
 
 
 # ---------------------------------------------------------------------------
