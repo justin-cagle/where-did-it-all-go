@@ -117,8 +117,14 @@ class AuditLogOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class ConversationTurn(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., min_length=1, max_length=4000)
+
+
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
+    history: list[ConversationTurn] = Field(default_factory=lambda: [], max_length=20)
 
 
 class AskResponse(BaseModel):

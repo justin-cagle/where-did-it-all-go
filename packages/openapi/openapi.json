@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.27"
+    "version": "0.2.28"
   },
   "paths": {
     "/api/v1/auth/register": {
@@ -12637,6 +12637,14 @@
             "maxLength": 2000,
             "minLength": 1,
             "title": "Question"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurn"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "History"
           }
         },
         "type": "object",
@@ -14864,6 +14872,24 @@
         "type": "string",
         "enum": ["manual", "tag_driven", "recurring_rule"],
         "title": "ContributionType"
+      },
+      "ConversationTurn": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "pattern": "^(user|assistant)$",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": ["role", "content"],
+        "title": "ConversationTurn"
       },
       "CreateInvitationRequest": {
         "properties": {

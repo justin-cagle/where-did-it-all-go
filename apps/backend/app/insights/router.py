@@ -460,6 +460,7 @@ async def ask(
         session,
         household_id=household_id,
         question=body.question,
+        history=[{"role": t.role, "content": t.content} for t in body.history],
         master_key=settings.master_key,
     )
     await session.commit()

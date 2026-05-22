@@ -12,6 +12,24 @@ from app.insights.providers.base import CompletionResult, InsightProvider
 
 _DEFAULT_MODEL = "gpt-4o-mini"
 
+# USD per million tokens (input, output). Models not listed default to $0.
+_PRICING: dict[str, tuple[Decimal, Decimal]] = {
+    "gpt-4o-mini": (Decimal("0.15"), Decimal("0.60")),
+    "gpt-4o": (Decimal("2.50"), Decimal("10.00")),
+    "gpt-4-turbo": (Decimal("10.00"), Decimal("30.00")),
+    "gpt-4": (Decimal("30.00"), Decimal("60.00")),
+}
+
+_MILLION = Decimal("1000000")
+
+
+def _calc_cost(model: str, tokens_in: int, tokens_out: int) -> Decimal:
+    price = _PRICING.get(model)
+    if price is None:
+        return Decimal("0")
+    in_price, out_price = price
+    return (in_price * tokens_in + out_price * tokens_out) / _MILLION
+
 
 class OpenAIProvider(InsightProvider):
     """Wraps the OpenAI Chat Completions API.
@@ -50,11 +68,12 @@ class OpenAIProvider(InsightProvider):
             max_tokens=max_tokens,
         )
         text = str(response.choices[0].message.content or "")
-        tokens_used = int(response.usage.total_tokens) if response.usage else 0
+        tokens_in = int(response.usage.prompt_tokens) if response.usage else 0
+        tokens_out = int(response.usage.completion_tokens) if response.usage else 0
         return CompletionResult(
             text=text,
-            tokens_used=tokens_used,
-            cost=Decimal("0"),  # pricing wired in future iteration
+            tokens_used=tokens_in + tokens_out,
+            cost=_calc_cost(self._model, tokens_in, tokens_out),
         )
 
     async def is_available(self) -> bool:

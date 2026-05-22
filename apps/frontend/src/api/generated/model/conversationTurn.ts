@@ -6,4 +6,12 @@
  * OpenAPI spec version: 0.2.28
  */
 
-export type RuleActionSchemaCategoryId = string | null
+export interface ConversationTurn {
+  /** @pattern ^(user|assistant)$ */
+  role: string
+  /**
+   * @minLength 1
+   * @maxLength 4000
+   */
+  content: string
+}

@@ -101,7 +101,7 @@ _QA_TEMPLATE = """\
 Financial data summary:
 
 {data}
-
+{history_block}
 User question: {question}
 
 Answer the question based only on the provided data. Be concise and factual."""
@@ -824,6 +824,7 @@ async def answer_question(
     household_id: uuid.UUID,
     question: str,
     master_key: str,
+    history: list[dict[str, str]] | None = None,
 ) -> AnswerResult:
     """Synchronous Q&A: answer a natural language question about the household's finances.
 
@@ -905,7 +906,16 @@ async def answer_question(
             return AnswerResult(answer=None, provider_used=None, reason="disabled")
 
         rendered_data = json.dumps(redacted_vars, default=str, indent=2)
-        prompt = qa_template.format(data=rendered_data, question=question)
+        history_block = ""
+        if history:
+            lines: list[str] = []
+            for turn in history:
+                label = "User" if turn["role"] == "user" else "Assistant"
+                lines.append(f"{label}: {turn['content']}")
+            history_block = "\nConversation so far:\n" + "\n".join(lines) + "\n"
+        prompt = qa_template.format(
+            data=rendered_data, question=question, history_block=history_block
+        )
         prompt_fingerprint = hashlib.sha256(prompt.encode()).hexdigest()
         model_name = provider.get_model_name()
 
