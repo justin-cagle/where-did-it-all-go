@@ -1175,7 +1175,7 @@ function TokenBudgetSection({ householdId, currency }: { householdId: string; cu
           This month:{' '}
           <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg-primary)' }}>
             {budget.tokens_used.toLocaleString()} tokens /{' '}
-            {formatAmount(parseFloat(budget.cost_used), { currency })}
+            {formatAmount(parseFloat(budget.cost_used), { currency, fractionDigits: 4 })}
           </span>
         </div>
       )}

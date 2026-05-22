@@ -851,7 +851,7 @@ function TokenBudgetWidget({
             <div
               style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--fg-primary)' }}
             >
-              {formatAmount(costUsed, { currency })}
+              {formatAmount(costUsed, { currency, fractionDigits: 4 })}
             </div>
           </div>
           <div>
