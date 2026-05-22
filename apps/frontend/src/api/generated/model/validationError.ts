@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.20
+ * OpenAPI spec version: 0.2.21
  */
 import type { ValidationErrorLocItem } from './validationErrorLocItem'
 import type { ValidationErrorCtx } from './validationErrorCtx'
