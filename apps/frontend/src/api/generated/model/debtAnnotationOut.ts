@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.30
+ * OpenAPI spec version: 0.2.31
  */
 import type { DebtAnnotationOutStatementDay } from './debtAnnotationOutStatementDay'
 import type { DebtAnnotationOutDueDay } from './debtAnnotationOutDueDay'
