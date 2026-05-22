@@ -29,8 +29,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy application source
 COPY . .
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 8000
 
-# Default command: run the FastAPI application.
-# Workers override this in docker-compose.yml.
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
