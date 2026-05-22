@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/store'
+import { useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet } from '@/api/generated/insights/insights'
+import { useHousehold } from '@/hooks/use-household'
 
 const PRIMARY_ITEMS = [
   { to: '/dashboard', label: 'Overview', icon: DashboardIcon },
@@ -21,6 +23,14 @@ const MORE_ITEMS = [
 export function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false)
   const isAdmin = useAuthStore((s) => s.currentUser?.is_app_admin ?? false)
+  const { householdId } = useHousehold()
+  const hid = householdId ?? ''
+  const { data: providers = [] } = useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet(
+    hid,
+    { query: { staleTime: 300_000, enabled: !!hid } }
+  )
+  const showInsights = isAdmin || (providers as { id: string }[]).length > 0
+  const moreItems = MORE_ITEMS.filter(({ to }) => to !== '/insights' || showInsights)
 
   return (
     <>
@@ -78,7 +88,7 @@ export function BottomNav() {
               <span>Admin</span>
             </NavLink>
           )}
-          {MORE_ITEMS.map(({ to, label, icon: Icon }) => (
+          {moreItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

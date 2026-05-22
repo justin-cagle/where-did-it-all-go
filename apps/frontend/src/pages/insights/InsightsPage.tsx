@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Send, Loader, Sparkles, CheckCircle, XCircle, AlertTriangle, Settings } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { useAuthStore } from '@/store'
 import {
   useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet,
   useAskApiV1HouseholdsHouseholdIdInsightsAskPost,
@@ -23,7 +24,7 @@ import type { RecommendationOut } from '@/api/generated/model/recommendationOut'
 import type { AskResponse } from '@/api/generated/model/askResponse'
 import { NavLink } from 'react-router-dom'
 
-const SETTINGS_LINK = '/settings/insights'
+const ADMIN_AI_LINK = '/admin/ai'
 
 interface QAItem {
   id: string
@@ -118,6 +119,21 @@ function ProviderChip({
           style={{ animation: 'spin 1s linear infinite', color: 'var(--warning)' }}
         />
       )}
+      {status.state === 'unreachable' && (
+        <span
+          style={{
+            fontSize: 11,
+            color: 'var(--danger)',
+            maxWidth: 140,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={status.error}
+        >
+          {status.error}
+        </span>
+      )}
     </button>
   )
 }
@@ -138,7 +154,7 @@ function ProviderStatusBar({
         <ProviderChip key={p.id} provider={p} householdId={householdId} />
       ))}
       <NavLink
-        to={SETTINGS_LINK}
+        to={ADMIN_AI_LINK}
         style={{
           fontSize: 12,
           color: 'var(--accent)',
@@ -153,16 +169,24 @@ function ProviderStatusBar({
 }
 
 function QAErrorMessage({ errorType, error }: { errorType: string | null; error: string | null }) {
+  const isAdmin = useAuthStore((s) => s.currentUser?.is_app_admin ?? false)
   if (!error && !errorType) return null
+
+  const adminLink = isAdmin ? (
+    <>
+      {' '}
+      Check your provider configuration in{' '}
+      <NavLink to={ADMIN_AI_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+        Admin &rarr; AI
+      </NavLink>
+      .
+    </>
+  ) : null
 
   if (errorType === 'no_provider' || (error && error.includes('no_provider'))) {
     return (
       <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
-        No AI provider is available. Check your provider configuration in{' '}
-        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-          Settings &rarr; AI
-        </NavLink>
-        .
+        No AI provider is available.{adminLink}
       </div>
     )
   }
@@ -170,11 +194,7 @@ function QAErrorMessage({ errorType, error }: { errorType: string | null; error:
   if (errorType === 'budget_exceeded' || (error && error.includes('budget_exceeded'))) {
     return (
       <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
-        Monthly token budget reached. Adjust your budget in{' '}
-        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-          Settings &rarr; AI
-        </NavLink>
-        .
+        Monthly token budget reached.{adminLink}
       </div>
     )
   }
@@ -182,11 +202,7 @@ function QAErrorMessage({ errorType, error }: { errorType: string | null; error:
   if (errorType === 'disabled' || (error && error.includes('disabled'))) {
     return (
       <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
-        AI insights are disabled. Add a provider in{' '}
-        <NavLink to={SETTINGS_LINK} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-          Settings &rarr; AI
-        </NavLink>
-        .
+        AI insights are disabled.{adminLink}
       </div>
     )
   }
@@ -711,7 +727,15 @@ function InsightCard({
   )
 }
 
-function TokenBudgetWidget({ householdId, currency }: { householdId: string; currency: string }) {
+function TokenBudgetWidget({
+  householdId,
+  currency,
+  isAdmin,
+}: {
+  householdId: string
+  currency: string
+  isAdmin: boolean
+}) {
   const { data: budget } = useGetBudgetApiV1HouseholdsHouseholdIdInsightsBudgetGet(householdId, {
     query: { enabled: !!householdId },
   })
@@ -746,12 +770,14 @@ function TokenBudgetWidget({ householdId, currency }: { householdId: string; cur
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-primary)' }}>
           Token budget
         </div>
-        <NavLink
-          to={SETTINGS_LINK}
-          style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
-        >
-          Edit limits
-        </NavLink>
+        {isAdmin && (
+          <NavLink
+            to={ADMIN_AI_LINK}
+            style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+          >
+            Edit limits
+          </NavLink>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -937,6 +963,7 @@ export function InsightsPage() {
   const { household, householdId } = useHousehold()
   const hid = householdId ?? ''
   const qc = useQueryClient()
+  const isAdmin = useAuthStore((s) => s.currentUser?.is_app_admin ?? false)
 
   const { data: providers = [] } = useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet(
     hid,
@@ -1005,27 +1032,31 @@ export function InsightsPage() {
             No AI provider configured
           </div>
           <div style={{ fontSize: 13, color: 'var(--fg-muted)', maxWidth: 360 }}>
-            No AI provider configured &mdash; add one in Settings to get started.
+            {isAdmin
+              ? 'Add an AI provider in Admin → AI to get started.'
+              : 'Contact your instance administrator to configure an AI provider.'}
           </div>
-          <NavLink
-            to={SETTINGS_LINK}
-            style={{
-              marginTop: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 18px',
-              background: 'var(--accent)',
-              color: 'var(--accent-fg)',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              textDecoration: 'none',
-            }}
-          >
-            <Settings size={14} />
-            Go to Settings &rarr;
-          </NavLink>
+          {isAdmin && (
+            <NavLink
+              to={ADMIN_AI_LINK}
+              style={{
+                marginTop: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 18px',
+                background: 'var(--accent)',
+                color: 'var(--accent-fg)',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: 'none',
+              }}
+            >
+              <Settings size={14} />
+              Go to Admin &rarr; AI
+            </NavLink>
+          )}
         </div>
       </div>
     )
@@ -1080,19 +1111,21 @@ export function InsightsPage() {
           >
             <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
             <span style={{ color: 'var(--fg-secondary)', flex: 1 }}>
-              AI is unavailable &mdash; check your provider configuration.
+              AI is unavailable &mdash; all providers are disabled.
             </span>
-            <NavLink
-              to={SETTINGS_LINK}
-              style={{
-                fontSize: 12,
-                color: 'var(--accent)',
-                textDecoration: 'none',
-                flexShrink: 0,
-              }}
-            >
-              Settings &rarr;
-            </NavLink>
+            {isAdmin && (
+              <NavLink
+                to={ADMIN_AI_LINK}
+                style={{
+                  fontSize: 12,
+                  color: 'var(--accent)',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                }}
+              >
+                Admin &rarr; AI
+              </NavLink>
+            )}
           </div>
         )}
 
@@ -1120,7 +1153,7 @@ export function InsightsPage() {
           )}
         </div>
 
-        <TokenBudgetWidget householdId={hid} currency={currency} />
+        <TokenBudgetWidget householdId={hid} currency={currency} isAdmin={isAdmin} />
       </div>
     </div>
   )

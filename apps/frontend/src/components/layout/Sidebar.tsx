@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
+import { useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet } from '@/api/generated/insights/insights'
+import { useHousehold } from '@/hooks/use-household'
 import { useVersionCheck } from '@/hooks/use-version'
 
 interface SidebarProps {
@@ -27,6 +29,14 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
     query: { staleTime: 60_000, enabled: isAdmin },
   })
   const unassigned = isAdmin ? (overview?.unassigned_user_count ?? 0) : 0
+
+  const { householdId } = useHousehold()
+  const hid = householdId ?? ''
+  const { data: providers = [] } = useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet(
+    hid,
+    { query: { staleTime: 300_000, enabled: !!hid } }
+  )
+  const showInsights = isAdmin || (providers as { id: string }[]).length > 0
 
   const { status: versionStatus } = useVersionCheck()
   const updateAvailable = versionStatus?.updateAvailable ?? false
@@ -101,31 +111,33 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
 
       {/* Nav items */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '8px 10px',
-              borderRadius: 6,
-              background: isActive
-                ? 'color-mix(in oklch, var(--accent) 10%, transparent)'
-                : 'transparent',
-              color: isActive ? 'var(--accent)' : 'var(--fg-secondary)',
-              textDecoration: 'none',
-              fontSize: 13,
-              fontWeight: isActive ? 500 : 400,
-              transition: 'background 0.1s, color 0.1s',
-              whiteSpace: 'nowrap',
-            })}
-          >
-            <Icon />
-            {!compact && <span>{label}</span>}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.filter(({ to }) => to !== '/insights' || showInsights).map(
+          ({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: 6,
+                background: isActive
+                  ? 'color-mix(in oklch, var(--accent) 10%, transparent)'
+                  : 'transparent',
+                color: isActive ? 'var(--accent)' : 'var(--fg-secondary)',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: isActive ? 500 : 400,
+                transition: 'background 0.1s, color 0.1s',
+                whiteSpace: 'nowrap',
+              })}
+            >
+              <Icon />
+              {!compact && <span>{label}</span>}
+            </NavLink>
+          )
+        )}
       </div>
 
       {/* Bottom: admin (if admin) + settings + compact toggle */}
