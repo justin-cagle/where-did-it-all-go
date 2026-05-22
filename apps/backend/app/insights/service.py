@@ -906,39 +906,6 @@ async def answer_question(
         prompt_fingerprint = hashlib.sha256(prompt.encode()).hexdigest()
         model_name = provider.get_model_name()
 
-        start = time.monotonic()
-        result: CompletionResult | None = None
-        error_detail: str | None = None
-
-        try:
-            result = await provider.complete(prompt, _SYSTEM_PROMPT, 1024)
-        except Exception as exc:
-            error_detail = str(exc)
-            logger.warning(
-                "insights.qa.provider_error",
-                household_id=str(household_id),
-                error=str(exc),
-            )
-
-        duration_ms = int((time.monotonic() - start) * 1000)
-        await _record_audit_and_update_budget(
-            session,
-            household_id=household_id,
-            config=config,
-            model_name=model_name,
-            prompt_template=qa_template,
-            prompt_fingerprint=prompt_fingerprint,
-            result=result,
-            insight_category=InsightCategory.QA,
-            duration_ms=duration_ms,
-            error_detail=error_detail,
-        )
-
-        if result is None:
-            return AnswerResult(answer=None, provider_used=model_name, reason="no_provider")
-
-        return AnswerResult(answer=result.text, provider_used=model_name, reason=None)
-
     except Exception as exc:
         logger.error(
             "insights.qa.unexpected_error",
@@ -954,6 +921,57 @@ async def answer_question(
                 error=str(rollback_exc),
             )
         return AnswerResult(answer=None, provider_used=None, reason="no_provider")
+
+    # Phase 2: LLM call — separate from setup so audit failures don't discard results
+    start = time.monotonic()
+    result: CompletionResult | None = None
+    error_detail: str | None = None
+
+    try:
+        result = await provider.complete(prompt, _SYSTEM_PROMPT, 1024)
+    except Exception as exc:
+        error_detail = str(exc)
+        logger.warning(
+            "insights.qa.provider_error",
+            household_id=str(household_id),
+            error=str(exc),
+        )
+
+    duration_ms = int((time.monotonic() - start) * 1000)
+
+    # Phase 3: Audit log — failure is logged but does not discard the LLM result
+    try:
+        await _record_audit_and_update_budget(
+            session,
+            household_id=household_id,
+            config=config,
+            model_name=model_name,
+            prompt_template=qa_template,
+            prompt_fingerprint=prompt_fingerprint,
+            result=result,
+            insight_category=InsightCategory.QA,
+            duration_ms=duration_ms,
+            error_detail=error_detail,
+        )
+    except Exception as exc:
+        logger.error(
+            "insights.qa.audit_error",
+            household_id=str(household_id),
+            error=str(exc),
+        )
+        try:
+            await session.rollback()
+        except Exception as rollback_exc:
+            logger.warning(
+                "insights.qa.rollback_failed",
+                household_id=str(household_id),
+                error=str(rollback_exc),
+            )
+
+    if result is None:
+        return AnswerResult(answer=None, provider_used=model_name, reason="no_provider")
+
+    return AnswerResult(answer=result.text, provider_used=model_name, reason=None)
 
 
 # ---------------------------------------------------------------------------
