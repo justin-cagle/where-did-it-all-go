@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { customInstance } from '@/api/client'
@@ -195,8 +194,6 @@ interface AdminShellProps {
 }
 
 export function AdminShell({ children }: AdminShellProps) {
-  const isMobile = useIsMobile()
-
   return (
     <div style={{ display: 'flex', height: '100dvh', background: A.bg, overflow: 'hidden' }}>
       <AdminSidebar />
@@ -383,15 +380,4 @@ function AdminSidebar() {
       </div>
     </nav>
   )
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  return isMobile
 }
