@@ -354,15 +354,36 @@ function QAHistory({
   )
 }
 
+const QA_STORAGE_KEY = (hid: string) => `qa_history_${hid}`
+
 function AskSection({ householdId }: { householdId: string }) {
   const [question, setQuestion] = useState('')
-  const [history, setHistory] = useState<QAItem[]>([])
+  const [history, setHistory] = useState<QAItem[]>(() => {
+    try {
+      const stored = sessionStorage.getItem(QA_STORAGE_KEY(householdId))
+      if (!stored) return []
+      return (JSON.parse(stored) as QAItem[]).map((x) => ({ ...x, loading: false }))
+    } catch {
+      return []
+    }
+  })
   const [inlineError, setInlineError] = useState<{ msg: string; type: string | null } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showLongWait, setShowLongWait] = useState(false)
   const qc = useQueryClient()
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        QA_STORAGE_KEY(householdId),
+        JSON.stringify(history.filter((x) => !x.loading))
+      )
+    } catch {
+      // sessionStorage unavailable — silently skip
+    }
+  }, [history, householdId])
 
   const ask = useAskApiV1HouseholdsHouseholdIdInsightsAskPost()
 
@@ -566,7 +587,14 @@ function AskSection({ householdId }: { householdId: string }) {
         <div style={{ padding: '16px 20px' }}>
           <QAHistory
             items={history}
-            onClear={() => setHistory([])}
+            onClear={() => {
+              setHistory([])
+              try {
+                sessionStorage.removeItem(QA_STORAGE_KEY(householdId))
+              } catch {
+                /* sessionStorage unavailable */
+              }
+            }}
             onRetry={(q) => void handleSubmit(q)}
           />
         </div>
@@ -884,6 +912,7 @@ function GenerateSection({ householdId, recCount }: { householdId: string; recCo
   const generate = useTriggerGenerateApiV1HouseholdsHouseholdIdInsightsGeneratePost()
   const [disabledUntil, setDisabledUntil] = useState<number | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const qc = useQueryClient()
 
   const isDisabled = generate.isPending || (disabledUntil !== null && Date.now() < disabledUntil)
 
@@ -892,6 +921,14 @@ function GenerateSection({ householdId, recCount }: { householdId: string; recCo
     try {
       await generate.mutateAsync({ householdId })
       setDisabledUntil(Date.now() + 60000)
+      // Background job — poll for results at increasing intervals
+      for (const delay of [5000, 15000, 30000, 60000]) {
+        setTimeout(() => {
+          void qc.invalidateQueries({
+            queryKey: [`/api/v1/households/${householdId}/recommendations`],
+          })
+        }, delay)
+      }
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Failed to start generation')
     }
