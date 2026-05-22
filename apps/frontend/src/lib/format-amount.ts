@@ -29,10 +29,18 @@ export interface FormatAmountOptions {
   privacyMode?: PrivacyMode
   /** Use compact notation (1.2k, 5.3M) — for chart axis labels only. */
   compact?: boolean
+  /** Override fraction digits (sets both min and max). Use 4 for sub-cent cost display. */
+  fractionDigits?: number
 }
 
 export function formatAmount(amount: number | string, options: FormatAmountOptions = {}): string {
-  const { locale = 'en-US', currency = 'USD', privacyMode = 'off', compact = false } = options
+  const {
+    locale = 'en-US',
+    currency = 'USD',
+    privacyMode = 'off',
+    compact = false,
+    fractionDigits,
+  } = options
 
   if (privacyMode === 'full_blur') {
     return '••••'
@@ -44,6 +52,9 @@ export function formatAmount(amount: number | string, options: FormatAmountOptio
     style: 'currency',
     currency,
     ...(compact ? { notation: 'compact', maximumSignificantDigits: 3 } : {}),
+    ...(fractionDigits != null
+      ? { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }
+      : {}),
   })
 
   if (privacyMode === 'partial_blur') {
