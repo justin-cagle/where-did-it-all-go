@@ -3,12 +3,15 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.18"
+    "version": "0.2.19"
   },
   "paths": {
     "/api/v1/auth/register": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Register",
         "description": "Register a new user with local credentials.\n\nReturns a RegisterResponse with has_household and redirect routing hints.\nReturns RFC 9457 Problem Details (403) if registration is blocked.",
         "operationId": "register_api_v1_auth_register_post",
@@ -48,7 +51,10 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Login",
         "description": "Authenticate with local credentials and receive session cookies.",
         "operationId": "login_api_v1_auth_login_post",
@@ -88,7 +94,10 @@
     },
     "/api/v1/auth/refresh": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Refresh",
         "description": "Rotate the refresh token (sliding-window idle timeout).",
         "operationId": "refresh_api_v1_auth_refresh_post",
@@ -108,7 +117,10 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Logout",
         "description": "Revoke all refresh tokens for the current user and clear cookies.",
         "operationId": "logout_api_v1_auth_logout_post",
@@ -121,7 +133,10 @@
     },
     "/api/v1/auth/step-up": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Step Up",
         "description": "Grant step-up elevation for App Admin actions (5-minute window).",
         "operationId": "step_up_api_v1_auth_step_up_post",
@@ -161,7 +176,10 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Me",
         "description": "Return the authenticated user's profile.",
         "operationId": "me_api_v1_auth_me_get",
@@ -179,7 +197,10 @@
         }
       },
       "patch": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Update Me",
         "description": "Update the authenticated user's display_name.",
         "operationId": "update_me_api_v1_auth_me_patch",
@@ -219,7 +240,10 @@
     },
     "/api/v1/auth/totp/setup": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Totp Setup",
         "description": "Begin TOTP enrollment \u2014 returns a provisioning URI and raw secret for QR-code display.",
         "operationId": "totp_setup_api_v1_auth_totp_setup_post",
@@ -239,7 +263,10 @@
     },
     "/api/v1/auth/totp/confirm": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Totp Confirm",
         "description": "Confirm TOTP enrollment with the first generated code.",
         "operationId": "totp_confirm_api_v1_auth_totp_confirm_post",
@@ -272,7 +299,10 @@
     },
     "/api/v1/auth/totp/disable": {
       "delete": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Totp Disable",
         "description": "Disable TOTP for the current user.",
         "operationId": "totp_disable_api_v1_auth_totp_disable_delete",
@@ -285,7 +315,10 @@
     },
     "/api/v1/auth/sessions": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "List Sessions",
         "description": "Return all active refresh tokens (sessions) for the current user.",
         "operationId": "list_sessions_api_v1_auth_sessions_get",
@@ -309,7 +342,10 @@
     },
     "/api/v1/auth/sessions/{token_id}": {
       "delete": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Revoke Session",
         "description": "Revoke a specific refresh token (session) for the current user.",
         "operationId": "revoke_session_api_v1_auth_sessions__token_id__delete",
@@ -344,7 +380,10 @@
     },
     "/api/v1/auth/change-password": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Change Password",
         "description": "Change the current user's password. Revokes all active sessions.",
         "operationId": "change_password_api_v1_auth_change_password_post",
@@ -377,7 +416,10 @@
     },
     "/api/v1/households": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "List Households",
         "description": "List all households the current user is a member of.",
         "operationId": "list_households_api_v1_households_get",
@@ -399,7 +441,10 @@
         }
       },
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Create Household",
         "description": "Create a new household. The creator becomes the owner.",
         "operationId": "create_household_api_v1_households_post",
@@ -439,7 +484,10 @@
     },
     "/api/v1/households/{household_id}": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Get Household",
         "description": "Return household details (actor must be a member).",
         "operationId": "get_household_api_v1_households__household_id__get",
@@ -479,7 +527,10 @@
         }
       },
       "patch": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Update Household",
         "description": "Update household settings (actor must be owner).\n\nWhen home_currency changes, enqueues recompute_fx_conversions_job and\nreturns recompute_started=true. Clients should show a recalculating banner\nuntil the fx_recompute_complete SSE event is received.",
         "operationId": "update_household_api_v1_households__household_id__patch",
@@ -529,7 +580,10 @@
         }
       },
       "delete": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Archive Household",
         "description": "Soft-delete (archive) a household (actor must be owner).",
         "operationId": "archive_household_api_v1_households__household_id__delete",
@@ -564,7 +618,10 @@
     },
     "/api/v1/households/{household_id}/members": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "List Members",
         "description": "List all active members of the household.",
         "operationId": "list_members_api_v1_households__household_id__members_get",
@@ -608,7 +665,10 @@
         }
       },
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Add Member",
         "description": "Add a user to the household (requires step-up auth + App Admin).",
         "operationId": "add_member_api_v1_households__household_id__members_post",
@@ -660,7 +720,10 @@
     },
     "/api/v1/households/{household_id}/members/{user_id}": {
       "delete": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Remove Member",
         "description": "Remove a member from the household (requires step-up auth + App Admin).",
         "operationId": "remove_member_api_v1_households__household_id__members__user_id__delete",
@@ -705,7 +768,10 @@
     },
     "/api/v1/households/{household_id}/invitations/": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Create Invitation",
         "description": "Create a household invitation (owner or app_admin).",
         "operationId": "create_invitation_api_v1_households__household_id__invitations__post",
@@ -755,7 +821,10 @@
         }
       },
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "List Invitations",
         "description": "List invitations for this household (owner or app_admin).",
         "operationId": "list_invitations_api_v1_households__household_id__invitations__get",
@@ -817,7 +886,10 @@
     },
     "/api/v1/households/{household_id}/invitations/{invitation_id}/resend": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Resend Invitation",
         "description": "Reset invite expiry and reattempt email delivery (owner or app_admin).",
         "operationId": "resend_invitation_api_v1_households__household_id__invitations__invitation_id__resend_post",
@@ -869,7 +941,10 @@
     },
     "/api/v1/households/{household_id}/invitations/{invitation_id}/revoke": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Revoke Invitation",
         "description": "Revoke a pending invitation (owner or app_admin).",
         "operationId": "revoke_invitation_api_v1_households__household_id__invitations__invitation_id__revoke_post",
@@ -921,7 +996,10 @@
     },
     "/api/v1/invitations/{token}": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Get Invitation Metadata",
         "description": "Return public invitation metadata. Token is NOT included in response.",
         "operationId": "get_invitation_metadata_api_v1_invitations__token__get",
@@ -962,7 +1040,10 @@
     },
     "/api/v1/invitations/{token}/accept": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Accept Invitation",
         "description": "Accept an invitation. Requires authentication; validates email match.",
         "operationId": "accept_invitation_api_v1_invitations__token__accept_post",
@@ -1003,7 +1084,10 @@
     },
     "/api/v1/invitations/{token}/decline": {
       "post": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Decline Invitation",
         "description": "Decline an invitation. No email match required.",
         "operationId": "decline_invitation_api_v1_invitations__token__decline_post",
@@ -1037,7 +1121,10 @@
     },
     "/api/v1/settings/smtp-status": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Get Smtp Status",
         "description": "Return SMTP configuration status (no auth required, non-sensitive).\n\nChecks DB-stored config first, then falls back to env-var SMTP settings.",
         "operationId": "get_smtp_status_api_v1_settings_smtp_status_get",
@@ -1057,7 +1144,10 @@
     },
     "/api/v1/settings/registration": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Get Registration Settings",
         "description": "Return public registration configuration.\n\nNo authentication required \u2014 used by RegisterPage and WaitingPage.",
         "operationId": "get_registration_settings_api_v1_settings_registration_get",
@@ -1079,7 +1169,10 @@
     },
     "/api/v1/households/events": {
       "get": {
-        "tags": ["households", "auth"],
+        "tags": [
+          "households",
+          "auth"
+        ],
         "summary": "Household Events",
         "description": "Server-Sent Events stream for household-level notifications.\n\nEmits events: household_assigned, read_only_changed.\nKeepalive comment every 30s to prevent proxy timeouts.",
         "operationId": "household_events_api_v1_households_events_get",
@@ -1097,7 +1190,9 @@
     },
     "/api/v1/households/{household_id}/audit/": {
       "get": {
-        "tags": ["audit"],
+        "tags": [
+          "audit"
+        ],
         "summary": "List Household Audit Log",
         "description": "Paginated audit log for the household, newest first.",
         "operationId": "list_household_audit_log_api_v1_households__household_id__audit__get",
@@ -1250,7 +1345,9 @@
     },
     "/api/v1/households/{household_id}/audit/entities/{entity_type}/{entity_id}": {
       "get": {
-        "tags": ["audit"],
+        "tags": [
+          "audit"
+        ],
         "summary": "Get Entity Audit History",
         "description": "Full audit history for a specific entity, oldest first.",
         "operationId": "get_entity_audit_history_api_v1_households__household_id__audit_entities__entity_type___entity_id__get",
@@ -1315,7 +1412,9 @@
     },
     "/api/v1/households/{household_id}/audit/entities/{entity_type}/{entity_id}/state": {
       "get": {
-        "tags": ["audit"],
+        "tags": [
+          "audit"
+        ],
         "summary": "Get Entity Reconstructed State",
         "description": "Reconstruct entity state by replaying RFC 6902 patches from the audit log.",
         "operationId": "get_entity_reconstructed_state_api_v1_households__household_id__audit_entities__entity_type___entity_id__state_get",
@@ -1393,7 +1492,9 @@
     },
     "/api/v1/households/{household_id}/audit/{event_id}/reversals": {
       "get": {
-        "tags": ["audit"],
+        "tags": [
+          "audit"
+        ],
         "summary": "Get Reversal Chain",
         "description": "Return the root event and all reversal events linked via source_event_id.",
         "operationId": "get_reversal_chain_api_v1_households__household_id__audit__event_id__reversals_get",
@@ -1449,7 +1550,9 @@
     },
     "/api/v1/households/{household_id}/accounts/": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "List Accounts",
         "description": "List accounts in the household, optionally filtered by type or manual flag.",
         "operationId": "list_accounts_api_v1_households__household_id__accounts__get",
@@ -1525,7 +1628,9 @@
         }
       },
       "post": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Create Account",
         "description": "Create a new account.",
         "operationId": "create_account_api_v1_households__household_id__accounts__post",
@@ -1577,7 +1682,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Get Account",
         "description": "Return account details.",
         "operationId": "get_account_api_v1_households__household_id__accounts__account_id__get",
@@ -1627,7 +1734,9 @@
         }
       },
       "patch": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Update Account",
         "description": "Update account name or balance.",
         "operationId": "update_account_api_v1_households__household_id__accounts__account_id__patch",
@@ -1687,7 +1796,9 @@
         }
       },
       "delete": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Archive Account",
         "description": "Soft-delete (archive) an account.",
         "operationId": "archive_account_api_v1_households__household_id__accounts__account_id__delete",
@@ -1732,7 +1843,9 @@
     },
     "/api/v1/households/{household_id}/accounts/groups/": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "List Account Groups",
         "description": "List all account groups in the household.",
         "operationId": "list_account_groups_api_v1_households__household_id__accounts_groups__get",
@@ -1776,7 +1889,9 @@
         }
       },
       "post": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Create Account Group",
         "description": "Create an account group, optionally linking initial member accounts.",
         "operationId": "create_account_group_api_v1_households__household_id__accounts_groups__post",
@@ -1828,7 +1943,9 @@
     },
     "/api/v1/households/{household_id}/accounts/groups/candidates": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Find Group Candidates",
         "description": "Return candidate account pairs for HITL grouping review.\n\nDetection heuristic: same institution + same balance + same currency +\nname similarity \u2265 60%. Does NOT auto-merge; confirmation is a separate write.",
         "operationId": "find_group_candidates_api_v1_households__household_id__accounts_groups_candidates_get",
@@ -1874,7 +1991,9 @@
     },
     "/api/v1/households/{household_id}/accounts/groups/{group_id}": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Get Account Group",
         "description": "Return account group details.",
         "operationId": "get_account_group_api_v1_households__household_id__accounts_groups__group_id__get",
@@ -1924,7 +2043,9 @@
         }
       },
       "patch": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Update Account Group",
         "description": "Update account group name or membership metadata.",
         "operationId": "update_account_group_api_v1_households__household_id__accounts_groups__group_id__patch",
@@ -1984,7 +2105,9 @@
         }
       },
       "delete": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Archive Account Group",
         "description": "Soft-delete (archive) an account group.",
         "operationId": "archive_account_group_api_v1_households__household_id__accounts_groups__group_id__delete",
@@ -2029,7 +2152,9 @@
     },
     "/api/v1/households/{household_id}/accounts/groups/{group_id}/members/{account_id}": {
       "post": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Add Account To Group",
         "description": "Link an account to a group (HITL confirmation of a detected candidate).",
         "operationId": "add_account_to_group_api_v1_households__household_id__accounts_groups__group_id__members__account_id__post",
@@ -2089,7 +2214,9 @@
         }
       },
       "delete": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Remove Account From Group",
         "description": "Remove an account from a group.",
         "operationId": "remove_account_from_group_api_v1_households__household_id__accounts_groups__group_id__members__account_id__delete",
@@ -2144,7 +2271,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/balance-history": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Get Balance History",
         "description": "Return one balance reading per day for the last 90 days from the audit log.\n\nReturns an empty list if no reconciliation entries exist for this account.",
         "operationId": "get_balance_history_api_v1_households__household_id__accounts__account_id__balance_history_get",
@@ -2200,7 +2329,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/debt": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Get Debt Annotation",
         "description": "Return the debt annotation for an account.",
         "operationId": "get_debt_annotation_api_v1_households__household_id__accounts__account_id__debt_get",
@@ -2250,7 +2381,9 @@
         }
       },
       "post": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Create Debt Annotation",
         "description": "Annotate a debt account with payment strategy and initial APR tranche.",
         "operationId": "create_debt_annotation_api_v1_households__household_id__accounts__account_id__debt_post",
@@ -2310,7 +2443,9 @@
         }
       },
       "patch": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Update Debt Annotation",
         "description": "Update debt account payment strategy and scheduling fields.",
         "operationId": "update_debt_annotation_api_v1_households__household_id__accounts__account_id__debt_patch",
@@ -2372,7 +2507,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/debt/balances": {
       "get": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "List Debt Balances",
         "description": "Return full APR history for a debt account, ordered by effective_from.",
         "operationId": "list_debt_balances_api_v1_households__household_id__accounts__account_id__debt_balances_get",
@@ -2426,7 +2563,9 @@
         }
       },
       "post": {
-        "tags": ["accounts"],
+        "tags": [
+          "accounts"
+        ],
         "summary": "Add Debt Balance",
         "description": "Add a new APR tranche, closing the current one in the effective-dated chain.",
         "operationId": "add_debt_balance_api_v1_households__household_id__accounts__account_id__debt_balances_post",
@@ -2488,7 +2627,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "List Transactions For Account",
         "description": "List transactions for a specific account.",
         "operationId": "list_transactions_for_account_api_v1_households__household_id__accounts__account_id__transactions__get",
@@ -2624,7 +2765,9 @@
         }
       },
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Create Transaction",
         "description": "Create a transaction via manual entry.",
         "operationId": "create_transaction_api_v1_households__household_id__accounts__account_id__transactions__post",
@@ -2686,7 +2829,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Get Transaction For Account",
         "description": "Return transaction detail with splits.",
         "operationId": "get_transaction_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__get",
@@ -2746,7 +2891,9 @@
         }
       },
       "delete": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Archive Transaction For Account",
         "description": "Soft-delete (archive) a transaction.",
         "operationId": "archive_transaction_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__delete",
@@ -2801,7 +2948,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/state": {
       "patch": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Transition State For Account",
         "description": "Advance the transaction state machine.",
         "operationId": "transition_state_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__state_patch",
@@ -2873,7 +3022,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/note": {
       "patch": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Update Note For Account",
         "description": "Set or clear the user note on a transaction.",
         "operationId": "update_note_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__note_patch",
@@ -2945,7 +3096,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/splits": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Set Splits For Account",
         "description": "Replace all splits on a transaction.",
         "operationId": "set_splits_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__splits_post",
@@ -3021,7 +3174,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/transfer-pair": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Pair Transfer For Account",
         "description": "Link two transactions as an internal or external transfer.",
         "operationId": "pair_transfer_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__transfer_pair_post",
@@ -3097,7 +3252,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/refund-candidates": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Get Refund Candidates",
         "description": "Return credit transactions that could be refunds of this debit.",
         "operationId": "get_refund_candidates_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__refund_candidates_get",
@@ -3173,7 +3330,9 @@
     },
     "/api/v1/households/{household_id}/accounts/{account_id}/transactions/{transaction_id}/refund-pair": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Pair Refund For Account",
         "description": "Confirm a refund pairing (HITL write).",
         "operationId": "pair_refund_for_account_api_v1_households__household_id__accounts__account_id__transactions__transaction_id__refund_pair_post",
@@ -3249,7 +3408,9 @@
     },
     "/api/v1/households/{household_id}/transactions/": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "List Transactions Cross Account",
         "description": "List all transactions in the household (cross-account).",
         "operationId": "list_transactions_cross_account_api_v1_households__household_id__transactions__get",
@@ -3394,7 +3555,9 @@
     },
     "/api/v1/households/{household_id}/transactions/dedup-candidates": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "List Dedup Candidates",
         "description": "Return pending dedup candidate pairs for HITL review.",
         "operationId": "list_dedup_candidates_api_v1_households__household_id__transactions_dedup_candidates_get",
@@ -3440,7 +3603,9 @@
     },
     "/api/v1/households/{household_id}/transactions/dedup-candidates/{log_id}/resolve": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Resolve Dedup Candidate",
         "description": "Accept a merge or reject a dedup candidate pair.",
         "operationId": "resolve_dedup_candidate_api_v1_households__household_id__transactions_dedup_candidates__log_id__resolve_post",
@@ -3502,7 +3667,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Get Transaction Cross Account",
         "description": "Return transaction detail with splits (cross-account).",
         "operationId": "get_transaction_cross_account_api_v1_households__household_id__transactions__transaction_id__get",
@@ -3552,7 +3719,9 @@
         }
       },
       "delete": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Archive Transaction Cross Account",
         "description": "Soft-delete a transaction (cross-account).",
         "operationId": "archive_transaction_cross_account_api_v1_households__household_id__transactions__transaction_id__delete",
@@ -3597,7 +3766,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/state": {
       "patch": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Transition State Cross Account",
         "description": "Advance the transaction state machine (cross-account).",
         "operationId": "transition_state_cross_account_api_v1_households__household_id__transactions__transaction_id__state_patch",
@@ -3659,7 +3830,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/note": {
       "patch": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Update Note Cross Account",
         "description": "Set or clear the user note on a transaction (cross-account).",
         "operationId": "update_note_cross_account_api_v1_households__household_id__transactions__transaction_id__note_patch",
@@ -3721,7 +3894,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/splits": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Set Splits Cross Account",
         "description": "Replace all splits on a transaction (cross-account).",
         "operationId": "set_splits_cross_account_api_v1_households__household_id__transactions__transaction_id__splits_post",
@@ -3787,7 +3962,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/transfer-pair": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Pair Transfer Cross Account",
         "description": "Link two transactions as an internal or external transfer (cross-account).",
         "operationId": "pair_transfer_cross_account_api_v1_households__household_id__transactions__transaction_id__transfer_pair_post",
@@ -3853,7 +4030,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/refund-pair": {
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Pair Refund Cross Account",
         "description": "Confirm a refund pairing (cross-account).",
         "operationId": "pair_refund_cross_account_api_v1_households__household_id__transactions__transaction_id__refund_pair_post",
@@ -3919,7 +4098,9 @@
     },
     "/api/v1/households/{household_id}/payment-groups/": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "List Payment Groups",
         "description": "List all payment groups in the household.",
         "operationId": "list_payment_groups_api_v1_households__household_id__payment_groups__get",
@@ -3963,7 +4144,9 @@
         }
       },
       "post": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Create Payment Group",
         "description": "Create a payment group from confirmed candidate transactions.",
         "operationId": "create_payment_group_api_v1_households__household_id__payment_groups__post",
@@ -4015,7 +4198,9 @@
     },
     "/api/v1/households/{household_id}/payment-groups/{group_id}": {
       "get": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Get Payment Group",
         "description": "Return payment group details.",
         "operationId": "get_payment_group_api_v1_households__household_id__payment_groups__group_id__get",
@@ -4065,7 +4250,9 @@
         }
       },
       "delete": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Archive Payment Group",
         "description": "Soft-delete (archive) a payment group.",
         "operationId": "archive_payment_group_api_v1_households__household_id__payment_groups__group_id__delete",
@@ -4110,7 +4297,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/fx-rate": {
       "patch": {
-        "tags": ["transactions"],
+        "tags": [
+          "transactions"
+        ],
         "summary": "Override Transaction Fx Rate",
         "description": "Override the FX rate on a foreign-currency transaction.\n\nSets fx_rate_source=manual. Recomputes home_currency_amount.\nDoes NOT update the platform_fx_rate table (market rates only).",
         "operationId": "override_transaction_fx_rate_api_v1_households__household_id__transactions__transaction_id__fx_rate_patch",
@@ -4172,7 +4361,9 @@
     },
     "/api/v1/households/{household_id}/categories": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "List Categories",
         "operationId": "list_categories_api_v1_households__household_id__categories_get",
         "parameters": [
@@ -4215,7 +4406,9 @@
         }
       },
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Create Category",
         "operationId": "create_category_api_v1_households__household_id__categories_post",
         "parameters": [
@@ -4266,7 +4459,9 @@
     },
     "/api/v1/households/{household_id}/categories/{category_id}": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Get Category",
         "operationId": "get_category_api_v1_households__household_id__categories__category_id__get",
         "parameters": [
@@ -4315,7 +4510,9 @@
         }
       },
       "patch": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Update Category",
         "operationId": "update_category_api_v1_households__household_id__categories__category_id__patch",
         "parameters": [
@@ -4374,7 +4571,9 @@
         }
       },
       "delete": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Archive Category",
         "operationId": "archive_category_api_v1_households__household_id__categories__category_id__delete",
         "parameters": [
@@ -4418,7 +4617,9 @@
     },
     "/api/v1/households/{household_id}/tags": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "List Tags",
         "operationId": "list_tags_api_v1_households__household_id__tags_get",
         "parameters": [
@@ -4461,7 +4662,9 @@
         }
       },
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Create Tag",
         "operationId": "create_tag_api_v1_households__household_id__tags_post",
         "parameters": [
@@ -4512,7 +4715,9 @@
     },
     "/api/v1/households/{household_id}/tags/{tag_id}": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Get Tag",
         "operationId": "get_tag_api_v1_households__household_id__tags__tag_id__get",
         "parameters": [
@@ -4561,7 +4766,9 @@
         }
       },
       "patch": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Update Tag",
         "operationId": "update_tag_api_v1_households__household_id__tags__tag_id__patch",
         "parameters": [
@@ -4620,7 +4827,9 @@
         }
       },
       "delete": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Archive Tag",
         "operationId": "archive_tag_api_v1_households__household_id__tags__tag_id__delete",
         "parameters": [
@@ -4664,7 +4873,9 @@
     },
     "/api/v1/households/{household_id}/rules": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "List Rules",
         "operationId": "list_rules_api_v1_households__household_id__rules_get",
         "parameters": [
@@ -4707,7 +4918,9 @@
         }
       },
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Create Rule",
         "operationId": "create_rule_api_v1_households__household_id__rules_post",
         "parameters": [
@@ -4758,7 +4971,9 @@
     },
     "/api/v1/households/{household_id}/rules/{rule_id}": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Get Rule",
         "operationId": "get_rule_api_v1_households__household_id__rules__rule_id__get",
         "parameters": [
@@ -4807,7 +5022,9 @@
         }
       },
       "patch": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Update Rule",
         "operationId": "update_rule_api_v1_households__household_id__rules__rule_id__patch",
         "parameters": [
@@ -4866,7 +5083,9 @@
         }
       },
       "delete": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Archive Rule",
         "operationId": "archive_rule_api_v1_households__household_id__rules__rule_id__delete",
         "parameters": [
@@ -4910,7 +5129,9 @@
     },
     "/api/v1/households/{household_id}/rules/reorder": {
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Reorder Rules",
         "operationId": "reorder_rules_api_v1_households__household_id__rules_reorder_post",
         "parameters": [
@@ -4965,7 +5186,9 @@
     },
     "/api/v1/households/{household_id}/rules/{rule_id}/test": {
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Test Rule",
         "operationId": "test_rule_api_v1_households__household_id__rules__rule_id__test_post",
         "parameters": [
@@ -5016,7 +5239,9 @@
     },
     "/api/v1/households/{household_id}/income-sources": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "List Income Sources",
         "operationId": "list_income_sources_api_v1_households__household_id__income_sources_get",
         "parameters": [
@@ -5059,7 +5284,9 @@
         }
       },
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Create Income Source",
         "operationId": "create_income_source_api_v1_households__household_id__income_sources_post",
         "parameters": [
@@ -5110,7 +5337,9 @@
     },
     "/api/v1/households/{household_id}/income-sources/{source_id}": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Get Income Source",
         "operationId": "get_income_source_api_v1_households__household_id__income_sources__source_id__get",
         "parameters": [
@@ -5159,7 +5388,9 @@
         }
       },
       "patch": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Update Income Source",
         "operationId": "update_income_source_api_v1_households__household_id__income_sources__source_id__patch",
         "parameters": [
@@ -5218,7 +5449,9 @@
         }
       },
       "delete": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Archive Income Source",
         "operationId": "archive_income_source_api_v1_households__household_id__income_sources__source_id__delete",
         "parameters": [
@@ -5262,7 +5495,9 @@
     },
     "/api/v1/households/{household_id}/classification-settings": {
       "get": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Get Classification Settings",
         "operationId": "get_classification_settings_api_v1_households__household_id__classification_settings_get",
         "parameters": [
@@ -5301,7 +5536,9 @@
         }
       },
       "patch": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Update Classification Settings",
         "operationId": "update_classification_settings_api_v1_households__household_id__classification_settings_patch",
         "parameters": [
@@ -5352,7 +5589,9 @@
     },
     "/api/v1/households/{household_id}/transactions/{transaction_id}/reclassify": {
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Reclassify Transaction",
         "operationId": "reclassify_transaction_api_v1_households__household_id__transactions__transaction_id__reclassify_post",
         "parameters": [
@@ -5403,7 +5642,9 @@
     },
     "/api/v1/households/{household_id}/reclassify-all": {
       "post": {
-        "tags": ["classification"],
+        "tags": [
+          "classification"
+        ],
         "summary": "Reclassify All",
         "description": "Enqueue a bulk reclassification job. Returns immediately with a job ID.",
         "operationId": "reclassify_all_api_v1_households__household_id__reclassify_all_post",
@@ -5445,7 +5686,9 @@
     },
     "/api/v1/households/{household_id}/ingest/sync-configs/": {
       "post": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Create Sync Config",
         "operationId": "create_sync_config_api_v1_households__household_id__ingest_sync_configs__post",
         "parameters": [
@@ -5494,7 +5737,9 @@
         }
       },
       "get": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "List Sync Configs",
         "operationId": "list_sync_configs_api_v1_households__household_id__ingest_sync_configs__get",
         "parameters": [
@@ -5539,7 +5784,9 @@
     },
     "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}": {
       "patch": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Update Sync Config",
         "operationId": "update_sync_config_api_v1_households__household_id__ingest_sync_configs__config_id__patch",
         "parameters": [
@@ -5598,7 +5845,9 @@
         }
       },
       "delete": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Delete Sync Config",
         "operationId": "delete_sync_config_api_v1_households__household_id__ingest_sync_configs__config_id__delete",
         "parameters": [
@@ -5642,7 +5891,9 @@
     },
     "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/trigger": {
       "post": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Trigger Sync",
         "description": "Enqueue sync_account_job for a SimpleFIN sync config. Returns job ID.",
         "operationId": "trigger_sync_api_v1_households__household_id__ingest_sync_configs__config_id__trigger_post",
@@ -5694,7 +5945,9 @@
     },
     "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/preview": {
       "get": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Preview Simplefin Accounts",
         "description": "Fetch SimpleFIN accounts for a SyncConfig and return preview with suggested types.\n\nResult is cached in Redis for 5 minutes to avoid repeated SimpleFIN calls.\nDoes NOT create any system accounts.",
         "operationId": "preview_simplefin_accounts_api_v1_households__household_id__ingest_sync_configs__config_id__preview_get",
@@ -5750,7 +6003,9 @@
     },
     "/api/v1/households/{household_id}/ingest/sync-configs/{config_id}/mapping": {
       "post": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Save Account Mapping",
         "description": "Save account mapping decisions for a SimpleFIN SyncConfig.\n\nCreates new accounts, maps existing accounts, or ignores SimpleFIN accounts.\nSets authoritative_sync_config_id on mapped/created accounts.\nTriggers initial 90-day sync job on first mapping save.",
         "operationId": "save_account_mapping_api_v1_households__household_id__ingest_sync_configs__config_id__mapping_post",
@@ -5816,7 +6071,9 @@
     },
     "/api/v1/households/{household_id}/ingest/csv-mappings": {
       "post": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Upsert Csv Mapping",
         "operationId": "upsert_csv_mapping_api_v1_households__household_id__ingest_csv_mappings_post",
         "parameters": [
@@ -5867,7 +6124,9 @@
     },
     "/api/v1/households/{household_id}/ingest/csv-mappings/{institution_name}": {
       "get": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Get Csv Mapping",
         "operationId": "get_csv_mapping_api_v1_households__household_id__ingest_csv_mappings__institution_name__get",
         "parameters": [
@@ -5917,7 +6176,9 @@
     },
     "/api/v1/households/{household_id}/ingest/upload": {
       "post": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Upload File",
         "description": "Accept a multipart OFX/QFX or CSV upload, enqueue processing job.\n\nFile bytes are read in-memory, base64-encoded, and sent to the ARQ job.\nThe bytes are NOT stored in the database.\ncsv_config: JSON-encoded column mapping config (required for csv_upload).",
         "operationId": "upload_file_api_v1_households__household_id__ingest_upload_post",
@@ -6006,7 +6267,9 @@
     },
     "/api/v1/households/{household_id}/ingest/jobs/": {
       "get": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "List Import Jobs",
         "description": "Return recent import jobs for the household.",
         "operationId": "list_import_jobs_api_v1_households__household_id__ingest_jobs__get",
@@ -6064,7 +6327,9 @@
     },
     "/api/v1/households/{household_id}/ingest/jobs/{import_job_id}": {
       "get": {
-        "tags": ["ingest"],
+        "tags": [
+          "ingest"
+        ],
         "summary": "Get Import Job",
         "operationId": "get_import_job_api_v1_households__household_id__ingest_jobs__import_job_id__get",
         "parameters": [
@@ -6115,7 +6380,9 @@
     },
     "/api/v1/households/{household_id}/recurrences": {
       "get": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "List Recurrences",
         "operationId": "list_recurrences_api_v1_households__household_id__recurrences_get",
         "parameters": [
@@ -6175,7 +6442,9 @@
         }
       },
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Create Recurrence",
         "operationId": "create_recurrence_api_v1_households__household_id__recurrences_post",
         "parameters": [
@@ -6226,7 +6495,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/{recurrence_id}": {
       "get": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Get Recurrence",
         "operationId": "get_recurrence_api_v1_households__household_id__recurrences__recurrence_id__get",
         "parameters": [
@@ -6275,7 +6546,9 @@
         }
       },
       "patch": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Update Recurrence",
         "operationId": "update_recurrence_api_v1_households__household_id__recurrences__recurrence_id__patch",
         "parameters": [
@@ -6334,7 +6607,9 @@
         }
       },
       "delete": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Archive Recurrence",
         "operationId": "archive_recurrence_api_v1_households__household_id__recurrences__recurrence_id__delete",
         "parameters": [
@@ -6378,7 +6653,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/{recurrence_id}/pause": {
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Pause Recurrence",
         "operationId": "pause_recurrence_api_v1_households__household_id__recurrences__recurrence_id__pause_post",
         "parameters": [
@@ -6429,7 +6706,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/{recurrence_id}/resume": {
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Resume Recurrence",
         "operationId": "resume_recurrence_api_v1_households__household_id__recurrences__recurrence_id__resume_post",
         "parameters": [
@@ -6480,7 +6759,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/{recurrence_id}/exceptions": {
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Add Exception",
         "operationId": "add_exception_api_v1_households__household_id__recurrences__recurrence_id__exceptions_post",
         "parameters": [
@@ -6541,7 +6822,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/{recurrence_id}/matches": {
       "get": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "List Matches",
         "operationId": "list_matches_api_v1_households__household_id__recurrences__recurrence_id__matches_get",
         "parameters": [
@@ -6596,7 +6879,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/candidates": {
       "get": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "List Candidates",
         "operationId": "list_candidates_api_v1_households__household_id__recurrences_candidates_get",
         "parameters": [
@@ -6641,7 +6926,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/candidates/{candidate_id}/confirm": {
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Confirm Candidate",
         "operationId": "confirm_candidate_api_v1_households__household_id__recurrences_candidates__candidate_id__confirm_post",
         "parameters": [
@@ -6692,7 +6979,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/candidates/{candidate_id}/dismiss": {
       "post": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Dismiss Candidate",
         "operationId": "dismiss_candidate_api_v1_households__household_id__recurrences_candidates__candidate_id__dismiss_post",
         "parameters": [
@@ -6743,7 +7032,9 @@
     },
     "/api/v1/households/{household_id}/recurrences/expected": {
       "get": {
-        "tags": ["recurrences"],
+        "tags": [
+          "recurrences"
+        ],
         "summary": "Get Expected Events",
         "operationId": "get_expected_events_api_v1_households__household_id__recurrences_expected_get",
         "parameters": [
@@ -6808,7 +7099,9 @@
     },
     "/api/v1/households/{household_id}/recommendations": {
       "get": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "List Recommendations",
         "operationId": "list_recommendations_api_v1_households__household_id__recommendations_get",
         "parameters": [
@@ -6902,7 +7195,9 @@
     },
     "/api/v1/households/{household_id}/recommendations/auto-apply": {
       "get": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "List Auto Apply Rules",
         "operationId": "list_auto_apply_rules_api_v1_households__household_id__recommendations_auto_apply_get",
         "parameters": [
@@ -6947,7 +7242,9 @@
     },
     "/api/v1/households/{household_id}/recommendations/auto-apply/{source}": {
       "post": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "Toggle Auto Apply",
         "operationId": "toggle_auto_apply_api_v1_households__household_id__recommendations_auto_apply__source__post",
         "parameters": [
@@ -7006,7 +7303,9 @@
     },
     "/api/v1/households/{household_id}/recommendations/{recommendation_id}": {
       "get": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "Get Recommendation",
         "operationId": "get_recommendation_api_v1_households__household_id__recommendations__recommendation_id__get",
         "parameters": [
@@ -7057,7 +7356,9 @@
     },
     "/api/v1/households/{household_id}/recommendations/{recommendation_id}/accept": {
       "post": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "Accept Recommendation",
         "operationId": "accept_recommendation_api_v1_households__household_id__recommendations__recommendation_id__accept_post",
         "parameters": [
@@ -7108,7 +7409,9 @@
     },
     "/api/v1/households/{household_id}/recommendations/{recommendation_id}/reject": {
       "post": {
-        "tags": ["recommendations"],
+        "tags": [
+          "recommendations"
+        ],
         "summary": "Reject Recommendation",
         "operationId": "reject_recommendation_api_v1_households__household_id__recommendations__recommendation_id__reject_post",
         "parameters": [
@@ -7159,7 +7462,9 @@
     },
     "/api/v1/households/{household_id}/budgets": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "List Budgets",
         "operationId": "list_budgets_api_v1_households__household_id__budgets_get",
         "parameters": [
@@ -7202,7 +7507,9 @@
         }
       },
       "post": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Create Budget",
         "operationId": "create_budget_api_v1_households__household_id__budgets_post",
         "parameters": [
@@ -7253,7 +7560,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Get Budget",
         "operationId": "get_budget_api_v1_households__household_id__budgets__budget_id__get",
         "parameters": [
@@ -7302,7 +7611,9 @@
         }
       },
       "patch": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Update Budget",
         "operationId": "update_budget_api_v1_households__household_id__budgets__budget_id__patch",
         "parameters": [
@@ -7361,7 +7672,9 @@
         }
       },
       "delete": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Archive Budget",
         "operationId": "archive_budget_api_v1_households__household_id__budgets__budget_id__delete",
         "parameters": [
@@ -7405,7 +7718,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/history": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "List Budget History",
         "operationId": "list_budget_history_api_v1_households__household_id__budgets__budget_id__history_get",
         "parameters": [
@@ -7460,7 +7775,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/status": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Get Budget Status",
         "operationId": "get_budget_status_api_v1_households__household_id__budgets__budget_id__status_get",
         "parameters": [
@@ -7528,7 +7845,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/lines": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "List Budget Lines",
         "operationId": "list_budget_lines_api_v1_households__household_id__budgets__budget_id__lines_get",
         "parameters": [
@@ -7581,7 +7900,9 @@
         }
       },
       "post": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Create Budget Line",
         "operationId": "create_budget_line_api_v1_households__household_id__budgets__budget_id__lines_post",
         "parameters": [
@@ -7642,7 +7963,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/lines/{line_id}": {
       "patch": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Update Budget Line",
         "operationId": "update_budget_line_api_v1_households__household_id__budgets__budget_id__lines__line_id__patch",
         "parameters": [
@@ -7711,7 +8034,9 @@
         }
       },
       "delete": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Archive Budget Line",
         "operationId": "archive_budget_line_api_v1_households__household_id__budgets__budget_id__lines__line_id__delete",
         "parameters": [
@@ -7765,7 +8090,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/periods": {
       "get": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "List Periods",
         "operationId": "list_periods_api_v1_households__household_id__budgets__budget_id__periods_get",
         "parameters": [
@@ -7820,7 +8147,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/compute": {
       "post": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Compute Actuals",
         "description": "Manually trigger actuals recompute for the current period.",
         "operationId": "compute_actuals_api_v1_households__household_id__budgets__budget_id__compute_post",
@@ -7889,7 +8218,9 @@
     },
     "/api/v1/households/{household_id}/budgets/{budget_id}/income": {
       "post": {
-        "tags": ["budgets"],
+        "tags": [
+          "budgets"
+        ],
         "summary": "Set Period Income",
         "operationId": "set_period_income_api_v1_households__household_id__budgets__budget_id__income_post",
         "parameters": [
@@ -10335,7 +10666,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers": {
       "get": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "List Providers",
         "operationId": "list_providers_api_v1_households__household_id__insights_providers_get",
         "parameters": [
@@ -10378,7 +10711,9 @@
         }
       },
       "post": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Create Provider",
         "operationId": "create_provider_api_v1_households__household_id__insights_providers_post",
         "parameters": [
@@ -10429,7 +10764,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers/ollama/models": {
       "get": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "List Ollama Models",
         "description": "List models installed on the configured Ollama instance.\n\nReturns empty list (not 400) if Ollama is unreachable.\nReturns 400 if no Ollama provider is configured.",
         "operationId": "list_ollama_models_api_v1_households__household_id__insights_providers_ollama_models_get",
@@ -10471,7 +10808,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers/ollama/pull": {
       "post": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Pull Ollama Model",
         "description": "Pull a model from Ollama registry. Streams SSE progress events.",
         "operationId": "pull_ollama_model_api_v1_households__household_id__insights_providers_ollama_pull_post",
@@ -10516,7 +10855,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers/ollama/models/{model_name}": {
       "delete": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Delete Ollama Model",
         "description": "Delete a locally installed Ollama model. model_name may contain colons.",
         "operationId": "delete_ollama_model_api_v1_households__household_id__insights_providers_ollama_models__model_name__delete",
@@ -10560,7 +10901,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers/{config_id}": {
       "patch": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Update Provider",
         "operationId": "update_provider_api_v1_households__household_id__insights_providers__config_id__patch",
         "parameters": [
@@ -10619,7 +10962,9 @@
         }
       },
       "delete": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Delete Provider",
         "operationId": "delete_provider_api_v1_households__household_id__insights_providers__config_id__delete",
         "parameters": [
@@ -10663,7 +11008,9 @@
     },
     "/api/v1/households/{household_id}/insights/providers/{config_id}/test": {
       "post": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Test Provider",
         "description": "Check whether a specific provider config is reachable.\n\nAlways returns 200. Never raises on connection failure.",
         "operationId": "test_provider_api_v1_households__household_id__insights_providers__config_id__test_post",
@@ -10715,7 +11062,9 @@
     },
     "/api/v1/households/{household_id}/insights/budget": {
       "get": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Get Budget",
         "operationId": "get_budget_api_v1_households__household_id__insights_budget_get",
         "parameters": [
@@ -10754,7 +11103,9 @@
         }
       },
       "patch": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Update Budget",
         "operationId": "update_budget_api_v1_households__household_id__insights_budget_patch",
         "parameters": [
@@ -10805,7 +11156,9 @@
     },
     "/api/v1/households/{household_id}/insights/audit": {
       "get": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "List Audit",
         "operationId": "list_audit_api_v1_households__household_id__insights_audit_get",
         "parameters": [
@@ -10873,7 +11226,9 @@
     },
     "/api/v1/households/{household_id}/insights/ask": {
       "post": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Ask",
         "operationId": "ask_api_v1_households__household_id__insights_ask_post",
         "parameters": [
@@ -10924,7 +11279,9 @@
     },
     "/api/v1/households/{household_id}/insights/generate": {
       "post": {
-        "tags": ["insights"],
+        "tags": [
+          "insights"
+        ],
         "summary": "Trigger Generate",
         "description": "Enqueue the insight generation job. Returns job_id for polling.",
         "operationId": "trigger_generate_api_v1_households__household_id__insights_generate_post",
@@ -10966,7 +11323,9 @@
     },
     "/api/v1/currencies": {
       "get": {
-        "tags": ["platform"],
+        "tags": [
+          "platform"
+        ],
         "summary": "List Currencies",
         "description": "Return all currencies supported by the Frankfurter API.\n\nNo auth required. Cached in Redis for 24 hours.",
         "operationId": "list_currencies_api_v1_currencies_get",
@@ -10990,7 +11349,9 @@
     },
     "/api/v1/fx-rates": {
       "get": {
-        "tags": ["platform"],
+        "tags": [
+          "platform"
+        ],
         "summary": "Get Fx Rate",
         "description": "Look up an FX rate for a currency pair and date.\n\nRequires authentication. Stores the rate if fetched from Frankfurter.\nReturns is_approximate=true when using a fallback rate.",
         "operationId": "get_fx_rate_api_v1_fx_rates_get",
@@ -11054,7 +11415,9 @@
     },
     "/api/v1/admin/overview": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Overview",
         "operationId": "get_overview_api_v1_admin_overview_get",
         "responses": {
@@ -11073,7 +11436,9 @@
     },
     "/api/v1/admin/system": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get System",
         "operationId": "get_system_api_v1_admin_system_get",
         "responses": {
@@ -11092,7 +11457,9 @@
     },
     "/api/v1/admin/users": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "List Users",
         "operationId": "list_users_api_v1_admin_users_get",
         "parameters": [
@@ -11198,7 +11565,9 @@
     },
     "/api/v1/admin/users/{user_id}": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get User",
         "operationId": "get_user_api_v1_admin_users__user_id__get",
         "parameters": [
@@ -11237,7 +11606,9 @@
         }
       },
       "delete": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Delete User",
         "operationId": "delete_user_api_v1_admin_users__user_id__delete",
         "parameters": [
@@ -11271,7 +11642,9 @@
     },
     "/api/v1/admin/users/{user_id}/promote": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Promote User",
         "operationId": "promote_user_api_v1_admin_users__user_id__promote_post",
         "parameters": [
@@ -11305,7 +11678,9 @@
     },
     "/api/v1/admin/users/{user_id}/demote": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Demote User",
         "operationId": "demote_user_api_v1_admin_users__user_id__demote_post",
         "parameters": [
@@ -11339,7 +11714,9 @@
     },
     "/api/v1/admin/users/{user_id}/assign-household": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Assign Household",
         "operationId": "assign_household_api_v1_admin_users__user_id__assign_household_post",
         "parameters": [
@@ -11383,7 +11760,9 @@
     },
     "/api/v1/admin/users/{user_id}/force-logout": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Force Logout",
         "operationId": "force_logout_api_v1_admin_users__user_id__force_logout_post",
         "parameters": [
@@ -11417,7 +11796,9 @@
     },
     "/api/v1/admin/households": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "List Households",
         "operationId": "list_households_api_v1_admin_households_get",
         "responses": {
@@ -11436,7 +11817,9 @@
     },
     "/api/v1/admin/households/{household_id}": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Household",
         "operationId": "get_household_api_v1_admin_households__household_id__get",
         "parameters": [
@@ -11477,7 +11860,9 @@
     },
     "/api/v1/admin/notifications": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "List Notifications",
         "operationId": "list_notifications_api_v1_admin_notifications_get",
         "parameters": [
@@ -11551,7 +11936,9 @@
     },
     "/api/v1/admin/notifications/{notification_id}/read": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Mark Read",
         "operationId": "mark_read_api_v1_admin_notifications__notification_id__read_post",
         "parameters": [
@@ -11585,7 +11972,9 @@
     },
     "/api/v1/admin/notifications/read-all": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Mark All Read",
         "operationId": "mark_all_read_api_v1_admin_notifications_read_all_post",
         "responses": {
@@ -11597,7 +11986,9 @@
     },
     "/api/v1/admin/smtp": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Smtp",
         "operationId": "get_smtp_api_v1_admin_smtp_get",
         "responses": {
@@ -11614,7 +12005,9 @@
         }
       },
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Upsert Smtp",
         "operationId": "upsert_smtp_api_v1_admin_smtp_post",
         "requestBody": {
@@ -11651,7 +12044,9 @@
         }
       },
       "delete": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Delete Smtp",
         "operationId": "delete_smtp_api_v1_admin_smtp_delete",
         "responses": {
@@ -11663,7 +12058,9 @@
     },
     "/api/v1/admin/smtp/test": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Test Smtp",
         "operationId": "test_smtp_api_v1_admin_smtp_test_post",
         "responses": {
@@ -11682,7 +12079,9 @@
     },
     "/api/v1/admin/backup/config": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Backup Config",
         "operationId": "get_backup_config_api_v1_admin_backup_config_get",
         "responses": {
@@ -11699,7 +12098,9 @@
         }
       },
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Upsert Backup Config",
         "operationId": "upsert_backup_config_api_v1_admin_backup_config_post",
         "requestBody": {
@@ -11738,7 +12139,9 @@
     },
     "/api/v1/admin/backup/config/test-s3": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Test S3",
         "operationId": "test_s3_api_v1_admin_backup_config_test_s3_post",
         "responses": {
@@ -11757,7 +12160,9 @@
     },
     "/api/v1/admin/backup/config/s3": {
       "delete": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Delete S3",
         "operationId": "delete_s3_api_v1_admin_backup_config_s3_delete",
         "responses": {
@@ -11769,7 +12174,9 @@
     },
     "/api/v1/admin/backup/runs": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "List Backup Runs",
         "operationId": "list_backup_runs_api_v1_admin_backup_runs_get",
         "parameters": [
@@ -11827,7 +12234,9 @@
     },
     "/api/v1/admin/backup/trigger": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Trigger Backup",
         "operationId": "trigger_backup_api_v1_admin_backup_trigger_post",
         "responses": {
@@ -11846,7 +12255,9 @@
     },
     "/api/v1/admin/registration": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Registration",
         "operationId": "get_registration_api_v1_admin_registration_get",
         "responses": {
@@ -11863,7 +12274,9 @@
         }
       },
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Update Registration",
         "operationId": "update_registration_api_v1_admin_registration_post",
         "requestBody": {
@@ -11902,7 +12315,9 @@
     },
     "/api/v1/admin/emergency/read-only": {
       "get": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Get Read Only",
         "operationId": "get_read_only_api_v1_admin_emergency_read_only_get",
         "responses": {
@@ -11919,7 +12334,9 @@
         }
       },
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Set Read Only",
         "operationId": "set_read_only_api_v1_admin_emergency_read_only_post",
         "requestBody": {
@@ -11958,7 +12375,9 @@
     },
     "/api/v1/admin/force-logout-all": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Force Logout All",
         "operationId": "force_logout_all_api_v1_admin_force_logout_all_post",
         "requestBody": {
@@ -11990,7 +12409,9 @@
     },
     "/api/v1/settings/instance-info": {
       "get": {
-        "tags": ["settings"],
+        "tags": [
+          "settings"
+        ],
         "summary": "Get Instance Info",
         "description": "Return instance metadata. No authentication required.\n\nUsed by the login page to detect AIO/demo mode and show credentials.",
         "operationId": "get_instance_info_api_v1_settings_instance_info_get",
@@ -12025,7 +12446,10 @@
           }
         },
         "type": "object",
-        "required": ["household_id", "membership_id"],
+        "required": [
+          "household_id",
+          "membership_id"
+        ],
         "title": "AcceptInviteResponse",
         "description": "Response to a successful invitation accept."
       },
@@ -12074,7 +12498,10 @@
           }
         },
         "type": "object",
-        "required": ["name", "account_type"],
+        "required": [
+          "name",
+          "account_type"
+        ],
         "title": "AccountCreate",
         "description": "Create a new account."
       },
@@ -12118,7 +12545,9 @@
           }
         },
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "AccountGroupCreate",
         "description": "Create an account group, optionally with initial members."
       },
@@ -12384,7 +12813,9 @@
           }
         },
         "type": "object",
-        "required": ["email"],
+        "required": [
+          "email"
+        ],
         "title": "AddMemberRequest",
         "description": "Add an existing user to a household (requires step-up auth)."
       },
@@ -12447,7 +12878,9 @@
           }
         },
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "AdminHouseholdListOut"
       },
       "AdminHouseholdOut": {
@@ -12577,7 +13010,10 @@
           }
         },
         "type": "object",
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "AdminUserListOut"
       },
       "AdminUserOut": {
@@ -12640,7 +13076,9 @@
           }
         },
         "type": "object",
-        "required": ["question"],
+        "required": [
+          "question"
+        ],
         "title": "AskRequest"
       },
       "AskResponse": {
@@ -12681,7 +13119,10 @@
           }
         },
         "type": "object",
-        "required": ["answer", "provider_used"],
+        "required": [
+          "answer",
+          "provider_used"
+        ],
         "title": "AskResponse"
       },
       "AssignHouseholdIn": {
@@ -12697,7 +13138,9 @@
           }
         },
         "type": "object",
-        "required": ["household_id"],
+        "required": [
+          "household_id"
+        ],
         "title": "AssignHouseholdIn"
       },
       "AuditEventOut": {
@@ -12926,7 +13369,10 @@
           }
         },
         "type": "object",
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "AuditLogPage"
       },
       "AuditOperation": {
@@ -12994,7 +13440,9 @@
           }
         },
         "type": "object",
-        "required": ["enabled"],
+        "required": [
+          "enabled"
+        ],
         "title": "AutoApplyToggle"
       },
       "BackupConfigIn": {
@@ -13155,7 +13603,10 @@
           }
         },
         "type": "object",
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "BackupRunListOut"
       },
       "BackupRunOut": {
@@ -13262,12 +13713,19 @@
       },
       "BackupStatus": {
         "type": "string",
-        "enum": ["running", "success", "failed"],
+        "enum": [
+          "running",
+          "success",
+          "failed"
+        ],
         "title": "BackupStatus"
       },
       "BackupTrigger": {
         "type": "string",
-        "enum": ["scheduled", "manual"],
+        "enum": [
+          "scheduled",
+          "manual"
+        ],
         "title": "BackupTrigger"
       },
       "BackupTriggerOut": {
@@ -13279,7 +13737,9 @@
           }
         },
         "type": "object",
-        "required": ["backup_run_id"],
+        "required": [
+          "backup_run_id"
+        ],
         "title": "BackupTriggerOut"
       },
       "BalanceHistoryPoint": {
@@ -13296,7 +13756,10 @@
           }
         },
         "type": "object",
-        "required": ["date", "balance"],
+        "required": [
+          "date",
+          "balance"
+        ],
         "title": "BalanceHistoryPoint",
         "description": "One balance reading per day, derived from audit log reconciliation entries."
       },
@@ -13323,7 +13786,12 @@
           }
         },
         "type": "object",
-        "required": ["event_date", "account_id", "balance", "currency"],
+        "required": [
+          "event_date",
+          "account_id",
+          "balance",
+          "currency"
+        ],
         "title": "BalancePoint"
       },
       "Body_upload_file_api_v1_households__household_id__ingest_upload_post": {
@@ -13335,7 +13803,9 @@
           }
         },
         "type": "object",
-        "required": ["file"],
+        "required": [
+          "file"
+        ],
         "title": "Body_upload_file_api_v1_households__household_id__ingest_upload_post"
       },
       "BreachType": {
@@ -13459,7 +13929,12 @@
           }
         },
         "type": "object",
-        "required": ["name", "period", "start_date", "method"],
+        "required": [
+          "name",
+          "period",
+          "start_date",
+          "method"
+        ],
         "title": "BudgetCreate"
       },
       "BudgetLineCreate": {
@@ -13519,7 +13994,10 @@
           }
         },
         "type": "object",
-        "required": ["category_id", "planned_amount"],
+        "required": [
+          "category_id",
+          "planned_amount"
+        ],
         "title": "BudgetLineCreate"
       },
       "BudgetLineOut": {
@@ -13615,7 +14093,11 @@
       },
       "BudgetLineStatus": {
         "type": "string",
-        "enum": ["under", "on_track", "over"],
+        "enum": [
+          "under",
+          "on_track",
+          "over"
+        ],
         "title": "BudgetLineStatus"
       },
       "BudgetLineStatusOut": {
@@ -14180,7 +14662,13 @@
       },
       "BurnUpStatus": {
         "type": "string",
-        "enum": ["ahead", "on_track", "behind", "at_risk", "off_track"],
+        "enum": [
+          "ahead",
+          "on_track",
+          "behind",
+          "at_risk",
+          "off_track"
+        ],
         "title": "BurnUpStatus"
       },
       "CSVMappingIn": {
@@ -14212,7 +14700,9 @@
           }
         },
         "type": "object",
-        "required": ["institution_name"],
+        "required": [
+          "institution_name"
+        ],
         "title": "CSVMappingIn"
       },
       "CSVMappingOut": {
@@ -14377,7 +14867,11 @@
       },
       "CandidateStatus": {
         "type": "string",
-        "enum": ["pending", "confirmed", "dismissed"],
+        "enum": [
+          "pending",
+          "confirmed",
+          "dismissed"
+        ],
         "title": "CandidateStatus"
       },
       "CashflowPeriod": {
@@ -14459,7 +14953,9 @@
           }
         },
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "CategoryCreate"
       },
       "CategoryOut": {
@@ -14632,7 +15128,10 @@
           }
         },
         "type": "object",
-        "required": ["current_password", "new_password"],
+        "required": [
+          "current_password",
+          "new_password"
+        ],
         "title": "ChangePasswordRequest",
         "description": "Change the current user's local auth password."
       },
@@ -14652,7 +15151,11 @@
           }
         },
         "type": "object",
-        "required": ["allocation_updates", "suggestions", "hitl_items"],
+        "required": [
+          "allocation_updates",
+          "suggestions",
+          "hitl_items"
+        ],
         "title": "ClassificationResultOut"
       },
       "CompletionPolicy": {
@@ -14766,7 +15269,10 @@
           }
         },
         "type": "object",
-        "required": ["amount", "contributed_at"],
+        "required": [
+          "amount",
+          "contributed_at"
+        ],
         "title": "ContributionCreate"
       },
       "ContributionOut": {
@@ -14862,7 +15368,11 @@
       },
       "ContributionType": {
         "type": "string",
-        "enum": ["manual", "tag_driven", "recurring_rule"],
+        "enum": [
+          "manual",
+          "tag_driven",
+          "recurring_rule"
+        ],
         "title": "ContributionType"
       },
       "CreateInvitationRequest": {
@@ -14878,7 +15388,9 @@
           }
         },
         "type": "object",
-        "required": ["email"],
+        "required": [
+          "email"
+        ],
         "title": "CreateInvitationRequest",
         "description": "Create a household invitation."
       },
@@ -14894,7 +15406,10 @@
           }
         },
         "type": "object",
-        "required": ["code", "name"],
+        "required": [
+          "code",
+          "name"
+        ],
         "title": "CurrencyOut"
       },
       "DebtAnnotationCreate": {
@@ -15004,7 +15519,11 @@
           }
         },
         "type": "object",
-        "required": ["initial_balance", "initial_apr", "effective_from"],
+        "required": [
+          "initial_balance",
+          "initial_apr",
+          "effective_from"
+        ],
         "title": "DebtAnnotationCreate",
         "description": "Annotate a debt account with payment strategy and initial APR tranche."
       },
@@ -15197,7 +15716,11 @@
           }
         },
         "type": "object",
-        "required": ["principal_balance", "apr", "effective_from"],
+        "required": [
+          "principal_balance",
+          "apr",
+          "effective_from"
+        ],
         "title": "DebtBalanceCreate",
         "description": "Add a new APR tranche, closing the current one."
       },
@@ -15322,7 +15845,9 @@
           }
         },
         "type": "object",
-        "required": ["amount"],
+        "required": [
+          "amount"
+        ],
         "title": "DebtPaymentRecord"
       },
       "DebtPlanComparisonItem": {
@@ -15384,7 +15909,10 @@
           }
         },
         "type": "object",
-        "required": ["current", "compared"],
+        "required": [
+          "current",
+          "compared"
+        ],
         "title": "DebtPlanComparisonOut"
       },
       "DebtPlanCreate": {
@@ -15442,12 +15970,20 @@
           }
         },
         "type": "object",
-        "required": ["name", "method"],
+        "required": [
+          "name",
+          "method"
+        ],
         "title": "DebtPlanCreate"
       },
       "DebtPlanMethod": {
         "type": "string",
-        "enum": ["avalanche", "snowball", "custom", "none"],
+        "enum": [
+          "avalanche",
+          "snowball",
+          "custom",
+          "none"
+        ],
         "title": "DebtPlanMethod"
       },
       "DebtPlanOut": {
@@ -15554,7 +16090,10 @@
           }
         },
         "type": "object",
-        "required": ["account_id", "rows"],
+        "required": [
+          "account_id",
+          "rows"
+        ],
         "title": "DebtPlanScheduleByAccount"
       },
       "DebtPlanScheduleRow": {
@@ -15785,12 +16324,17 @@
         "properties": {
           "resolution": {
             "type": "string",
-            "enum": ["merged", "rejected"],
+            "enum": [
+              "merged",
+              "rejected"
+            ],
             "title": "Resolution"
           }
         },
         "type": "object",
-        "required": ["resolution"],
+        "required": [
+          "resolution"
+        ],
         "title": "DedupResolveRequest",
         "description": "Resolve a pending dedup candidate as merged or rejected."
       },
@@ -15893,7 +16437,10 @@
           }
         },
         "type": "object",
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "title": "DemoCredentials"
       },
       "DepositSplitEntry": {
@@ -15917,7 +16464,10 @@
           }
         },
         "type": "object",
-        "required": ["account_id", "amount_or_percentage"],
+        "required": [
+          "account_id",
+          "amount_or_percentage"
+        ],
         "title": "DepositSplitEntry"
       },
       "ExceptionCreate": {
@@ -15970,7 +16520,10 @@
           }
         },
         "type": "object",
-        "required": ["exception_type", "affected_period"],
+        "required": [
+          "exception_type",
+          "affected_period"
+        ],
         "title": "ExceptionCreate"
       },
       "ExceptionOut": {
@@ -16049,7 +16602,11 @@
       },
       "ExceptionType": {
         "type": "string",
-        "enum": ["skip", "amount_change", "date_shift"],
+        "enum": [
+          "skip",
+          "amount_change",
+          "date_shift"
+        ],
         "title": "ExceptionType"
       },
       "ExpectedEventOut": {
@@ -16209,7 +16766,12 @@
           }
         },
         "type": "object",
-        "required": ["job_id", "function", "enqueue_time", "score"],
+        "required": [
+          "job_id",
+          "function",
+          "enqueue_time",
+          "score"
+        ],
         "title": "FailedJobOut"
       },
       "ForceLogoutAllIn": {
@@ -16220,7 +16782,9 @@
           }
         },
         "type": "object",
-        "required": ["confirm"],
+        "required": [
+          "confirm"
+        ],
         "title": "ForceLogoutAllIn"
       },
       "FundingSourceCreate": {
@@ -16254,7 +16818,9 @@
           }
         },
         "type": "object",
-        "required": ["source_type"],
+        "required": [
+          "source_type"
+        ],
         "title": "FundingSourceCreate"
       },
       "FundingSourceOut": {
@@ -16321,12 +16887,19 @@
       },
       "FundingSourceType": {
         "type": "string",
-        "enum": ["account", "income_stream", "household_surplus"],
+        "enum": [
+          "account",
+          "income_stream",
+          "household_surplus"
+        ],
         "title": "FundingSourceType"
       },
       "FundingStrategy": {
         "type": "string",
-        "enum": ["dedicated_account", "virtual_allocation"],
+        "enum": [
+          "dedicated_account",
+          "virtual_allocation"
+        ],
         "title": "FundingStrategy"
       },
       "GenerateResponse": {
@@ -16342,7 +16915,9 @@
           }
         },
         "type": "object",
-        "required": ["job_id"],
+        "required": [
+          "job_id"
+        ],
         "title": "GenerateResponse"
       },
       "GoalCreate": {
@@ -16479,7 +17054,10 @@
           }
         },
         "type": "object",
-        "required": ["name", "goal_type"],
+        "required": [
+          "name",
+          "goal_type"
+        ],
         "title": "GoalCreate"
       },
       "GoalOut": {
@@ -16741,7 +17319,12 @@
       },
       "GoalStatus": {
         "type": "string",
-        "enum": ["active", "paused", "completed", "archived"],
+        "enum": [
+          "active",
+          "paused",
+          "completed",
+          "archived"
+        ],
         "title": "GoalStatus"
       },
       "GoalType": {
@@ -16955,7 +17538,10 @@
       },
       "GroupType": {
         "type": "string",
-        "enum": ["split_purchase", "split_funding"],
+        "enum": [
+          "split_purchase",
+          "split_funding"
+        ],
         "title": "GroupType"
       },
       "HTTPValidationError": {
@@ -16992,7 +17578,9 @@
           }
         },
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "HouseholdCreate",
         "description": "Create a new household."
       },
@@ -17034,7 +17622,10 @@
       },
       "HouseholdRole": {
         "type": "string",
-        "enum": ["owner", "member"],
+        "enum": [
+          "owner",
+          "member"
+        ],
         "title": "HouseholdRole",
         "description": "Financial role within a household."
       },
@@ -17061,7 +17652,12 @@
           }
         },
         "type": "object",
-        "required": ["household_id", "strictness", "created_at", "updated_at"],
+        "required": [
+          "household_id",
+          "strictness",
+          "created_at",
+          "updated_at"
+        ],
         "title": "HouseholdSettingsOut"
       },
       "HouseholdSettingsUpdate": {
@@ -17071,7 +17667,9 @@
           }
         },
         "type": "object",
-        "required": ["strictness"],
+        "required": [
+          "strictness"
+        ],
         "title": "HouseholdSettingsUpdate"
       },
       "HouseholdUpdate": {
@@ -17463,7 +18061,12 @@
       },
       "IncomeSourceSubType": {
         "type": "string",
-        "enum": ["payroll", "bonus", "rsu", "reimbursement"],
+        "enum": [
+          "payroll",
+          "bonus",
+          "rsu",
+          "reimbursement"
+        ],
         "title": "IncomeSourceSubType"
       },
       "IncomeSourceUpdate": {
@@ -17603,7 +18206,11 @@
           }
         },
         "type": "object",
-        "required": ["aio_mode", "version", "demo_credentials"],
+        "required": [
+          "aio_mode",
+          "version",
+          "demo_credentials"
+        ],
         "title": "InstanceInfoOut"
       },
       "InvitationOut": {
@@ -17733,7 +18340,10 @@
           }
         },
         "type": "object",
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "title": "LoginRequest",
         "description": "Local auth login."
       },
@@ -17745,7 +18355,11 @@
           },
           "action": {
             "type": "string",
-            "enum": ["create", "map", "ignore"],
+            "enum": [
+              "create",
+              "map",
+              "ignore"
+            ],
             "title": "Action"
           },
           "system_account_id": {
@@ -17779,7 +18393,10 @@
           }
         },
         "type": "object",
-        "required": ["simplefin_account_id", "action"],
+        "required": [
+          "simplefin_account_id",
+          "action"
+        ],
         "title": "MappingDecision"
       },
       "MappingResult": {
@@ -17798,7 +18415,11 @@
           }
         },
         "type": "object",
-        "required": ["accounts_created", "accounts_mapped", "accounts_ignored"],
+        "required": [
+          "accounts_created",
+          "accounts_mapped",
+          "accounts_ignored"
+        ],
         "title": "MappingResult"
       },
       "MatchOut": {
@@ -17890,7 +18511,12 @@
       },
       "MatchStatus": {
         "type": "string",
-        "enum": ["matched", "deviated", "missed", "dismissed"],
+        "enum": [
+          "matched",
+          "deviated",
+          "missed",
+          "dismissed"
+        ],
         "title": "MatchStatus"
       },
       "MembershipOut": {
@@ -17937,7 +18563,11 @@
       },
       "MinimumPaymentStrategy": {
         "type": "string",
-        "enum": ["fixed_amount", "percentage_of_balance", "from_statement"],
+        "enum": [
+          "fixed_amount",
+          "percentage_of_balance",
+          "from_statement"
+        ],
         "title": "MinimumPaymentStrategy"
       },
       "NetWorthPoint": {
@@ -17958,7 +18588,11 @@
           }
         },
         "type": "object",
-        "required": ["event_date", "net_worth", "currency"],
+        "required": [
+          "event_date",
+          "net_worth",
+          "currency"
+        ],
         "title": "NetWorthPoint"
       },
       "NotificationListOut": {
@@ -17983,7 +18617,10 @@
           }
         },
         "type": "object",
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "NotificationListOut"
       },
       "NotificationType": {
@@ -18012,7 +18649,11 @@
           }
         },
         "type": "object",
-        "required": ["name", "size_bytes", "modified_at"],
+        "required": [
+          "name",
+          "size_bytes",
+          "modified_at"
+        ],
         "title": "OllamaModelOut"
       },
       "OllamaModelsResponse": {
@@ -18026,7 +18667,9 @@
           }
         },
         "type": "object",
-        "required": ["models"],
+        "required": [
+          "models"
+        ],
         "title": "OllamaModelsResponse"
       },
       "OllamaPullRequest": {
@@ -18039,7 +18682,9 @@
           }
         },
         "type": "object",
-        "required": ["model_name"],
+        "required": [
+          "model_name"
+        ],
         "title": "OllamaPullRequest"
       },
       "OverrideType": {
@@ -18070,7 +18715,10 @@
           }
         },
         "type": "object",
-        "required": ["group_type", "member_transaction_ids"],
+        "required": [
+          "group_type",
+          "member_transaction_ids"
+        ],
         "title": "PaymentGroupCreate",
         "description": "Create a payment group from confirmed candidate transactions."
       },
@@ -18181,17 +18829,27 @@
           }
         },
         "type": "object",
-        "required": ["period_start", "expected_income"],
+        "required": [
+          "period_start",
+          "expected_income"
+        ],
         "title": "PeriodIncomeSet"
       },
       "ProjectedConfidence": {
         "type": "string",
-        "enum": ["high", "medium", "low"],
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ],
         "title": "ProjectedConfidence"
       },
       "ProjectedDirection": {
         "type": "string",
-        "enum": ["debit", "credit"],
+        "enum": [
+          "debit",
+          "credit"
+        ],
         "title": "ProjectedDirection"
       },
       "ProjectedEventOut": {
@@ -18404,7 +19062,11 @@
           }
         },
         "type": "object",
-        "required": ["run", "events_count", "breaches_count"],
+        "required": [
+          "run",
+          "events_count",
+          "breaches_count"
+        ],
         "title": "ProjectionResponse"
       },
       "ProjectionRunOut": {
@@ -18474,7 +19136,11 @@
       },
       "ProjectionRunStatus": {
         "type": "string",
-        "enum": ["pending", "complete", "failed"],
+        "enum": [
+          "pending",
+          "complete",
+          "failed"
+        ],
         "title": "ProjectionRunStatus"
       },
       "ProviderConfigCreate": {
@@ -18537,7 +19203,9 @@
           }
         },
         "type": "object",
-        "required": ["provider"],
+        "required": [
+          "provider"
+        ],
         "title": "ProviderConfigCreate"
       },
       "ProviderConfigOut": {
@@ -18721,7 +19389,11 @@
           }
         },
         "type": "object",
-        "required": ["available", "model_name", "error"],
+        "required": [
+          "available",
+          "model_name",
+          "error"
+        ],
         "title": "ProviderTestResponse"
       },
       "ReadOnlyStateOut": {
@@ -18772,7 +19444,13 @@
           }
         },
         "type": "object",
-        "required": ["id", "enabled", "reason", "enabled_at", "enabled_by_id"],
+        "required": [
+          "id",
+          "enabled",
+          "reason",
+          "enabled_at",
+          "enabled_by_id"
+        ],
         "title": "ReadOnlyStateOut"
       },
       "ReclassifyAllOut": {
@@ -18783,7 +19461,9 @@
           }
         },
         "type": "object",
-        "required": ["job_id"],
+        "required": [
+          "job_id"
+        ],
         "title": "ReclassifyAllOut"
       },
       "RecommendationOut": {
@@ -18934,7 +19614,12 @@
       },
       "RecommendationStatus": {
         "type": "string",
-        "enum": ["pending", "accepted", "rejected", "expired"],
+        "enum": [
+          "pending",
+          "accepted",
+          "rejected",
+          "expired"
+        ],
         "title": "RecommendationStatus"
       },
       "ReconstructedState": {
@@ -18974,7 +19659,13 @@
           }
         },
         "type": "object",
-        "required": ["entity_type", "entity_id", "as_of", "state", "errors"],
+        "required": [
+          "entity_type",
+          "entity_id",
+          "as_of",
+          "state",
+          "errors"
+        ],
         "title": "ReconstructedState"
       },
       "RecurrenceCreate": {
@@ -19099,12 +19790,19 @@
           }
         },
         "type": "object",
-        "required": ["account_id", "cadence", "expected_amount"],
+        "required": [
+          "account_id",
+          "cadence",
+          "expected_amount"
+        ],
         "title": "RecurrenceCreate"
       },
       "RecurrenceKind": {
         "type": "string",
-        "enum": ["detected", "declared"],
+        "enum": [
+          "detected",
+          "declared"
+        ],
         "title": "RecurrenceKind"
       },
       "RecurrenceOut": {
@@ -19402,7 +20100,10 @@
           }
         },
         "type": "object",
-        "required": ["transaction", "days_apart"],
+        "required": [
+          "transaction",
+          "days_apart"
+        ],
         "title": "RefundCandidateOut",
         "description": "A candidate credit transaction that could be a refund."
       },
@@ -19415,7 +20116,9 @@
           }
         },
         "type": "object",
-        "required": ["peer_id"],
+        "required": [
+          "peer_id"
+        ],
         "title": "RefundPairRequest",
         "description": "Link this transaction to its refund counterpart."
       },
@@ -19440,7 +20143,11 @@
           }
         },
         "type": "object",
-        "required": ["email", "display_name", "password"],
+        "required": [
+          "email",
+          "display_name",
+          "password"
+        ],
         "title": "RegisterRequest",
         "description": "Register a new user with local auth credentials."
       },
@@ -19472,7 +20179,10 @@
           }
         },
         "type": "object",
-        "required": ["user_id", "is_app_admin"],
+        "required": [
+          "user_id",
+          "is_app_admin"
+        ],
         "title": "RegisterResponse",
         "description": "Response body for POST /auth/register.\n\nExtends TokenResponse with post-registration routing hints."
       },
@@ -19500,7 +20210,9 @@
           }
         },
         "type": "object",
-        "required": ["allow_registration"],
+        "required": [
+          "allow_registration"
+        ],
         "title": "RegistrationSettingsIn"
       },
       "RegistrationSettingsOut": {
@@ -19593,7 +20305,9 @@
           }
         },
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "title": "RuleActionSchema"
       },
       "RuleConditionSchema": {
@@ -19657,7 +20371,10 @@
           }
         },
         "type": "object",
-        "required": ["field", "operator"],
+        "required": [
+          "field",
+          "operator"
+        ],
         "title": "RuleConditionSchema"
       },
       "RuleCreate": {
@@ -19695,12 +20412,20 @@
           }
         },
         "type": "object",
-        "required": ["name", "priority", "conditions", "actions"],
+        "required": [
+          "name",
+          "priority",
+          "conditions",
+          "actions"
+        ],
         "title": "RuleCreate"
       },
       "RuleMode": {
         "type": "string",
-        "enum": ["auto_apply", "suggest"],
+        "enum": [
+          "auto_apply",
+          "suggest"
+        ],
         "title": "RuleMode"
       },
       "RuleOut": {
@@ -19780,7 +20505,10 @@
           }
         },
         "type": "object",
-        "required": ["rule_id", "priority"],
+        "required": [
+          "rule_id",
+          "priority"
+        ],
         "title": "RulePriorityItem"
       },
       "RulePriorityReorderRequest": {
@@ -19794,7 +20522,9 @@
           }
         },
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "RulePriorityReorderRequest"
       },
       "RuleTestResult": {
@@ -19825,7 +20555,11 @@
           }
         },
         "type": "object",
-        "required": ["matching_transaction_ids", "match_count", "sample_count"],
+        "required": [
+          "matching_transaction_ids",
+          "match_count",
+          "sample_count"
+        ],
         "title": "RuleTestResult"
       },
       "RuleUpdate": {
@@ -19952,7 +20686,10 @@
           }
         },
         "type": "object",
-        "required": ["success", "error_detail"],
+        "required": [
+          "success",
+          "error_detail"
+        ],
         "title": "S3TestResult"
       },
       "SMTPConfigIn": {
@@ -19984,7 +20721,12 @@
           }
         },
         "type": "object",
-        "required": ["host", "username", "password", "from_address"],
+        "required": [
+          "host",
+          "username",
+          "password",
+          "from_address"
+        ],
         "title": "SMTPConfigIn"
       },
       "SMTPConfigOut": {
@@ -20092,7 +20834,10 @@
           }
         },
         "type": "object",
-        "required": ["success", "error_detail"],
+        "required": [
+          "success",
+          "error_detail"
+        ],
         "title": "SMTPTestResult"
       },
       "ScenarioCreate": {
@@ -20360,7 +21105,9 @@
           }
         },
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "title": "ScenarioOverride",
         "description": "One delta applied on top of base projection inputs."
       },
@@ -20422,7 +21169,12 @@
           }
         },
         "type": "object",
-        "required": ["id", "created_at", "last_used_at", "user_agent"],
+        "required": [
+          "id",
+          "created_at",
+          "last_used_at",
+          "user_agent"
+        ],
         "title": "SessionOut",
         "description": "Active refresh token (session) info returned in responses."
       },
@@ -20445,7 +21197,9 @@
           }
         },
         "type": "object",
-        "required": ["enabled"],
+        "required": [
+          "enabled"
+        ],
         "title": "SetReadOnlyIn"
       },
       "SimplefinAccountPreview": {
@@ -20507,13 +21261,19 @@
           }
         },
         "type": "object",
-        "required": ["smtp_configured"],
+        "required": [
+          "smtp_configured"
+        ],
         "title": "SmtpStatusResponse",
         "description": "SMTP configuration status (non-sensitive bool)."
       },
       "SmtpTlsMode": {
         "type": "string",
-        "enum": ["none", "ssl", "starttls"],
+        "enum": [
+          "none",
+          "ssl",
+          "starttls"
+        ],
         "title": "SmtpTlsMode"
       },
       "SplitAllocationIn": {
@@ -20577,7 +21337,9 @@
           }
         },
         "type": "object",
-        "required": ["amount"],
+        "required": [
+          "amount"
+        ],
         "title": "SplitAllocationIn",
         "description": "One slice in a set-splits request."
       },
@@ -20706,7 +21468,9 @@
           }
         },
         "type": "object",
-        "required": ["splits"],
+        "required": [
+          "splits"
+        ],
         "title": "SplitsSetRequest",
         "description": "Replace all splits on a transaction."
       },
@@ -20741,7 +21505,11 @@
       },
       "StrictnessMode": {
         "type": "string",
-        "enum": ["strict", "best_guess", "silent"],
+        "enum": [
+          "strict",
+          "best_guess",
+          "silent"
+        ],
         "title": "StrictnessMode"
       },
       "SyncConfigCreate": {
@@ -20782,7 +21550,9 @@
           }
         },
         "type": "object",
-        "required": ["provider"],
+        "required": [
+          "provider"
+        ],
         "title": "SyncConfigCreate",
         "description": "Create a SimpleFIN sync configuration.\n\nFor SimpleFIN: supply setup_token (exchanged immediately for access_url) and label.\nsetup_token is one-time-use and never stored."
       },
@@ -21226,7 +21996,9 @@
           }
         },
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "TagCreate"
       },
       "TagOut": {
@@ -21467,7 +22239,10 @@
           }
         },
         "type": "object",
-        "required": ["user_id", "is_app_admin"],
+        "required": [
+          "user_id",
+          "is_app_admin"
+        ],
         "title": "TokenResponse",
         "description": "Response body for auth endpoints (tokens are in httpOnly cookies)."
       },
@@ -21483,7 +22258,10 @@
           }
         },
         "type": "object",
-        "required": ["provisioning_uri", "secret"],
+        "required": [
+          "provisioning_uri",
+          "secret"
+        ],
         "title": "TotpSetupOut",
         "description": "TOTP enrollment response."
       },
@@ -21839,7 +22617,10 @@
       },
       "TransactionDirection": {
         "type": "string",
-        "enum": ["debit", "credit"],
+        "enum": [
+          "debit",
+          "credit"
+        ],
         "title": "TransactionDirection"
       },
       "TransactionFXRateUpdate": {
@@ -21871,7 +22652,9 @@
           }
         },
         "type": "object",
-        "required": ["rate"],
+        "required": [
+          "rate"
+        ],
         "title": "TransactionFXRateUpdate",
         "description": "Override the FX rate on a transaction."
       },
@@ -22134,7 +22917,11 @@
       },
       "TransactionState": {
         "type": "string",
-        "enum": ["pending", "posted", "reconciled"],
+        "enum": [
+          "pending",
+          "posted",
+          "reconciled"
+        ],
         "title": "TransactionState"
       },
       "TransactionStateUpdate": {
@@ -22144,7 +22931,9 @@
           }
         },
         "type": "object",
-        "required": ["state"],
+        "required": [
+          "state"
+        ],
         "title": "TransactionStateUpdate",
         "description": "Transition the transaction state."
       },
@@ -22223,12 +23012,18 @@
           },
           "transfer_type": {
             "type": "string",
-            "enum": ["internal", "external"],
+            "enum": [
+              "internal",
+              "external"
+            ],
             "title": "Transfer Type"
           }
         },
         "type": "object",
-        "required": ["peer_id", "transfer_type"],
+        "required": [
+          "peer_id",
+          "transfer_type"
+        ],
         "title": "TransferPairRequest",
         "description": "Link two transactions as an internal or external transfer."
       },
@@ -22241,7 +23036,9 @@
           }
         },
         "type": "object",
-        "required": ["import_job_id"],
+        "required": [
+          "import_job_id"
+        ],
         "title": "TriggerResponse"
       },
       "UpdateProfileRequest": {
@@ -22254,7 +23051,9 @@
           }
         },
         "type": "object",
-        "required": ["display_name"],
+        "required": [
+          "display_name"
+        ],
         "title": "UpdateProfileRequest",
         "description": "Update mutable fields on the authenticated user's profile."
       },
@@ -22267,7 +23066,9 @@
           }
         },
         "type": "object",
-        "required": ["import_job_id"],
+        "required": [
+          "import_job_id"
+        ],
         "title": "UploadResponse"
       },
       "UserContributionTotal": {
@@ -22295,7 +23096,11 @@
           }
         },
         "type": "object",
-        "required": ["attributed_to_user_id", "total", "currency"],
+        "required": [
+          "attributed_to_user_id",
+          "total",
+          "currency"
+        ],
         "title": "UserContributionTotal"
       },
       "UserOut": {
@@ -22372,12 +23177,20 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       },
       "VariabilityModel": {
         "type": "string",
-        "enum": ["fixed", "range", "historical_distribution"],
+        "enum": [
+          "fixed",
+          "range",
+          "historical_distribution"
+        ],
         "title": "VariabilityModel"
       },
       "VisibilityMode": {
