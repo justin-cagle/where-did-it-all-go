@@ -142,7 +142,7 @@ export function LoginPage() {
               {...registerTotp('code')}
               type="text"
               inputMode="numeric"
-              autoComplete="one-time-code"
+              autoComplete="off"
               autoFocus
               maxLength={6}
               placeholder="000000"

@@ -837,15 +837,17 @@ async def get_smtp_status(session: _DbSession) -> SmtpStatusResponse:
 
 
 @router.get("/settings/registration", include_in_schema=True)
-async def get_registration_settings() -> dict[str, object]:
+async def get_registration_settings(session: _DbSession) -> dict[str, object]:
     """Return public registration configuration.
 
     No authentication required — used by RegisterPage and WaitingPage.
+    Reads DB-backed admin overrides so admin panel changes take effect immediately.
     """
     settings = get_settings()
+    allow_reg, reg_limit = await service.get_effective_registration_settings(session, settings)
     return {
-        "allow_registration": settings.allow_registration,
-        "registration_limit": settings.registration_limit,
+        "allow_registration": allow_reg,
+        "registration_limit": reg_limit,
         "unassigned_account_ttl_days": settings.unassigned_account_ttl_days,
     }
 

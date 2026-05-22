@@ -356,6 +356,7 @@ export function AdminOverviewPage() {
               <span style={{ fontSize: 13, color: A.fgMuted }}>Registration limit</span>
               <input
                 type="number"
+                min="1"
                 defaultValue={regSettings.registration_limit ?? ''}
                 placeholder="unlimited"
                 onBlur={async (e) => {

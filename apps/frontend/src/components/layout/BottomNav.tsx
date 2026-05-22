@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAuthStore } from '@/store'
 
 const PRIMARY_ITEMS = [
   { to: '/dashboard', label: 'Overview', icon: DashboardIcon },
@@ -19,6 +20,7 @@ const MORE_ITEMS = [
 
 export function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false)
+  const isAdmin = useAuthStore((s) => s.currentUser?.is_app_admin ?? false)
 
   return (
     <>
@@ -53,6 +55,29 @@ export function BottomNav() {
             gap: 4,
           }}
         >
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              onClick={() => setMoreOpen(false)}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 16px',
+                borderRadius: 10,
+                background: isActive
+                  ? 'color-mix(in oklch, var(--danger) 10%, transparent)'
+                  : 'transparent',
+                color: isActive ? 'var(--danger)' : 'var(--danger)',
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: isActive ? 500 : 400,
+              })}
+            >
+              <AdminIcon />
+              <span>Admin</span>
+            </NavLink>
+          )}
           {MORE_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -340,6 +365,22 @@ function MoreIcon() {
       <circle cx="12" cy="12" r="1" />
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
+    </svg>
+  )
+}
+function AdminIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   )
 }

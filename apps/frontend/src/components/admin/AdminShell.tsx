@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useState, useEffect } from 'react'
-import { NavLink, Link, Navigate, useNavigate } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { customInstance } from '@/api/client'
 import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
@@ -196,10 +196,6 @@ interface AdminShellProps {
 
 export function AdminShell({ children }: AdminShellProps) {
   const isMobile = useIsMobile()
-
-  if (isMobile) {
-    return <Navigate to="/dashboard" replace />
-  }
 
   return (
     <div style={{ display: 'flex', height: '100dvh', background: A.bg, overflow: 'hidden' }}>
