@@ -39,19 +39,6 @@ services:
     labels:
       - wud.watch=false
 
-  migrate:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
-    build:
-      context: ./apps/backend
-      target: production
-    restart: "no"
-    command: ["uv", "run", "alembic", "upgrade", "head"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
-
   app:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-local}/wdiag-backend:${IMAGE_TAG:-latest}
     build:
@@ -63,8 +50,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
       REDIS_URL: redis://redis:6379/0
@@ -101,8 +86,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
       REDIS_URL: redis://redis:6379/0
@@ -121,8 +104,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wdiag}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB:-wdiag}
       REDIS_URL: redis://redis:6379/0
