@@ -856,14 +856,17 @@ async def answer_question(
                 SELECT
                     c.name AS category,
                     t.currency,
-                    SUM(t.amount) AS total,
-                    COUNT(*) AS cnt,
+                    SUM(s.amount) AS total,
+                    COUNT(DISTINCT t.id) AS cnt,
                     t.direction
                 FROM transactions_transaction t
-                JOIN classification_category c ON c.id = t.category_id
+                JOIN transactions_split_allocation s
+                    ON s.transaction_id = t.id AND s.archived_at IS NULL
+                JOIN classification_category c ON c.id = s.category_id
                 WHERE t.household_id = :hh_id
                   AND t.posted_date >= CURRENT_DATE - INTERVAL '90 days'
                   AND t.archived_at IS NULL
+                  AND s.category_id IS NOT NULL
                 GROUP BY c.name, t.currency, t.direction
                 ORDER BY total DESC
                 LIMIT 50
