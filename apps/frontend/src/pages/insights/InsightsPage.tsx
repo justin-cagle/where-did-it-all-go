@@ -362,6 +362,7 @@ function AskSection({ householdId }: { householdId: string }) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showLongWait, setShowLongWait] = useState(false)
+  const qc = useQueryClient()
 
   const ask = useAskApiV1HouseholdsHouseholdIdInsightsAskPost()
 
@@ -384,6 +385,14 @@ function AskSection({ householdId }: { householdId: string }) {
       errorType: null,
       loading: true,
     }
+
+    const conversationHistory = history
+      .filter((x) => x.response?.answer)
+      .flatMap((x) => [
+        { role: 'user' as const, content: x.question },
+        { role: 'assistant' as const, content: String(x.response?.answer ?? '') },
+      ])
+
     setHistory((prev) => [...prev, item])
     if (!q) setQuestion('')
 
@@ -392,7 +401,10 @@ function AskSection({ householdId }: { householdId: string }) {
     }, 60000)
 
     try {
-      const res = await ask.mutateAsync({ householdId, data: { question: text } })
+      const res = await ask.mutateAsync({
+        householdId,
+        data: { question: text, history: conversationHistory },
+      })
 
       if (longWaitRef.current) clearTimeout(longWaitRef.current)
       setShowLongWait(false)
@@ -408,6 +420,9 @@ function AskSection({ householdId }: { householdId: string }) {
         setHistory((prev) =>
           prev.map((x) => (x.id === id ? { ...x, response: res, loading: false } : x))
         )
+        void qc.invalidateQueries({
+          queryKey: [`/api/v1/households/${householdId}/insights/budget`],
+        })
         textareaRef.current?.focus()
       }
     } catch (err) {

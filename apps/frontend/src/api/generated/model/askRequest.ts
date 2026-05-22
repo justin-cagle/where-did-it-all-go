@@ -3,8 +3,9 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.27
+ * OpenAPI spec version: 0.2.28
  */
+import type { ConversationTurn } from './conversationTurn'
 
 export interface AskRequest {
   /**
@@ -12,4 +13,6 @@ export interface AskRequest {
    * @maxLength 2000
    */
   question: string
+  /** @maxItems 20 */
+  history?: ConversationTurn[]
 }

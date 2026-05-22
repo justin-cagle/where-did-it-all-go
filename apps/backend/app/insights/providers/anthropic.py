@@ -12,6 +12,24 @@ from app.insights.providers.base import CompletionResult, InsightProvider
 
 _DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 
+# USD per million tokens (input, output). Models not listed default to $0.
+_PRICING: dict[str, tuple[Decimal, Decimal]] = {
+    "claude-haiku-4-5": (Decimal("0.80"), Decimal("4.00")),
+    "claude-haiku-4-5-20251001": (Decimal("0.80"), Decimal("4.00")),
+    "claude-sonnet-4-6": (Decimal("3.00"), Decimal("15.00")),
+    "claude-opus-4-7": (Decimal("15.00"), Decimal("75.00")),
+}
+
+_MILLION = Decimal("1000000")
+
+
+def _calc_cost(model: str, tokens_in: int, tokens_out: int) -> Decimal:
+    price = _PRICING.get(model)
+    if price is None:
+        return Decimal("0")
+    in_price, out_price = price
+    return (in_price * tokens_in + out_price * tokens_out) / _MILLION
+
 
 class AnthropicProvider(InsightProvider):
     """Wraps the Anthropic Messages API.
@@ -51,7 +69,7 @@ class AnthropicProvider(InsightProvider):
         return CompletionResult(
             text=text,
             tokens_used=tokens_in + tokens_out,
-            cost=Decimal("0"),  # pricing wired in future iteration
+            cost=_calc_cost(self._model, tokens_in, tokens_out),
         )
 
     async def is_available(self) -> bool:
