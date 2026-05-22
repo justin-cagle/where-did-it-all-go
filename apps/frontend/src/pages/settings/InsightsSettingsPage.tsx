@@ -19,6 +19,24 @@ import { OllamaModelManager } from '@/components/insights/OllamaModelManager'
 
 const PROVIDER_TYPES = ['local_ollama', 'local_llamacpp', 'anthropic', 'openai', 'disabled']
 const LOCAL_TYPES = new Set(['local_ollama', 'local_llamacpp'])
+const REMOTE_TYPES = new Set(['anthropic', 'openai'])
+
+const ANTHROPIC_MODELS = [
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+  { value: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
+]
+
+const OPENAI_MODELS = [
+  { value: 'gpt-4o-mini', label: 'GPT-4o mini' },
+  { value: 'gpt-4o', label: 'GPT-4o' },
+]
+
+function remoteModelOptions(providerType: string) {
+  if (providerType === 'anthropic') return ANTHROPIC_MODELS
+  if (providerType === 'openai') return OPENAI_MODELS
+  return null
+}
 
 const AI_DATA_SHARING_OPTIONS = [
   { value: 'disabled', label: 'Disabled', description: 'No data sent to AI' },
@@ -265,6 +283,7 @@ function ProviderRow({
   const [baseUrl, setBaseUrl] = useState(provider.base_url ?? '')
   const [sharing, setSharing] = useState(provider.ai_data_sharing)
   const [enabled, setEnabled] = useState(provider.enabled)
+  const [apiKey, setApiKey] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [connStatus, setConnStatus] = useState<ConnectionStatus>({ state: 'untested' })
@@ -276,8 +295,10 @@ function ProviderRow({
   const qc = useQueryClient()
 
   const isLocal = LOCAL_TYPES.has(provider.provider)
+  const isRemote = REMOTE_TYPES.has(provider.provider)
   const isOllama = provider.provider === 'local_ollama'
   const isDisabled = provider.provider === 'disabled'
+  const remoteModels = remoteModelOptions(provider.provider)
 
   const runTest = async () => {
     setConnStatus({ state: 'testing' })
@@ -317,11 +338,13 @@ function ProviderRow({
           base_url: isLocal ? baseUrl || null : undefined,
           ai_data_sharing: sharing,
           enabled,
+          ...(isRemote && apiKey.trim() ? { credentials: { api_key: apiKey.trim() } } : {}),
         },
       })
       await qc.invalidateQueries({
         queryKey: [`/api/v1/households/${householdId}/insights/providers`],
       })
+      if (apiKey) setApiKey('')
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
       void runTest()
@@ -451,7 +474,7 @@ function ProviderRow({
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model</label>
                   {isOllama ? (
                     <OllamaModelSelector
                       householdId={householdId}
@@ -459,19 +482,50 @@ function ProviderRow({
                       onChange={setModelName}
                       onManage={() => setShowModelManager(true)}
                     />
+                  ) : remoteModels ? (
+                    <select
+                      value={modelName}
+                      onChange={(e) => setModelName(e.target.value)}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--fg-primary)',
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">— select a model —</option>
+                      {remoteModels.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
                     <input
                       value={modelName}
                       onChange={(e) => setModelName(e.target.value)}
-                      placeholder={
-                        provider.provider === 'local_llamacpp'
-                          ? 'e.g. mistral-7b-v0.1'
-                          : 'e.g. gpt-4o, claude-opus-4-7'
-                      }
+                      placeholder="e.g. mistral-7b-v0.1"
                       style={inputStyle}
                     />
                   )}
                 </div>
+
+                {isRemote && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>API key</label>
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="Leave blank to keep existing key"
+                      autoComplete="off"
+                      style={inputStyle}
+                    />
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
@@ -669,14 +723,23 @@ function AddProviderModal({
   const [modelName, setModelName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [sharing, setSharing] = useState('generalizations_only')
+  const [apiKey, setApiKey] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showModelManager, setShowModelManager] = useState(false)
 
   const create = useCreateProviderApiV1HouseholdsHouseholdIdInsightsProvidersPost()
   const isLocal = LOCAL_TYPES.has(providerType)
+  const isRemote = REMOTE_TYPES.has(providerType)
   const isOllama = providerType === 'local_ollama'
   const isDisabledType = providerType === 'disabled'
+  const remoteModels = remoteModelOptions(providerType)
+
+  const handleTypeChange = (t: string) => {
+    setProviderType(t)
+    setModelName('')
+    setApiKey('')
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -690,6 +753,7 @@ function AddProviderModal({
           base_url: isLocal ? baseUrl || null : undefined,
           ai_data_sharing: sharing,
           enabled: true,
+          ...(isRemote && apiKey.trim() ? { credentials: { api_key: apiKey.trim() } } : {}),
         },
       })
       onAdded()
@@ -775,7 +839,7 @@ function AddProviderModal({
               <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Provider type</label>
               <select
                 value={providerType}
-                onChange={(e) => setProviderType(e.target.value)}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 style={{
                   padding: '8px 10px',
                   borderRadius: 8,
@@ -817,7 +881,7 @@ function AddProviderModal({
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model name</label>
+                  <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Model</label>
                   {isOllama && baseUrl ? (
                     <OllamaModelSelector
                       householdId={householdId}
@@ -825,14 +889,33 @@ function AddProviderModal({
                       onChange={setModelName}
                       onManage={() => setShowModelManager(true)}
                     />
+                  ) : remoteModels ? (
+                    <select
+                      value={modelName}
+                      onChange={(e) => setModelName(e.target.value)}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--fg-primary)',
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">— select a model —</option>
+                      {remoteModels.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
                     <input
                       value={modelName}
                       onChange={(e) => setModelName(e.target.value)}
                       placeholder={
-                        providerType === 'local_llamacpp'
-                          ? 'e.g. mistral-7b-v0.1'
-                          : 'e.g. llama3, gpt-4o, claude-opus-4-7'
+                        providerType === 'local_llamacpp' ? 'e.g. mistral-7b-v0.1' : 'e.g. llama3'
                       }
                       style={{
                         padding: '8px 10px',
@@ -846,6 +929,28 @@ function AddProviderModal({
                     />
                   )}
                 </div>
+
+                {isRemote && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>API key</label>
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={providerType === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+                      autoComplete="off"
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--fg-primary)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Data sharing</label>
