@@ -269,10 +269,14 @@ const inputStyle: React.CSSProperties = {
 function ProviderRow({
   provider,
   householdId,
+  isActive,
+  onSetActive,
   onDeleted,
 }: {
   provider: ProviderConfigOut
   householdId: string
+  isActive: boolean
+  onSetActive: () => void
   onDeleted: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -282,7 +286,6 @@ function ProviderRow({
   const [modelName, setModelName] = useState(provider.model_name ?? '')
   const [baseUrl, setBaseUrl] = useState(provider.base_url ?? '')
   const [sharing, setSharing] = useState(provider.ai_data_sharing)
-  const [enabled, setEnabled] = useState(provider.enabled)
   const [apiKey, setApiKey] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -337,7 +340,6 @@ function ProviderRow({
           model_name: modelName || null,
           base_url: isLocal ? baseUrl || null : undefined,
           ai_data_sharing: sharing,
-          enabled,
           ...(isRemote && apiKey.trim() ? { credentials: { api_key: apiKey.trim() } } : {}),
         },
       })
@@ -375,33 +377,83 @@ function ProviderRow({
           overflow: 'hidden',
         }}
       >
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            width: '100%',
-            padding: '12px 14px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-sans)',
-            textAlign: 'left',
-          }}
-        >
-          {expanded ? (
-            <ChevronDown size={14} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />
-          ) : (
-            <ChevronRight size={14} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />
-          )}
-          <StatusDot status={connStatus} />
-          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)', flex: 1 }}>
-            {provider.provider.replace(/_/g, ' ')}
-          </span>
-          <ConnectionStatusLabel status={connStatus} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button
+            type="button"
+            title={isActive ? 'Active provider' : 'Set as active provider'}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isActive) onSetActive()
+            }}
+            style={{
+              flexShrink: 0,
+              width: 32,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'none',
+              border: 'none',
+              cursor: isActive ? 'default' : 'pointer',
+              padding: 0,
+            }}
+          >
+            <span
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: '50%',
+                border: `2px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                background: isActive ? 'var(--accent)' : 'transparent',
+                display: 'block',
+                transition: 'all 0.15s',
+              }}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flex: 1,
+              padding: '12px 14px 12px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+              textAlign: 'left',
+            }}
+          >
+            {expanded ? (
+              <ChevronDown size={14} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />
+            ) : (
+              <ChevronRight size={14} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />
+            )}
+            <StatusDot status={connStatus} />
+            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)', flex: 1 }}>
+              {provider.provider.replace(/_/g, ' ')}
+            </span>
+            {isActive && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--accent)',
+                  background: 'color-mix(in oklch, var(--accent) 10%, transparent)',
+                  border: '1px solid color-mix(in oklch, var(--accent) 25%, transparent)',
+                  borderRadius: 4,
+                  padding: '1px 6px',
+                  flexShrink: 0,
+                }}
+              >
+                ACTIVE
+              </span>
+            )}
+            <ConnectionStatusLabel status={connStatus} />
+          </button>
+        </div>
 
         {expanded && (
           <div
@@ -572,26 +624,7 @@ function ProviderRow({
               </>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  color: 'var(--fg-secondary)',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={(e) => setEnabled(e.target.checked)}
-                  style={{ width: 14, height: 14 }}
-                />
-                Enabled
-              </label>
-
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 {confirmDelete ? (
                   <>
@@ -1057,7 +1090,15 @@ function AddProviderModal({
   )
 }
 
-function TokenBudgetSection({ householdId, currency }: { householdId: string; currency: string }) {
+function TokenBudgetSection({
+  householdId,
+  currency,
+  activeProviderName,
+}: {
+  householdId: string
+  currency: string
+  activeProviderName: string | null
+}) {
   const { data: budget, refetch } = useGetBudgetApiV1HouseholdsHouseholdIdInsightsBudgetGet(
     householdId,
     { query: { enabled: !!householdId } }
@@ -1094,9 +1135,32 @@ function TokenBudgetSection({ householdId, currency }: { householdId: string; cu
     }
   }
 
+  if (!activeProviderName) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>
+          Token budget
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--fg-muted)' }}>
+          No active provider. Set a provider as active to configure its budget.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>Token budget</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)' }}>
+          Token budget
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+          for{' '}
+          <span style={{ color: 'var(--accent)', fontWeight: 500 }}>
+            {activeProviderName.replace(/_/g, ' ')}
+          </span>
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -1219,6 +1283,9 @@ export function InsightsSettingsPage() {
       query: { enabled: !!hid },
     })
 
+  const setActiveMutation =
+    useUpdateProviderApiV1HouseholdsHouseholdIdInsightsProvidersConfigIdPatch()
+
   const handleAdded = async () => {
     setShowAdd(false)
     await refetch()
@@ -1230,7 +1297,21 @@ export function InsightsSettingsPage() {
     })
   }
 
+  const handleSetActive = async (configId: string) => {
+    await setActiveMutation.mutateAsync({
+      householdId: hid,
+      configId,
+      data: { enabled: true },
+    })
+    await refetch()
+    await qc.invalidateQueries({
+      queryKey: [`/api/v1/households/${hid}/insights/budget`],
+    })
+  }
+
   const currency = household?.home_currency ?? 'USD'
+  const providerList = providers as ProviderConfigOut[]
+  const activeProvider = providerList.find((p) => p.enabled) ?? null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 640 }}>
@@ -1270,14 +1351,21 @@ export function InsightsSettingsPage() {
           </button>
         </div>
 
-        {(providers as ProviderConfigOut[]).length === 0 ? (
+        {providerList.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--fg-muted)' }}>
             No providers configured. Add one to enable AI insights.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(providers as ProviderConfigOut[]).map((p) => (
-              <ProviderRow key={p.id} provider={p} householdId={hid} onDeleted={handleDeleted} />
+            {providerList.map((p) => (
+              <ProviderRow
+                key={p.id}
+                provider={p}
+                householdId={hid}
+                isActive={p.enabled}
+                onSetActive={() => void handleSetActive(p.id)}
+                onDeleted={handleDeleted}
+              />
             ))}
           </div>
         )}
@@ -1289,7 +1377,11 @@ export function InsightsSettingsPage() {
           borderTop: '1px solid var(--border)',
         }}
       >
-        <TokenBudgetSection householdId={hid} currency={currency} />
+        <TokenBudgetSection
+          householdId={hid}
+          currency={currency}
+          activeProviderName={activeProvider?.provider ?? null}
+        />
       </div>
 
       {showAdd && (

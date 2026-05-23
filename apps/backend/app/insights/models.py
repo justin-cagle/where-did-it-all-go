@@ -141,14 +141,16 @@ class TokenBudget(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         server_default=sa.text("'block'"),
         comment="block | warn_and_continue | silent",
     )
+    provider_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey("insights_provider_config.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="active provider when this budget row was created; NULL = pre-migration rows",
+    )
 
     __table_args__ = (
         sa.Index("ix_insights_token_budget_household", "household_id"),
-        sa.UniqueConstraint(
-            "household_id",
-            "period_start",
-            name="uq_insights_token_budget_household_period",
-        ),
+        sa.Index("ix_insights_token_budget_provider_config", "provider_config_id"),
     )
 
     def __repr__(self) -> str:

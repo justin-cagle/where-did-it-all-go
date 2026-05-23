@@ -64,6 +64,7 @@ class ProviderConfigOut(BaseModel):
 class TokenBudgetOut(BaseModel):
     id: uuid.UUID
     household_id: uuid.UUID
+    provider_config_id: uuid.UUID | None
     period_start: date
     token_limit: int | None
     cost_limit: Decimal | None

@@ -390,7 +390,10 @@ async def get_budget(
     session: _DbSession,
     current_user: CurrentUser,
 ) -> TokenBudgetOut:
-    budget = await service.get_or_create_budget(session, household_id)
+    settings = get_settings()
+    _, config = await service.get_active_provider(session, household_id, settings.master_key)
+    provider_config_id = config.id if config is not None else None
+    budget = await service.get_or_create_budget(session, household_id, provider_config_id)
     await session.commit()
     return TokenBudgetOut.model_validate(budget)
 
@@ -405,6 +408,9 @@ async def update_budget(
     session: _DbSession,
     current_user: CurrentUser,
 ) -> TokenBudgetOut:
+    settings = get_settings()
+    _, config = await service.get_active_provider(session, household_id, settings.master_key)
+    provider_config_id = config.id if config is not None else None
     budget = await service.update_budget(
         session,
         household_id=household_id,
@@ -413,6 +419,7 @@ async def update_budget(
         currency=body.currency,
         overage_behavior=body.overage_behavior,
         actor_id=current_user.id,
+        provider_config_id=provider_config_id,
     )
     await session.commit()
     return TokenBudgetOut.model_validate(budget)
