@@ -29,6 +29,7 @@ import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { HouseholdPage } from '@/pages/settings/HouseholdPage'
 
 import { SecurityPage } from '@/pages/settings/SecurityPage'
+import { DangerZonePage } from '@/pages/settings/DangerZonePage'
 import { IngestPage } from '@/pages/ingest/IngestPage'
 import { ConnectPage } from '@/pages/ingest/ConnectPage'
 import { AccountMappingPage } from '@/pages/ingest/AccountMappingPage'
@@ -255,6 +256,7 @@ export const router = createBrowserRouter([
       { path: 'ingest', element: <IngestPage /> },
       { path: 'classification', element: <ClassificationPage /> },
       { path: 'security', element: <SecurityPage /> },
+      { path: 'danger', element: <DangerZonePage /> },
     ],
   },
 

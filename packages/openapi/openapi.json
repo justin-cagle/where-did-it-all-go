@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.36"
+    "version": "0.2.39"
   },
   "paths": {
     "/api/v1/auth/register": {
@@ -533,6 +533,41 @@
         "summary": "Archive Household",
         "description": "Soft-delete (archive) a household (actor must be owner).",
         "operationId": "archive_household_api_v1_households__household_id__delete",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/leave": {
+      "post": {
+        "tags": ["households", "auth"],
+        "summary": "Leave Household",
+        "description": "Leave a household. Members can always leave; owners only if sole member.",
+        "operationId": "leave_household_api_v1_households__household_id__leave_post",
         "parameters": [
           {
             "name": "household_id",

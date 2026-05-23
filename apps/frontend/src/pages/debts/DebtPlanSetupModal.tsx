@@ -359,7 +359,9 @@ export function DebtPlanSetupModal({ householdId, liabilityAccounts, onClose, on
           </button>
           <button
             type="button"
-            disabled={isPending}
+            disabled={
+              isPending || (method !== DebtPlanMethod.none && liabilityAccounts.length === 0)
+            }
             onClick={() => void handleCreate()}
             style={{
               padding: '7px 18px',
@@ -369,8 +371,14 @@ export function DebtPlanSetupModal({ householdId, liabilityAccounts, onClose, on
               border: 'none',
               borderRadius: 8,
               color: 'var(--accent-fg)',
-              cursor: isPending ? 'not-allowed' : 'pointer',
-              opacity: isPending ? 0.7 : 1,
+              cursor:
+                isPending || (method !== DebtPlanMethod.none && liabilityAccounts.length === 0)
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                isPending || (method !== DebtPlanMethod.none && liabilityAccounts.length === 0)
+                  ? 0.7
+                  : 1,
             }}
           >
             {isPending ? 'Creating...' : 'Create plan'}

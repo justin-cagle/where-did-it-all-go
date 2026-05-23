@@ -566,6 +566,70 @@ async def archive_household(
     )
 
 
+async def leave_household(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    actor: User,
+) -> None:
+    """Allow actor to leave a household.
+
+    Members can always leave. Owners may only leave when they are the sole member
+    — doing so dissolves (archives) the household. Raises ConflictError if an
+    owner tries to leave while other members are still present.
+    """
+    membership = await _get_membership(session, household_id, actor.id)
+    if membership is None:
+        raise NotFoundError("not a member of this household")
+
+    if membership.role == str(HouseholdRole.OWNER):
+        count_result = await session.execute(
+            sa.select(sa.func.count())
+            .select_from(HouseholdMembership)
+            .where(
+                HouseholdMembership.household_id == household_id,
+                HouseholdMembership.archived_at.is_(None),
+            )
+        )
+        member_count = count_result.scalar_one()
+        if member_count > 1:
+            raise ConflictError("transfer or remove all members before leaving as owner")
+        # Sole owner — archive the household
+        household = await session.get(Household, household_id)
+        if household is not None:
+            now_hh = datetime.now(tz=UTC)
+            household.archived_at = now_hh
+            household.archived_by = actor.id
+
+    now = datetime.now(tz=UTC)
+    membership.archived_at = now
+    membership.archived_by = actor.id
+    await session.flush()
+
+    # Revoke refresh tokens scoped to this household
+    await session.execute(
+        sa.update(models.RefreshToken)
+        .where(
+            models.RefreshToken.user_id == actor.id,
+            models.RefreshToken.household_id == household_id,
+            models.RefreshToken.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
+
+    await _write_audit(
+        session,
+        actor_type=ActorType.USER,
+        actor_id=actor.id,
+        household_id=household_id,
+        entity_type="household_membership",
+        entity_id=membership.id,
+        operation=AuditOperation.ARCHIVE,
+        delta=[{"op": "replace", "path": "/archived_at", "value": now.isoformat()}],
+        rationale="member left household",
+    )
+
+
 async def list_households(session: AsyncSession, *, actor: User) -> list[Household]:
     """Return all households the actor is a member of."""
     stmt = (

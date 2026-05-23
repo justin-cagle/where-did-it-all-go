@@ -22,6 +22,7 @@ Routes:
     GET    /api/v1/households/{household_id}
     PATCH  /api/v1/households/{household_id}
     DELETE /api/v1/households/{household_id}
+    POST   /api/v1/households/{household_id}/leave
     GET    /api/v1/households/{household_id}/members
     POST   /api/v1/households/{household_id}/members     (step-up required)
     DELETE /api/v1/households/{household_id}/members/{user_id} (step-up required)
@@ -487,6 +488,22 @@ async def archive_household(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post("/households/{household_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave_household(
+    household_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: _DbSession,
+) -> None:
+    """Leave a household. Members can always leave; owners only if sole member."""
+    try:
+        await service.leave_household(session, household_id=household_id, actor=current_user)
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except service.ConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    await session.commit()
 
 
 @router.get("/households/{household_id}/members", response_model=list[MembershipOut])
