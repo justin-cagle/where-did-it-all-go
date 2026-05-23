@@ -228,8 +228,12 @@ async def get_active_provider(
 async def get_or_create_budget(
     session: AsyncSession,
     household_id: uuid.UUID,
+    provider_config_id: uuid.UUID | None = None,
 ) -> TokenBudget:
-    """Fetch the current-period budget, creating it if this is a new month."""
+    """Fetch the current-period budget for a provider, creating it if new month.
+
+    Scoped to provider_config_id so each provider tracks its own usage independently.
+    """
     today = date.today()
     period_start = today.replace(day=1)
 
@@ -237,6 +241,7 @@ async def get_or_create_budget(
         sa.select(TokenBudget).where(
             TokenBudget.household_id == household_id,
             TokenBudget.period_start == period_start,
+            TokenBudget.provider_config_id == provider_config_id,
         )
     )
     budget = result.scalar_one_or_none()
@@ -244,6 +249,7 @@ async def get_or_create_budget(
         budget = TokenBudget(
             household_id=household_id,
             period_start=period_start,
+            provider_config_id=provider_config_id,
         )
         session.add(budget)
         await session.flush()
@@ -254,12 +260,13 @@ async def check_budget(
     session: AsyncSession,
     household_id: uuid.UUID,
     estimated_tokens: int,
+    provider_config_id: uuid.UUID | None = None,
 ) -> bool:
     """Return True if the call should proceed, False if budget is exhausted (block mode).
 
     Applies overage_behavior: block returns False; warn_and_continue and silent return True.
     """
-    budget = await get_or_create_budget(session, household_id)
+    budget = await get_or_create_budget(session, household_id, provider_config_id)
 
     overage = OverageBehavior(budget.overage_behavior)
 
@@ -315,6 +322,7 @@ async def _record_audit_and_update_budget(
     insight_category: InsightCategory,
     duration_ms: int,
     error_detail: str | None,
+    provider_config_id: uuid.UUID | None = None,
 ) -> None:
     success = result is not None
     response_fingerprint: str | None = None
@@ -344,7 +352,7 @@ async def _record_audit_and_update_budget(
     session.add(log_entry)
 
     if success and tokens_used > 0:
-        budget = await get_or_create_budget(session, household_id)
+        budget = await get_or_create_budget(session, household_id, provider_config_id)
         budget.tokens_used += tokens_used
         budget.cost_used += cost
 
@@ -380,11 +388,13 @@ async def complete(
         8. Return response text or None
     """
     try:
-        if not await check_budget(session, household_id, estimated_tokens):
-            return None
-
         provider, config = await get_active_provider(session, household_id, master_key)
         if provider is None or config is None:
+            return None
+
+        if not await check_budget(
+            session, household_id, estimated_tokens, provider_config_id=config.id
+        ):
             return None
 
         sharing_level = config.ai_data_sharing
@@ -440,6 +450,7 @@ async def complete(
             insight_category=insight_category,
             duration_ms=duration_ms,
             error_detail=error_detail,
+            provider_config_id=config.id,
         )
 
         return result.text if result is not None else None
@@ -847,7 +858,9 @@ async def answer_question(
                 return AnswerResult(answer=None, provider_used=None, reason="disabled")
             return AnswerResult(answer=None, provider_used=None, reason="no_provider")
 
-        budget_ok = await check_budget(session, household_id, estimated_tokens=500)
+        budget_ok = await check_budget(
+            session, household_id, estimated_tokens=500, provider_config_id=config.id
+        )
         if not budget_ok:
             return AnswerResult(answer=None, provider_used=None, reason="budget_exceeded")
 
@@ -965,6 +978,7 @@ async def answer_question(
             insight_category=InsightCategory.QA,
             duration_ms=duration_ms,
             error_detail=error_detail,
+            provider_config_id=config.id,
         )
     except Exception as exc:
         logger.error(
@@ -1019,6 +1033,24 @@ async def test_provider_config(
 # ---------------------------------------------------------------------------
 # Provider config CRUD
 # ---------------------------------------------------------------------------
+
+
+async def _disable_other_providers(
+    session: AsyncSession,
+    household_id: uuid.UUID,
+    exclude_id: uuid.UUID,
+) -> None:
+    """Enforce single-active-provider constraint: disable all enabled configs except exclude_id."""
+    await session.execute(
+        sa.update(InsightProviderConfig)
+        .where(
+            InsightProviderConfig.household_id == household_id,
+            InsightProviderConfig.id != exclude_id,
+            InsightProviderConfig.enabled.is_(True),
+            InsightProviderConfig.archived_at.is_(None),
+        )
+        .values(enabled=False)
+    )
 
 
 async def list_provider_configs(
@@ -1088,6 +1120,9 @@ async def create_provider_config(
     session.add(config)
     await session.flush()
 
+    if enabled:
+        await _disable_other_providers(session, household_id, exclude_id=config.id)
+
     await _write_config_audit(
         session,
         actor_id=actor_id,
@@ -1129,6 +1164,8 @@ async def update_provider_config(
     if enabled is not None and enabled != config.enabled:
         delta.append({"op": "replace", "path": "/enabled", "value": enabled})
         config.enabled = enabled
+        if enabled:
+            await _disable_other_providers(session, household_id, exclude_id=config_id)
     if priority is not None and priority != config.priority:
         delta.append({"op": "replace", "path": "/priority", "value": priority})
         config.priority = priority
@@ -1202,8 +1239,9 @@ async def update_budget(
     currency: str | None = None,
     overage_behavior: str | None = None,
     actor_id: uuid.UUID,
+    provider_config_id: uuid.UUID | None = None,
 ) -> TokenBudget:
-    budget = await get_or_create_budget(session, household_id)
+    budget = await get_or_create_budget(session, household_id, provider_config_id)
     delta: list[dict[str, Any]] = []
 
     if token_limit is not None and token_limit != budget.token_limit:

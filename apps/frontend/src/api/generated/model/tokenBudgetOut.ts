@@ -3,14 +3,16 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.33
+ * OpenAPI spec version: 0.2.34
  */
+import type { TokenBudgetOutProviderConfigId } from './tokenBudgetOutProviderConfigId'
 import type { TokenBudgetOutTokenLimit } from './tokenBudgetOutTokenLimit'
 import type { TokenBudgetOutCostLimit } from './tokenBudgetOutCostLimit'
 
 export interface TokenBudgetOut {
   id: string
   household_id: string
+  provider_config_id: TokenBudgetOutProviderConfigId
   period_start: string
   token_limit: TokenBudgetOutTokenLimit
   cost_limit: TokenBudgetOutCostLimit
