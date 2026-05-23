@@ -744,7 +744,10 @@ async def list_members(
 
     stmt = (
         sa.select(HouseholdMembership)
-        .where(HouseholdMembership.household_id == household_id)
+        .where(
+            HouseholdMembership.household_id == household_id,
+            HouseholdMembership.archived_at.is_(None),
+        )
         .order_by(HouseholdMembership.created_at)
     )
     rows = await session.execute(stmt)
@@ -772,6 +775,7 @@ async def _get_membership(
     stmt = sa.select(HouseholdMembership).where(
         HouseholdMembership.household_id == household_id,
         HouseholdMembership.user_id == user_id,
+        HouseholdMembership.archived_at.is_(None),
     )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
