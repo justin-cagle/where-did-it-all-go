@@ -23,7 +23,7 @@ export function DangerZonePage() {
     query: { enabled: !!hid },
   })
 
-  const isOwner = (members as MembershipOut[]).find((m) => m.user_id === me?.id)?.role === 'OWNER'
+  const isOwner = (members as MembershipOut[]).find((m) => m.user_id === me?.id)?.role === 'owner'
 
   const archiveHousehold = useArchiveHouseholdApiV1HouseholdsHouseholdIdDelete()
   const logoutMutation = useLogoutApiV1AuthLogoutPost()
