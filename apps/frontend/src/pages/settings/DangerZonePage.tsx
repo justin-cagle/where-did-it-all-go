@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useMeApiV1AuthMeGet,
-  useGetHouseholdApiV1HouseholdsHouseholdIdGet,
   useListMembersApiV1HouseholdsHouseholdIdMembersGet,
   useArchiveHouseholdApiV1HouseholdsHouseholdIdDelete,
   useLogoutApiV1AuthLogoutPost,
 } from '@/api/generated/households/households'
 import type { MembershipOut } from '@/api/generated/model/membershipOut'
 import { useAuthStore } from '@/store'
+import { useHousehold } from '@/hooks/use-household'
 
 export function DangerZonePage() {
   const navigate = useNavigate()
@@ -17,11 +17,8 @@ export function DangerZonePage() {
   const clearUser = useAuthStore((s) => s.clearUser)
 
   const { data: me } = useMeApiV1AuthMeGet()
-  const hid = me?.household_id ?? ''
-
-  const { data: household } = useGetHouseholdApiV1HouseholdsHouseholdIdGet(hid, {
-    query: { enabled: !!hid },
-  })
+  const { household, householdId } = useHousehold()
+  const hid = householdId ?? ''
   const { data: members = [] } = useListMembersApiV1HouseholdsHouseholdIdMembersGet(hid, {
     query: { enabled: !!hid },
   })
