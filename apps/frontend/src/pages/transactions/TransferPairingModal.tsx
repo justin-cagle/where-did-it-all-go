@@ -35,8 +35,8 @@ export function TransferPairingModal({ householdId, transaction, open, onClose }
       householdId,
       {
         direction: oppositeDirection as 'debit' | 'credit',
-        date_from: offsetDate(transaction.posted_date, -7),
-        date_to: offsetDate(transaction.posted_date, 7),
+        date_from: offsetDate(transaction.posted_date ?? transaction.occurred_at.slice(0, 10), -7),
+        date_to: offsetDate(transaction.posted_date ?? transaction.occurred_at.slice(0, 10), 7),
       },
       { query: { enabled: open } }
     )
@@ -293,8 +293,9 @@ function CandidateRow({
   )
 }
 
-function offsetDate(dateStr: string, days: number): string {
-  const parts = dateStr.split('-')
+function offsetDate(dateStr: string | null | undefined, days: number): string {
+  const safe = dateStr ?? new Date().toISOString().slice(0, 10)
+  const parts = safe.split('-')
   const y = parseInt(parts[0] ?? '2000', 10)
   const m = parseInt(parts[1] ?? '1', 10)
   const d = parseInt(parts[2] ?? '1', 10)
