@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.36
+ * OpenAPI spec version: 0.2.39
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
@@ -1619,6 +1619,89 @@ export const useArchiveHouseholdApiV1HouseholdsHouseholdIdDelete = <
 > => {
   const mutationOptions =
     getArchiveHouseholdApiV1HouseholdsHouseholdIdDeleteMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * Leave a household. Members can always leave; owners only if sole member.
+ * @summary Leave Household
+ */
+export const leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost = (
+  householdId: string,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>({
+    url: `/api/v1/households/${householdId}/leave`,
+    method: 'POST',
+    signal,
+  })
+}
+
+export const getLeaveHouseholdApiV1HouseholdsHouseholdIdLeavePostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>,
+    TError,
+    { householdId: string },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>,
+  TError,
+  { householdId: string },
+  TContext
+> => {
+  const mutationKey = ['leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>,
+    { householdId: string }
+  > = (props) => {
+    const { householdId } = props ?? {}
+
+    return leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost(householdId)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type LeaveHouseholdApiV1HouseholdsHouseholdIdLeavePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>
+>
+
+export type LeaveHouseholdApiV1HouseholdsHouseholdIdLeavePostMutationError = HTTPValidationError
+
+/**
+ * @summary Leave Household
+ */
+export const useLeaveHouseholdApiV1HouseholdsHouseholdIdLeavePost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>,
+      TError,
+      { householdId: string },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof leaveHouseholdApiV1HouseholdsHouseholdIdLeavePost>>,
+  TError,
+  { householdId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getLeaveHouseholdApiV1HouseholdsHouseholdIdLeavePostMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
 }

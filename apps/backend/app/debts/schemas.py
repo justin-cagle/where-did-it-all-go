@@ -3,9 +3,9 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.debts.enums import DebtPlanMethod
 from app.platform.money import MoneyDecimal
@@ -23,6 +23,12 @@ class DebtPlanCreate(BaseModel):
     snowball_flow: bool = True
     account_ids: list[uuid.UUID] = []
     effective_from: date | None = None
+
+    @model_validator(mode="after")
+    def require_accounts_for_active_method(self) -> Self:
+        if self.method != DebtPlanMethod.NONE and not self.account_ids:
+            raise ValueError("At least one debt account is required to create a plan")
+        return self
 
 
 class DebtPlanUpdate(BaseModel):
