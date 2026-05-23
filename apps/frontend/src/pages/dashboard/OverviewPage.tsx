@@ -24,7 +24,8 @@ import type { GoalSnapshotOut } from '@/api/generated/model/goalSnapshotOut'
 import type { ExpectedEventOut } from '@/api/generated/model/expectedEventOut'
 import type { TransactionOut } from '@/api/generated/model/transactionOut'
 
-function fmtDate(dateStr: string): string {
+function fmtDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
   const parts = dateStr.split('-')
   const y = parseInt(parts[0] ?? '2000', 10)
   const m = parseInt(parts[1] ?? '1', 10)
@@ -284,7 +285,7 @@ function TxRow({ tx, privacyMode }: { tx: TransactionOut; privacyMode: PrivacyMo
           {tx.merchant_name ?? tx.description}
         </div>
         <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
-          {fmtDate(tx.posted_date)}
+          {fmtDate(tx.posted_date ?? tx.occurred_at.slice(0, 10))}
         </div>
       </div>
       <div
