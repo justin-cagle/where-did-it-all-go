@@ -332,7 +332,7 @@ export function DebtsPage() {
             <Pencil size={13} />
             View plan
           </button>
-        ) : (
+        ) : liabilityAccounts.length > 0 ? (
           <button
             type="button"
             onClick={() => setShowSetup(true)}
@@ -353,7 +353,7 @@ export function DebtsPage() {
             <Plus size={14} />
             Create debt plan
           </button>
-        )}
+        ) : null}
       </div>
 
       <div

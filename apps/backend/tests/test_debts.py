@@ -23,9 +23,11 @@ import pytest
 import sqlalchemy as sa
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.debts.enums import DebtPlanMethod
+from app.debts.schemas import DebtPlanCreate
 from app.debts.service import (
     AccountState,
     AccountTranche,
@@ -1058,3 +1060,35 @@ async def test_comparison_validation_error(db_session_debts: AsyncSession) -> No
             household_id=hh_id,
             compare="invalid_method",
         )
+
+
+# ---------------------------------------------------------------------------
+# Schema validation — DebtPlanCreate
+# ---------------------------------------------------------------------------
+
+
+def test_create_schema_rejects_active_method_with_no_accounts() -> None:
+    with pytest.raises(PydanticValidationError):
+        DebtPlanCreate(name="Plan", method=DebtPlanMethod.AVALANCHE, account_ids=[])
+
+
+def test_create_schema_rejects_snowball_with_no_accounts() -> None:
+    with pytest.raises(PydanticValidationError):
+        DebtPlanCreate(name="Plan", method=DebtPlanMethod.SNOWBALL, account_ids=[])
+
+
+def test_create_schema_rejects_custom_with_no_accounts() -> None:
+    with pytest.raises(PydanticValidationError):
+        DebtPlanCreate(name="Plan", method=DebtPlanMethod.CUSTOM, account_ids=[])
+
+
+def test_create_schema_allows_none_method_with_no_accounts() -> None:
+    schema = DebtPlanCreate(name="Track only", method=DebtPlanMethod.NONE, account_ids=[])
+    assert schema.method == DebtPlanMethod.NONE
+    assert schema.account_ids == []
+
+
+def test_create_schema_allows_active_method_with_accounts() -> None:
+    account_id = uuid.uuid4()
+    schema = DebtPlanCreate(name="Plan", method=DebtPlanMethod.AVALANCHE, account_ids=[account_id])
+    assert schema.account_ids == [account_id]
