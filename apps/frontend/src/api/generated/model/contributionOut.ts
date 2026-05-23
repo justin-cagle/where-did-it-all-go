@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.31
+ * OpenAPI spec version: 0.2.32
  */
 import type { ContributionType } from './contributionType'
 import type { ContributionOutTransactionId } from './contributionOutTransactionId'
