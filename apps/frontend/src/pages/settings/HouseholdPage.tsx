@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
-import { UserMinus, Crown, Copy, RefreshCw, X, Mail, MailX, AlertTriangle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import {
+  UserMinus,
+  Crown,
+  Copy,
+  RefreshCw,
+  X,
+  Mail,
+  MailX,
+  AlertTriangle,
+  LogOut,
+} from 'lucide-react'
 import {
   useGetHouseholdApiV1HouseholdsHouseholdIdGet,
   useListMembersApiV1HouseholdsHouseholdIdMembersGet,
@@ -12,6 +23,8 @@ import {
   useResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost,
   useRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost,
   useGetSmtpStatusApiV1SettingsSmtpStatusGet,
+  useLeaveHouseholdApiV1HouseholdsHouseholdIdLeavePost,
+  useLogoutApiV1AuthLogoutPost,
 } from '@/api/generated/households/households'
 import { useHousehold } from '@/hooks/use-household'
 import { useQueryClient } from '@tanstack/react-query'
@@ -19,6 +32,7 @@ import type { MembershipOut } from '@/api/generated/model/membershipOut'
 import type { InvitationOut } from '@/api/generated/model/invitationOut'
 import { VisibilityMode } from '@/api/generated/model/visibilityMode'
 import { CurrencySelect } from '@/components/CurrencySelect'
+import { useAuthStore } from '@/store'
 
 const VISIBILITY_OPTIONS = [
   {
@@ -214,6 +228,8 @@ export function HouseholdPage() {
   const { householdId } = useHousehold()
   const hid = householdId ?? ''
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const clearUser = useAuthStore((s) => s.clearUser)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'owner'>('member')
   const [inviteResult, setInviteResult] = useState<InvitationOut | null>(null)
@@ -223,6 +239,8 @@ export function HouseholdPage() {
   const [pendingCurrency, setPendingCurrency] = useState<string | null>(null)
   const [pendingVisibility, setPendingVisibility] = useState<VisibilityMode | null>(null)
   const [recomputing, setRecomputing] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!recomputing || !hid) return
@@ -257,6 +275,8 @@ export function HouseholdPage() {
     useResendInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdResendPost()
   const revokeInvitation =
     useRevokeInvitationApiV1HouseholdsHouseholdIdInvitationsInvitationIdRevokePost()
+  const leaveHousehold = useLeaveHouseholdApiV1HouseholdsHouseholdIdLeavePost()
+  const logoutMutation = useLogoutApiV1AuthLogoutPost()
 
   const invitationsKey = [`/api/v1/households/${hid}/invitations`]
 
@@ -266,6 +286,26 @@ export function HouseholdPage() {
 
   const currentMembership = (members as MembershipOut[]).find((m) => m.user_id === me?.id)
   const isOwner = currentMembership?.role === 'owner'
+  const isSoleOwner = isOwner && (members as MembershipOut[]).length === 1
+
+  const handleLeave = async () => {
+    setLeaveError(null)
+    try {
+      await leaveHousehold.mutateAsync({ householdId: hid })
+      void qc.clear()
+      try {
+        await logoutMutation.mutateAsync()
+      } catch {
+        // best-effort logout
+      }
+      clearUser()
+      navigate('/login', { replace: true })
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+      setLeaveError(detail ?? 'Failed to leave household')
+      setConfirmLeave(false)
+    }
+  }
 
   const handleRemove = async (userId: string) => {
     await removeMember.mutateAsync({ householdId: hid, userId })
@@ -974,25 +1014,100 @@ export function HouseholdPage() {
         )}
       </div>
 
-      {!isOwner && (
-        <div style={{ paddingTop: 20 }}>
+      {/* Leave / dissolve household */}
+      <div
+        style={{
+          marginTop: 32,
+          paddingTop: 24,
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-primary)' }}>
+          {isSoleOwner ? 'Dissolve household' : 'Leave household'}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+          {isSoleOwner
+            ? 'You are the only member. Leaving will archive this household and all its data permanently.'
+            : isOwner
+              ? 'You are the owner. Remove all other members or transfer ownership before leaving.'
+              : 'You will lose access to all shared financial data in this household.'}
+        </div>
+
+        {leaveError && <div style={{ fontSize: 12, color: 'var(--danger)' }}>{leaveError}</div>}
+
+        {isOwner && !isSoleOwner ? null : confirmLeave ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              disabled={leaveHousehold.isPending || logoutMutation.isPending}
+              onClick={() => void handleLeave()}
+              style={{
+                padding: '7px 14px',
+                fontSize: 13,
+                fontWeight: 500,
+                background: 'var(--danger)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor:
+                  leaveHousehold.isPending || logoutMutation.isPending ? 'not-allowed' : 'pointer',
+                opacity: leaveHousehold.isPending || logoutMutation.isPending ? 0.7 : 1,
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {leaveHousehold.isPending || logoutMutation.isPending
+                ? 'Leaving...'
+                : isSoleOwner
+                  ? 'Yes, dissolve'
+                  : 'Yes, leave'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmLeave(false)
+                setLeaveError(null)
+              }}
+              style={{
+                padding: '7px 14px',
+                fontSize: 13,
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: 'var(--fg-secondary)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
+            onClick={() => setConfirmLeave(true)}
             style={{
-              padding: '8px 16px',
+              alignSelf: 'flex-start',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              fontSize: 13,
               background: 'none',
               border: '1px solid var(--danger)',
               borderRadius: 8,
-              fontSize: 13,
               color: 'var(--danger)',
               cursor: 'pointer',
               fontFamily: 'var(--font-sans)',
             }}
           >
-            Leave household
+            <LogOut size={13} />
+            {isSoleOwner ? 'Dissolve household' : 'Leave household'}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
