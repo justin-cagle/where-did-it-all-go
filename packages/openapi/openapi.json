@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.35"
+    "version": "0.2.36"
   },
   "paths": {
     "/api/v1/auth/register": {

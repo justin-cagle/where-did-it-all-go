@@ -34,7 +34,7 @@ export function groupByDate(transactions: TransactionOut[]): DateGroup[] {
 
   const map = new Map<string, TransactionOut[]>()
   for (const tx of transactions) {
-    const date = tx.posted_date
+    const date = tx.posted_date ?? tx.occurred_at.slice(0, 10)
     const existing = map.get(date)
     if (existing) existing.push(tx)
     else map.set(date, [tx])
@@ -86,4 +86,24 @@ export function categoryColor(colorHex: string | null | undefined, name?: string
 export function txDisplayAmount(tx: TransactionOut): number {
   const raw = parseFloat(tx.amount)
   return tx.direction === 'credit' ? raw : -raw
+}
+
+export function formatTransactionDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  const parts = dateStr.split('-')
+  const y = parseInt(parts[0] ?? '2000', 10)
+  const m = parseInt(parts[1] ?? '1', 10)
+  const d = parseInt(parts[2] ?? '1', 10)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+export function offsetDateStr(dateStr: string | null | undefined, days: number): string {
+  const safe = dateStr ?? new Date().toISOString().slice(0, 10)
+  const parts = safe.split('-')
+  const y = parseInt(parts[0] ?? '2000', 10)
+  const m = parseInt(parts[1] ?? '1', 10)
+  const d = parseInt(parts[2] ?? '1', 10)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + days)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
