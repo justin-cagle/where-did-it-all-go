@@ -308,6 +308,7 @@ async def update_me(
         session,
         user=current_user,
         display_name=body.display_name,
+        avatar_url=body.avatar_url,
     )
     return UserOut.model_validate(user)
 

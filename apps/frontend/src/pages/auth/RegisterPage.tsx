@@ -92,6 +92,7 @@ export function RegisterPage() {
         display_name: data.display_name,
         is_app_admin: result.is_app_admin,
         totp_enabled: false,
+        avatar_url: null,
       })
       navigate(redirectAfter ?? result.redirect, { replace: true })
     } catch (err) {

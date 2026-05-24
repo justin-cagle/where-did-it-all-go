@@ -3,8 +3,9 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.42
+ * OpenAPI spec version: 0.2.43
  */
+import type { UpdateProfileRequestAvatarUrl } from './updateProfileRequestAvatarUrl'
 
 /**
  * Update mutable fields on the authenticated user's profile.
@@ -15,4 +16,5 @@ export interface UpdateProfileRequest {
    * @maxLength 255
    */
   display_name: string
+  avatar_url?: UpdateProfileRequestAvatarUrl
 }

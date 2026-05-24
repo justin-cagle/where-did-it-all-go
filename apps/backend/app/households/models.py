@@ -80,6 +80,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         comment="Base32 TOTP secret; TODO encrypt at rest (security.md)",
     )
     totp_enabled: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    avatar_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     memberships: Mapped[list["HouseholdMembership"]] = relationship(
         "HouseholdMembership",

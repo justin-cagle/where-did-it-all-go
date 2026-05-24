@@ -8,6 +8,7 @@ interface User {
   display_name: string
   is_app_admin: boolean
   totp_enabled: boolean
+  avatar_url: string | null
 }
 
 interface AuthState {

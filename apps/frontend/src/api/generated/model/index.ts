@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.42
+ * OpenAPI spec version: 0.2.43
  */
 
 export * from './acceptInviteResponse'
@@ -649,11 +649,13 @@ export * from './transferPairRequest'
 export * from './transferPairRequestTransferType'
 export * from './triggerResponse'
 export * from './updateProfileRequest'
+export * from './updateProfileRequestAvatarUrl'
 export * from './uploadFileApiV1HouseholdsHouseholdIdIngestUploadPostParams'
 export * from './uploadResponse'
 export * from './userContributionTotal'
 export * from './userContributionTotalAttributedToUserId'
 export * from './userOut'
+export * from './userOutAvatarUrl'
 export * from './validationError'
 export * from './validationErrorCtx'
 export * from './validationErrorLocItem'

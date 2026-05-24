@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   useMeApiV1AuthMeGet,
@@ -154,6 +154,148 @@ function SettingRow({
   )
 }
 
+function AvatarSection({
+  avatarUrl,
+  displayName,
+  onSave,
+}: {
+  avatarUrl: string | null
+  displayName: string
+  onSave: (url: string | null) => Promise<void>
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const initials = displayName
+    .split(' ')
+    .map((p) => p[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 512 * 1024) {
+      setError('Image must be under 512 KB')
+      return
+    }
+    setError(null)
+    setSaving(true)
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      await onSave(dataUrl)
+    } catch {
+      setError('Failed to save avatar')
+    } finally {
+      setSaving(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const handleRemove = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      await onSave(null)
+    } catch {
+      setError('Failed to remove avatar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          background: 'var(--accent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          border: '2px solid var(--border)',
+        }}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt="Avatar"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <span style={{ color: 'var(--accent-fg)', fontSize: 18, fontWeight: 600 }}>
+            {initials}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            style={{ display: 'none' }}
+            onChange={(e) => void handleFileChange(e)}
+          />
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => fileRef.current?.click()}
+            style={{
+              padding: '6px 14px',
+              background: 'var(--accent)',
+              color: 'var(--accent-fg)',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+              opacity: saving ? 0.6 : 1,
+            }}
+          >
+            {saving ? 'Saving...' : 'Upload photo'}
+          </button>
+          {avatarUrl && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => void handleRemove()}
+              style={{
+                padding: '6px 14px',
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                fontSize: 12,
+                color: 'var(--danger)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
+          PNG, JPG, WebP or GIF. Max 512 KB.
+        </div>
+        {error && <div style={{ fontSize: 12, color: 'var(--danger)' }}>{error}</div>}
+      </div>
+    </div>
+  )
+}
+
 export function ProfilePage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
@@ -176,6 +318,14 @@ export function ProfilePage() {
     }
   }
 
+  const handleSaveAvatar = async (avatar_url: string | null) => {
+    await updateMe.mutateAsync({ data: { display_name: me.display_name, avatar_url } })
+    await qc.invalidateQueries({ queryKey: getMeApiV1AuthMeGetQueryKey() })
+    if (currentUser) {
+      setUser({ ...currentUser, avatar_url })
+    }
+  }
+
   const handleEnableTotp = () => {
     navigate('/settings/totp-setup', { state: { returnTo: '/settings/profile' } })
   }
@@ -193,6 +343,14 @@ export function ProfilePage() {
       <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--fg-primary)', margin: '0 0 20px' }}>
         Profile
       </h2>
+
+      <SettingRow label="Avatar" description="Photo shown in the top bar and to household members">
+        <AvatarSection
+          avatarUrl={me.avatar_url ?? null}
+          displayName={me.display_name}
+          onSave={handleSaveAvatar}
+        />
+      </SettingRow>
 
       <SettingRow label="Display name" description="Shown to other household members">
         <InlineEdit value={me.display_name} onSave={handleSaveName} />

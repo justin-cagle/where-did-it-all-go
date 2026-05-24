@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.42
+ * OpenAPI spec version: 0.2.43
  */
 
 export type GoalUpdateDescription = string | null

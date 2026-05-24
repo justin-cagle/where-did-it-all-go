@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.42"
+    "version": "0.2.43"
   },
   "paths": {
     "/api/v1/auth/register": {
@@ -22325,6 +22325,17 @@
             "maxLength": 255,
             "minLength": 1,
             "title": "Display Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
           }
         },
         "type": "object",
@@ -22395,6 +22406,17 @@
             "type": "boolean",
             "title": "Totp Enabled"
           },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -22408,6 +22430,7 @@
           "display_name",
           "is_app_admin",
           "totp_enabled",
+          "avatar_url",
           "created_at"
         ],
         "title": "UserOut",

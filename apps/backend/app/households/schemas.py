@@ -85,6 +85,7 @@ class UserOut(_Base):
     display_name: str
     is_app_admin: bool
     totp_enabled: bool
+    avatar_url: str | None
     created_at: datetime
 
 
@@ -115,6 +116,7 @@ class UpdateProfileRequest(BaseModel):
     """Update mutable fields on the authenticated user's profile."""
 
     display_name: str = Field(min_length=1, max_length=255)
+    avatar_url: str | None = None
 
 
 # ---------------------------------------------------------------------------

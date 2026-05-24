@@ -903,9 +903,16 @@ async def update_user_profile(
     *,
     user: User,
     display_name: str,
+    avatar_url: str | None = None,
 ) -> User:
-    """Update the user's display_name."""
+    """Update the user's display_name and optional avatar_url."""
+    delta: list[dict[str, object]] = [
+        {"op": "replace", "path": "/display_name", "value": display_name},
+    ]
     user.display_name = display_name
+    if avatar_url is not None:
+        user.avatar_url = avatar_url
+        delta.append({"op": "replace", "path": "/avatar_url", "value": "[updated]"})
     await session.flush()
 
     await _write_audit(
@@ -916,7 +923,7 @@ async def update_user_profile(
         entity_type="user",
         entity_id=user.id,
         operation=AuditOperation.UPDATE,
-        delta=[{"op": "replace", "path": "/display_name", "value": display_name}],
+        delta=delta,
     )
     return user
 

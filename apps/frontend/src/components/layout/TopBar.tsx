@@ -154,6 +154,7 @@ export function TopBar({ householdName }: TopBarProps) {
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
+            className="user-btn-hover"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -167,7 +168,7 @@ export function TopBar({ householdName }: TopBarProps) {
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
               fontWeight: 500,
-              transition: 'background 0.1s',
+              transition: 'background 0.15s, border-color 0.15s',
             }}
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
@@ -185,9 +186,19 @@ export function TopBar({ householdName }: TopBarProps) {
                 fontSize: 11,
                 fontWeight: 600,
                 flexShrink: 0,
+                overflow: 'hidden',
+                border: '1.5px solid var(--border)',
               }}
             >
-              {initials(currentUser?.display_name ?? '')}
+              {currentUser?.avatar_url ? (
+                <img
+                  src={currentUser.avatar_url}
+                  alt="Avatar"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                initials(currentUser?.display_name ?? '')
+              )}
             </div>
             <span
               style={{
@@ -244,6 +255,7 @@ function IconButton({
       onClick={onClick}
       aria-label={ariaLabel}
       title={title}
+      className="icon-btn-hover"
       style={{
         width: 32,
         height: 32,
@@ -255,7 +267,7 @@ function IconButton({
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        transition: 'background 0.1s, color 0.1s',
+        transition: 'background 0.15s, color 0.15s',
       }}
     >
       {children}
@@ -276,6 +288,7 @@ function MenuItem({
     <button
       role="menuitem"
       onClick={onClick}
+      className={danger ? 'nav-link-hover-danger' : 'nav-link-hover'}
       style={{
         display: 'block',
         width: '100%',
@@ -288,6 +301,7 @@ function MenuItem({
         color: danger ? 'var(--danger)' : 'var(--fg-primary)',
         cursor: 'pointer',
         fontFamily: 'var(--font-sans)',
+        transition: 'background 0.15s',
       }}
     >
       {children}

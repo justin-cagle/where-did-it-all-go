@@ -3,8 +3,9 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.42
+ * OpenAPI spec version: 0.2.43
  */
+import type { UserOutAvatarUrl } from './userOutAvatarUrl'
 
 /**
  * User info returned in responses.
@@ -15,5 +16,6 @@ export interface UserOut {
   display_name: string
   is_app_admin: boolean
   totp_enabled: boolean
+  avatar_url: UserOutAvatarUrl
   created_at: string
 }
