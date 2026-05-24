@@ -68,6 +68,7 @@ from app.classification.schemas import (
     RuleUpdate,
     TagCreate,
     TagOut,
+    TagReorderRequest,
     TagUpdate,
     TransactionSummary,
 )
@@ -287,6 +288,25 @@ async def archive_tag(
         )
     except service.NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post(_tag_prefix + "/reorder", response_model=list[TagOut], tags=["classification"])
+async def reorder_tags(
+    household_id: HouseholdMember,
+    body: TagReorderRequest,
+    current_user: CurrentUser,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[TagOut]:
+    try:
+        tags = await service.reorder_tags(
+            session,
+            household_id=household_id,
+            actor_id=current_user.id,
+            items=[{"tag_id": str(i.tag_id), "sort_order": i.sort_order} for i in body.items],
+        )
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return [TagOut.model_validate(t) for t in tags]
 
 
 # ---------------------------------------------------------------------------

@@ -854,7 +854,13 @@ async def create_tag(
     name: str,
     color: str | None = None,
 ) -> Tag:
-    tag = Tag(household_id=household_id, name=name, color=color)
+    max_row = await session.execute(
+        sa.select(sa.func.coalesce(sa.func.max(Tag.sort_order), -1)).where(
+            Tag.household_id == household_id
+        )
+    )
+    next_order = int(max_row.scalar_one()) + 1
+    tag = Tag(household_id=household_id, name=name, color=color, sort_order=next_order)
     session.add(tag)
     await session.flush()
     await _write_audit(
@@ -873,7 +879,9 @@ async def create_tag(
 
 async def list_tags(session: AsyncSession, *, household_id: uuid.UUID) -> list[Tag]:
     rows = await session.execute(
-        sa.select(Tag).where(Tag.household_id == household_id).order_by(Tag.name)
+        sa.select(Tag)
+        .where(Tag.household_id == household_id)
+        .order_by(Tag.sort_order, Tag.created_at)
     )
     return list(rows.scalars().all())
 
@@ -941,6 +949,36 @@ async def archive_tag(
         operation=AuditOperation.ARCHIVE,
         delta=[{"op": "replace", "path": "/archived_at", "value": now.isoformat()}],
     )
+
+
+async def reorder_tags(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    actor_id: uuid.UUID,
+    items: list[dict[str, Any]],
+) -> list[Tag]:
+    """Bulk-update sort_order for a list of tags."""
+    updated: list[Tag] = []
+    for item in items:
+        tag_id = uuid.UUID(str(item["tag_id"]))
+        new_order = int(item["sort_order"])
+        tag = await get_tag(session, tag_id=tag_id, household_id=household_id)
+        tag.sort_order = new_order
+        updated.append(tag)
+    await session.flush()
+    await _write_audit(
+        session,
+        actor_type=ActorType.USER,
+        actor_id=actor_id,
+        actor_source="user_action",
+        household_id=household_id,
+        entity_type="tag",
+        entity_id=household_id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/sort_orders", "value": items}],
+    )
+    return updated
 
 
 # ---------------------------------------------------------------------------

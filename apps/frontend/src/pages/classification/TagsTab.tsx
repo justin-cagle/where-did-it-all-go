@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
-import { Pencil, Trash2 } from 'lucide-react'
+import { GripVertical, Pencil, Trash2 } from 'lucide-react'
 import type { TagOut } from '@/api/generated/model/tagOut'
 import {
   useCreateTagApiV1HouseholdsHouseholdIdTagsPost,
   useUpdateTagApiV1HouseholdsHouseholdIdTagsTagIdPatch,
   useArchiveTagApiV1HouseholdsHouseholdIdTagsTagIdDelete,
+  useReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost,
   getListTagsApiV1HouseholdsHouseholdIdTagsGetQueryKey,
 } from '@/api/generated/classification/classification'
 
@@ -133,7 +134,11 @@ export function TagsTab({ householdId, tags, qc }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [localOrder, setLocalOrder] = useState<TagOut[] | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dragIndexRef = useRef<number | null>(null)
+
+  const orderedTags = localOrder ?? tags
 
   const create = useCreateTagApiV1HouseholdsHouseholdIdTagsPost({
     mutation: {
@@ -143,6 +148,7 @@ export function TagsTab({ householdId, tags, qc }: Props) {
         })
         setNewName('')
         setNewColor('#6366f1')
+        setLocalOrder(null)
       },
     },
   })
@@ -164,6 +170,18 @@ export function TagsTab({ householdId, tags, qc }: Props) {
           queryKey: getListTagsApiV1HouseholdsHouseholdIdTagsGetQueryKey(householdId),
         })
         setDeleteConfirm(null)
+        setLocalOrder(null)
+      },
+    },
+  })
+
+  const reorder = useReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({
+          queryKey: getListTagsApiV1HouseholdsHouseholdIdTagsGetQueryKey(householdId),
+        })
+        setLocalOrder(null)
       },
     },
   })
@@ -200,6 +218,36 @@ export function TagsTab({ householdId, tags, qc }: Props) {
   function cancelEdit() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     setEditingId(null)
+  }
+
+  function handleDragStart(index: number) {
+    dragIndexRef.current = index
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault()
+    const from = dragIndexRef.current
+    if (from === null || from === index) return
+    const next = [...orderedTags]
+    const [moved] = next.splice(from, 1)
+    if (moved === undefined) return
+    next.splice(index, 0, moved)
+    dragIndexRef.current = index
+    setLocalOrder(next)
+  }
+
+  function handleDrop() {
+    dragIndexRef.current = null
+    reorder.mutate({
+      householdId,
+      data: {
+        items: orderedTags.map((t, i) => ({ tag_id: t.id, sort_order: i })),
+      },
+    })
+  }
+
+  function handleDragEnd() {
+    dragIndexRef.current = null
   }
 
   return (
@@ -263,7 +311,7 @@ export function TagsTab({ householdId, tags, qc }: Props) {
           overflow: 'hidden',
         }}
       >
-        {tags.length === 0 && (
+        {orderedTags.length === 0 && (
           <div
             style={{
               padding: '20px 16px',
@@ -275,10 +323,17 @@ export function TagsTab({ householdId, tags, qc }: Props) {
             No tags yet. Add one above.
           </div>
         )}
-        {tags.map((tag, i) => {
+        {orderedTags.map((tag, i) => {
           const isEditing = editingId === tag.id
           return (
-            <div key={tag.id}>
+            <div
+              key={tag.id}
+              draggable
+              onDragStart={() => handleDragStart(i)}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+            >
               {i > 0 && <div style={{ height: 1, background: 'var(--border)' }} />}
               <div
                 className="tag-row"
@@ -290,6 +345,22 @@ export function TagsTab({ householdId, tags, qc }: Props) {
                   position: 'relative',
                 }}
               >
+                {/* Drag handle */}
+                <div
+                  className="tag-drag-handle"
+                  style={{
+                    cursor: 'grab',
+                    color: 'var(--fg-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: 0,
+                    transition: 'opacity 0.1s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <GripVertical size={14} />
+                </div>
+
                 {/* Color dot */}
                 <ColorDotPicker
                   value={tag.color ?? null}
@@ -351,12 +422,16 @@ export function TagsTab({ householdId, tags, qc }: Props) {
         })}
       </div>
 
-      <style>{`.tag-row:hover .tag-actions { opacity: 1 !important; } .tag-row:hover { background: color-mix(in oklch, var(--fg-primary) 4%, transparent); }`}</style>
+      <style>{`
+        .tag-row:hover .tag-actions { opacity: 1 !important; }
+        .tag-row:hover .tag-drag-handle { opacity: 1 !important; }
+        .tag-row:hover { background: color-mix(in oklch, var(--fg-primary) 4%, transparent); }
+      `}</style>
 
       {/* Delete confirm */}
       {deleteConfirm &&
         (() => {
-          const tag = tags.find((t) => t.id === deleteConfirm)
+          const tag = orderedTags.find((t) => t.id === deleteConfirm)
           return (
             <div
               style={{

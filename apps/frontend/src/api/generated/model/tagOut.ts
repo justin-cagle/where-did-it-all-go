@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.43
+ * OpenAPI spec version: 0.2.44
  */
 import type { TagOutColor } from './tagOutColor'
 
@@ -12,6 +12,7 @@ export interface TagOut {
   household_id: string
   name: string
   color: TagOutColor
+  sort_order: number
   created_at: string
   updated_at: string
 }

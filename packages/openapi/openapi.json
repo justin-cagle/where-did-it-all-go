@@ -3,7 +3,7 @@
   "info": {
     "title": "WDIAG \u2014 Where Did It All Go",
     "description": "Personal finance budgeting and intelligence",
-    "version": "0.2.43"
+    "version": "0.2.44"
   },
   "paths": {
     "/api/v1/auth/register": {
@@ -4683,6 +4683,61 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/households/{household_id}/tags/reorder": {
+      "post": {
+        "tags": ["classification"],
+        "summary": "Reorder Tags",
+        "operationId": "reorder_tags_api_v1_households__household_id__tags_reorder_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagOut"
+                  },
+                  "title": "Response Reorder Tags Api V1 Households  Household Id  Tags Reorder Post"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -21317,6 +21372,10 @@
             ],
             "title": "Color"
           },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -21334,10 +21393,41 @@
           "household_id",
           "name",
           "color",
+          "sort_order",
           "created_at",
           "updated_at"
         ],
         "title": "TagOut"
+      },
+      "TagReorderItem": {
+        "properties": {
+          "tag_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tag Id"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          }
+        },
+        "type": "object",
+        "required": ["tag_id", "sort_order"],
+        "title": "TagReorderItem"
+      },
+      "TagReorderRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TagReorderItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": ["items"],
+        "title": "TagReorderRequest"
       },
       "TagUpdate": {
         "properties": {

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.43
+ * OpenAPI spec version: 0.2.44
  */
 import type { AccountType } from './accountType'
 

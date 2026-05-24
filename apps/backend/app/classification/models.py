@@ -78,6 +78,7 @@ class Tag(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     )
     name: Mapped[str] = mapped_column(sa.Text, nullable=False)
     color: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    sort_order: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
 
     __table_args__ = (sa.Index("ix_classification_tag_household", "household_id"),)
 

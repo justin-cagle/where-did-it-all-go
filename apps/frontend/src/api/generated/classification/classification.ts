@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.43
+ * OpenAPI spec version: 0.2.44
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
@@ -40,6 +40,7 @@ import type {
   RuleUpdate,
   TagCreate,
   TagOut,
+  TagReorderRequest,
   TagUpdate,
 } from '.././model'
 
@@ -1203,6 +1204,91 @@ export const useArchiveTagApiV1HouseholdsHouseholdIdTagsTagIdDelete = <
 > => {
   const mutationOptions =
     getArchiveTagApiV1HouseholdsHouseholdIdTagsTagIdDeleteMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}
+/**
+ * @summary Reorder Tags
+ */
+export const reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost = (
+  householdId: string,
+  tagReorderRequest: TagReorderRequest,
+  signal?: AbortSignal
+) => {
+  return customInstance<TagOut[]>({
+    url: `/api/v1/households/${householdId}/tags/reorder`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: tagReorderRequest,
+    signal,
+  })
+}
+
+export const getReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>,
+    TError,
+    { householdId: string; data: TagReorderRequest },
+    TContext
+  >
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>,
+  TError,
+  { householdId: string; data: TagReorderRequest },
+  TContext
+> => {
+  const mutationKey = ['reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost']
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>,
+    { householdId: string; data: TagReorderRequest }
+  > = (props) => {
+    const { householdId, data } = props ?? {}
+
+    return reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost(householdId, data)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type ReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>
+>
+export type ReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPostMutationBody = TagReorderRequest
+export type ReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPostMutationError = HTTPValidationError
+
+/**
+ * @summary Reorder Tags
+ */
+export const useReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>,
+      TError,
+      { householdId: string; data: TagReorderRequest },
+      TContext
+    >
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof reorderTagsApiV1HouseholdsHouseholdIdTagsReorderPost>>,
+  TError,
+  { householdId: string; data: TagReorderRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getReorderTagsApiV1HouseholdsHouseholdIdTagsReorderPostMutationOptions(options)
 
   return useMutation(mutationOptions, queryClient)
 }
