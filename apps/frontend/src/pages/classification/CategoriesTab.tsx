@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
-import { ChevronUp, ChevronDown, Lock, Pencil, Plus, Archive, X } from 'lucide-react'
+import { GripVertical, Lock, Pencil, Plus, Archive, X } from 'lucide-react'
 import type { CategoryOut } from '@/api/generated/model/categoryOut'
 import {
   useCreateCategoryApiV1HouseholdsHouseholdIdCategoriesPost,
   useUpdateCategoryApiV1HouseholdsHouseholdIdCategoriesCategoryIdPatch,
   useArchiveCategoryApiV1HouseholdsHouseholdIdCategoriesCategoryIdDelete,
+  useReorderCategoriesApiV1HouseholdsHouseholdIdCategoriesReorderPost,
   getListCategoriesApiV1HouseholdsHouseholdIdCategoriesGetQueryKey,
 } from '@/api/generated/classification/classification'
 import { categoryColor } from '@/domain/transactions'
@@ -296,7 +297,11 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null)
   const [addingRoot, setAddingRoot] = useState(false)
   const [archiveConfirm, setArchiveConfirm] = useState<string | null>(null)
+  const [localParentOrder, setLocalParentOrder] = useState<CategoryOut[] | null>(null)
+  const [localChildOrders, setLocalChildOrders] = useState<Record<string, CategoryOut[]>>({})
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dragGroupRef = useRef<string | null>(null)
+  const dragIndexRef = useRef<number | null>(null)
 
   const update = useUpdateCategoryApiV1HouseholdsHouseholdIdCategoriesCategoryIdPatch({
     mutation: {
@@ -315,14 +320,38 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
           queryKey: getListCategoriesApiV1HouseholdsHouseholdIdCategoriesGetQueryKey(householdId),
         })
         setArchiveConfirm(null)
+        setLocalParentOrder(null)
+        setLocalChildOrders({})
       },
     },
   })
 
-  const parents = categories.filter((c) => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+  const reorder = useReorderCategoriesApiV1HouseholdsHouseholdIdCategoriesReorderPost({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({
+          queryKey: getListCategoriesApiV1HouseholdsHouseholdIdCategoriesGetQueryKey(householdId),
+        })
+        setLocalParentOrder(null)
+        setLocalChildOrders({})
+      },
+    },
+  })
 
-  const childrenOf = (parentId: string) =>
+  const systemParents = categories
+    .filter((c) => !c.parent_id && c.system)
+    .sort((a, b) => a.sort_order - b.sort_order)
+
+  const serverHouseholdParents = categories
+    .filter((c) => !c.parent_id && !c.system)
+    .sort((a, b) => a.sort_order - b.sort_order)
+
+  const householdParents = localParentOrder ?? serverHouseholdParents
+
+  const serverChildrenOf = (parentId: string) =>
     categories.filter((c) => c.parent_id === parentId).sort((a, b) => a.sort_order - b.sort_order)
+
+  const childrenOf = (parentId: string) => localChildOrders[parentId] ?? serverChildrenOf(parentId)
 
   function startEdit(cat: CategoryOut) {
     if (!cat.renameable) return
@@ -367,251 +396,305 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
     setEditing(null)
   }
 
-  function moveCategory(cat: CategoryOut, direction: 'up' | 'down', siblings: CategoryOut[]) {
-    const idx = siblings.findIndex((c) => c.id === cat.id)
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
-    const swap = siblings[swapIdx]
-    if (!swap) return
-    update.mutate({ householdId, categoryId: cat.id, data: { sort_order: swap.sort_order } })
-    update.mutate({ householdId, categoryId: swap.id, data: { sort_order: cat.sort_order } })
-  }
-
   function updateColor(catId: string, color: string | null) {
     update.mutate({ householdId, categoryId: catId, data: { color: color ?? undefined } })
     setColorPickerFor(null)
   }
 
-  function renderRow(cat: CategoryOut, siblings: CategoryOut[], indent = false) {
+  // group is 'parents' for top-level household cats, or parentId for children
+  function handleDragStart(group: string, index: number) {
+    dragGroupRef.current = group
+    dragIndexRef.current = index
+  }
+
+  function handleDragOver(e: React.DragEvent, group: string, index: number) {
+    e.preventDefault()
+    if (dragGroupRef.current !== group) return
+    const from = dragIndexRef.current
+    if (from === null || from === index) return
+    if (group === 'parents') {
+      const next = [...householdParents]
+      const [moved] = next.splice(from, 1)
+      if (moved === undefined) return
+      next.splice(index, 0, moved)
+      dragIndexRef.current = index
+      setLocalParentOrder(next)
+    } else {
+      const current = childrenOf(group)
+      const next = [...current]
+      const [moved] = next.splice(from, 1)
+      if (moved === undefined) return
+      next.splice(index, 0, moved)
+      dragIndexRef.current = index
+      setLocalChildOrders((prev) => ({ ...prev, [group]: next }))
+    }
+  }
+
+  function handleDrop(group: string) {
+    dragGroupRef.current = null
+    dragIndexRef.current = null
+    if (group === 'parents') {
+      reorder.mutate({
+        householdId,
+        data: {
+          items: householdParents.map((c, i) => ({ category_id: c.id, sort_order: i })),
+        },
+      })
+    } else {
+      const kids = childrenOf(group)
+      reorder.mutate({
+        householdId,
+        data: {
+          items: kids.map((c, i) => ({ category_id: c.id, sort_order: i })),
+        },
+      })
+    }
+  }
+
+  function handleDragEnd() {
+    dragGroupRef.current = null
+    dragIndexRef.current = null
+  }
+
+  function renderRow(cat: CategoryOut, group: string, groupIndex: number, indent = false) {
     const col = categoryColor(cat.color, cat.name)
     const isEditing = editing?.id === cat.id
     const showColorPicker = colorPickerFor === cat.id
-    const idx = siblings.findIndex((c) => c.id === cat.id)
+    const draggable = !cat.system
 
     return (
       <div
         key={cat.id}
-        className="cat-row"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: `7px ${indent ? 32 : 12}px 7px ${indent ? 32 : 12}px`,
-          borderRadius: 8,
-          position: 'relative',
-        }}
+        draggable={draggable}
+        onDragStart={draggable ? () => handleDragStart(group, groupIndex) : undefined}
+        onDragOver={draggable ? (e) => handleDragOver(e, group, groupIndex) : undefined}
+        onDrop={draggable ? () => handleDrop(group) : undefined}
+        onDragEnd={draggable ? handleDragEnd : undefined}
       >
-        {/* Color dot */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button
-            type="button"
-            title="Change color"
-            onClick={() => setColorPickerFor(showColorPicker ? null : cat.id)}
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              background: col,
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          />
-          {showColorPicker && (
-            <ColorPicker
-              value={cat.color ?? null}
-              onChange={(hex) => updateColor(cat.id, hex)}
-              onClose={() => setColorPickerFor(null)}
-            />
-          )}
-        </div>
-
-        {/* Name / edit input */}
-        {isEditing ? (
-          <input
-            autoFocus
-            value={editing.value}
-            onChange={(e) => handleNameChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitEdit()
-              if (e.key === 'Escape') cancelEdit()
-            }}
-            onBlur={commitEdit}
-            style={{
-              flex: 1,
-              border: 'none',
-              borderBottom: '1px solid var(--accent)',
-              background: 'none',
-              color: 'var(--fg-primary)',
-              fontSize: indent ? 12 : 13,
-              fontWeight: indent ? 400 : 500,
-              outline: 'none',
-              padding: '1px 0',
-            }}
-          />
-        ) : (
-          <span
-            onClick={() => startEdit(cat)}
-            style={{
-              flex: 1,
-              fontSize: indent ? 12 : 13,
-              fontWeight: indent ? 400 : 500,
-              color: indent ? 'var(--fg-secondary)' : 'var(--fg-primary)',
-              cursor: cat.renameable ? 'text' : 'default',
-            }}
-          >
-            {cat.name}
-          </span>
-        )}
-
-        {/* Budget role badge / picker */}
-        {isEditing ? (
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <BudgetRoleBadge
-              role={editing.budgetRole}
-              onClick={() => setEditing({ ...editing, showRolePicker: !editing.showRolePicker })}
-            />
-            {editing.budgetRole === 'uncategorized' && (
-              <button
-                type="button"
-                onClick={() => setEditing({ ...editing, showRolePicker: !editing.showRolePicker })}
-                style={{
-                  fontSize: 10,
-                  color: 'var(--fg-muted)',
-                  background: 'none',
-                  border: '1px dashed var(--border)',
-                  borderRadius: 99,
-                  padding: '1px 7px',
-                  cursor: 'pointer',
-                }}
-              >
-                set role
-              </button>
-            )}
-            {editing.showRolePicker && (
-              <div
-                style={{
-                  position: 'absolute',
-                  zIndex: 50,
-                  top: '100%',
-                  left: 0,
-                  marginTop: 4,
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                  overflow: 'hidden',
-                  minWidth: 130,
-                }}
-              >
-                {BUDGET_ROLE_OPTIONS.map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => handleBudgetRoleChange(cat.id, role)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '6px 12px',
-                      textAlign: 'left' as const,
-                      fontSize: 12,
-                      background:
-                        editing.budgetRole === role
-                          ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
-                          : 'none',
-                      border: 'none',
-                      color: 'var(--fg-primary)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <BudgetRoleBadge role={cat.budget_role ?? 'uncategorized'} />
-        )}
-
-        {/* System badge */}
-        {cat.system && (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 500,
-              color: 'var(--fg-muted)',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 4,
-              padding: '1px 5px',
-            }}
-          >
-            system
-          </span>
-        )}
-
-        {/* Lock icon */}
-        {cat.system && <Lock size={11} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />}
-
-        {/* Hover actions */}
         <div
-          className="cat-actions"
+          className="cat-row"
           style={{
             display: 'flex',
-            gap: 2,
-            opacity: 0,
-            transition: 'opacity 0.1s',
+            alignItems: 'center',
+            gap: 8,
+            padding: `7px ${indent ? 32 : 12}px 7px ${indent ? 32 : 12}px`,
+            borderRadius: 8,
+            position: 'relative',
           }}
         >
-          {cat.renameable && (
+          {/* Drag handle */}
+          <div
+            className="cat-drag-handle"
+            style={{
+              cursor: draggable ? 'grab' : 'default',
+              color: 'var(--fg-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              opacity: draggable ? 0 : 0,
+              transition: 'opacity 0.1s',
+              flexShrink: 0,
+              visibility: draggable ? 'visible' : 'hidden',
+            }}
+          >
+            <GripVertical size={14} />
+          </div>
+
+          {/* Color dot */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
               type="button"
-              title="Edit name"
+              title="Change color"
+              onClick={() => setColorPickerFor(showColorPicker ? null : cat.id)}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: col,
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            />
+            {showColorPicker && (
+              <ColorPicker
+                value={cat.color ?? null}
+                onChange={(hex) => updateColor(cat.id, hex)}
+                onClose={() => setColorPickerFor(null)}
+              />
+            )}
+          </div>
+
+          {/* Name / edit input */}
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editing.value}
+              onChange={(e) => handleNameChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitEdit()
+                if (e.key === 'Escape') cancelEdit()
+              }}
+              onBlur={commitEdit}
+              style={{
+                flex: 1,
+                border: 'none',
+                borderBottom: '1px solid var(--accent)',
+                background: 'none',
+                color: 'var(--fg-primary)',
+                fontSize: indent ? 12 : 13,
+                fontWeight: indent ? 400 : 500,
+                outline: 'none',
+                padding: '1px 0',
+              }}
+            />
+          ) : (
+            <span
               onClick={() => startEdit(cat)}
-              style={actionBtnStyle}
+              style={{
+                flex: 1,
+                fontSize: indent ? 12 : 13,
+                fontWeight: indent ? 400 : 500,
+                color: indent ? 'var(--fg-secondary)' : 'var(--fg-primary)',
+                cursor: cat.renameable ? 'text' : 'default',
+              }}
             >
-              <Pencil size={12} />
-            </button>
+              {cat.name}
+            </span>
           )}
-          {!indent && (
-            <button
-              type="button"
-              title="Add child category"
-              disabled={false}
-              onClick={() => setAddingChildOf(cat.id)}
-              style={actionBtnStyle}
+
+          {/* Budget role badge / picker */}
+          {isEditing ? (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <BudgetRoleBadge
+                role={editing.budgetRole}
+                onClick={() => setEditing({ ...editing, showRolePicker: !editing.showRolePicker })}
+              />
+              {editing.budgetRole === 'uncategorized' && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditing({ ...editing, showRolePicker: !editing.showRolePicker })
+                  }
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--fg-muted)',
+                    background: 'none',
+                    border: '1px dashed var(--border)',
+                    borderRadius: 99,
+                    padding: '1px 7px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  set role
+                </button>
+              )}
+              {editing.showRolePicker && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    zIndex: 50,
+                    top: '100%',
+                    left: 0,
+                    marginTop: 4,
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                    overflow: 'hidden',
+                    minWidth: 130,
+                  }}
+                >
+                  {BUDGET_ROLE_OPTIONS.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => handleBudgetRoleChange(cat.id, role)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '6px 12px',
+                        textAlign: 'left' as const,
+                        fontSize: 12,
+                        background:
+                          editing.budgetRole === role
+                            ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
+                            : 'none',
+                        border: 'none',
+                        color: 'var(--fg-primary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <BudgetRoleBadge role={cat.budget_role ?? 'uncategorized'} />
+          )}
+
+          {/* System badge */}
+          {cat.system && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                color: 'var(--fg-muted)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '1px 5px',
+              }}
             >
-              <Plus size={12} />
-            </button>
+              system
+            </span>
           )}
-          <button
-            type="button"
-            title="Move up"
-            disabled={idx === 0}
-            onClick={() => moveCategory(cat, 'up', siblings)}
-            style={{ ...actionBtnStyle, opacity: idx === 0 ? 0.3 : 1 }}
+
+          {/* Lock icon */}
+          {cat.system && <Lock size={11} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />}
+
+          {/* Hover actions */}
+          <div
+            className="cat-actions"
+            style={{
+              display: 'flex',
+              gap: 2,
+              opacity: 0,
+              transition: 'opacity 0.1s',
+            }}
           >
-            <ChevronUp size={12} />
-          </button>
-          <button
-            type="button"
-            title="Move down"
-            disabled={idx === siblings.length - 1}
-            onClick={() => moveCategory(cat, 'down', siblings)}
-            style={{ ...actionBtnStyle, opacity: idx === siblings.length - 1 ? 0.3 : 1 }}
-          >
-            <ChevronDown size={12} />
-          </button>
-          {cat.deletable && (
-            <button
-              type="button"
-              title="Archive"
-              onClick={() => setArchiveConfirm(cat.id)}
-              style={{ ...actionBtnStyle, color: 'var(--danger)' }}
-            >
-              <Archive size={12} />
-            </button>
-          )}
+            {cat.renameable && (
+              <button
+                type="button"
+                title="Edit name"
+                onClick={() => startEdit(cat)}
+                style={actionBtnStyle}
+              >
+                <Pencil size={12} />
+              </button>
+            )}
+            {!indent && !cat.system && (
+              <button
+                type="button"
+                title="Add child category"
+                onClick={() => setAddingChildOf(cat.id)}
+                style={actionBtnStyle}
+              >
+                <Plus size={12} />
+              </button>
+            )}
+            {cat.deletable && (
+              <button
+                type="button"
+                title="Archive"
+                onClick={() => setArchiveConfirm(cat.id)}
+                style={{ ...actionBtnStyle, color: 'var(--danger)' }}
+              >
+                <Archive size={12} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -621,6 +704,7 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
     <>
       <style>{`
         .cat-row:hover .cat-actions { opacity: 1 !important; }
+        .cat-row:hover .cat-drag-handle { opacity: 1 !important; }
         .cat-row:hover { background: color-mix(in oklch, var(--fg-primary) 4%, transparent); }
       `}</style>
 
@@ -632,13 +716,23 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
           overflow: 'hidden',
         }}
       >
-        {parents.map((parent, pi) => {
+        {/* System categories — fixed, non-draggable */}
+        {systemParents.map((cat, pi) => (
+          <div key={cat.id}>
+            {pi > 0 && <div style={{ height: 1, background: 'var(--border)' }} />}
+            {renderRow(cat, 'system', pi)}
+          </div>
+        ))}
+
+        {/* Household categories — draggable */}
+        {householdParents.map((parent, pi) => {
           const kids = childrenOf(parent.id)
+          const hasDivider = systemParents.length > 0 || pi > 0
           return (
             <div key={parent.id}>
-              {pi > 0 && <div style={{ height: 1, background: 'var(--border)' }} />}
-              {renderRow(parent, parents)}
-              {kids.map((child) => renderRow(child, kids, true))}
+              {hasDivider && <div style={{ height: 1, background: 'var(--border)' }} />}
+              {renderRow(parent, 'parents', pi)}
+              {kids.map((child, ci) => renderRow(child, parent.id, ci, true))}
               {addingChildOf === parent.id && (
                 <div style={{ padding: '4px 32px 8px' }}>
                   <AddCategoryForm
@@ -657,7 +751,10 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
           <div
             style={{
               padding: '4px 12px 8px',
-              borderTop: parents.length > 0 ? '1px solid var(--border)' : 'none',
+              borderTop:
+                systemParents.length > 0 || householdParents.length > 0
+                  ? '1px solid var(--border)'
+                  : 'none',
             }}
           >
             <AddCategoryForm
@@ -670,7 +767,10 @@ export function CategoriesTab({ householdId, categories, qc }: Props) {
         ) : (
           <div
             style={{
-              borderTop: parents.length > 0 ? '1px solid var(--border)' : 'none',
+              borderTop:
+                systemParents.length > 0 || householdParents.length > 0
+                  ? '1px solid var(--border)'
+                  : 'none',
               padding: '8px 12px',
             }}
           >

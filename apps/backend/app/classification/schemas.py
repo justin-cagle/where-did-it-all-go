@@ -62,6 +62,24 @@ class TagUpdate(BaseModel):
     color: str | None = None
 
 
+class CategoryReorderItem(BaseModel):
+    category_id: uuid.UUID
+    sort_order: int
+
+
+class CategoryReorderRequest(BaseModel):
+    items: list[CategoryReorderItem]
+
+
+class TagReorderItem(BaseModel):
+    tag_id: uuid.UUID
+    sort_order: int
+
+
+class TagReorderRequest(BaseModel):
+    items: list[TagReorderItem]
+
+
 class TagOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -69,6 +87,7 @@ class TagOut(BaseModel):
     household_id: uuid.UUID
     name: str
     color: str | None
+    sort_order: int
     created_at: datetime
     updated_at: datetime
 

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.43
+ * OpenAPI spec version: 0.2.44
  */
 
 export * from './acceptInviteResponse'
@@ -144,6 +144,8 @@ export * from './categoryOut'
 export * from './categoryOutColor'
 export * from './categoryOutHouseholdId'
 export * from './categoryOutParentId'
+export * from './categoryReorderItem'
+export * from './categoryReorderRequest'
 export * from './categoryUpdate'
 export * from './categoryUpdateBudgetRole'
 export * from './categoryUpdateColor'
@@ -588,6 +590,8 @@ export * from './tagCreate'
 export * from './tagCreateColor'
 export * from './tagOut'
 export * from './tagOutColor'
+export * from './tagReorderItem'
+export * from './tagReorderRequest'
 export * from './tagUpdate'
 export * from './tagUpdateColor'
 export * from './tagUpdateName'
