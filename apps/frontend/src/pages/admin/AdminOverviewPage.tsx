@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,7 +13,6 @@ import {
   useUpdateRegistrationApiV1AdminRegistrationPost,
 } from '@/api/generated/admin/admin'
 import { formatBytes } from '@/lib/format'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -135,8 +134,6 @@ function RefreshIcon() {
 
 export function AdminOverviewPage() {
   const qc = useQueryClient()
-  const [stepUpFor, setStepUpFor] = useState<'toggle' | null>(null)
-  const [pendingToggle, setPendingToggle] = useState<boolean | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { data: overview, isLoading } = useGetOverviewApiV1AdminOverviewGet({
@@ -195,26 +192,6 @@ export function AdminOverviewPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {stepUpFor === 'toggle' && (
-        <StepUpModal
-          onSuccess={async () => {
-            setStepUpFor(null)
-            if (pendingToggle !== null && regSettings) {
-              await doUpdateReg(
-                pendingToggle,
-                regSettings.registration_limit,
-                regSettings.unassigned_account_ttl_days
-              )
-              setPendingToggle(null)
-            }
-          }}
-          onCancel={() => {
-            setStepUpFor(null)
-            setPendingToggle(null)
-          }}
-        />
-      )}
-
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
@@ -325,8 +302,11 @@ export function AdminOverviewPage() {
             <button
               onClick={() => {
                 const next = !(regSettings?.allow_registration ?? false)
-                setPendingToggle(next)
-                setStepUpFor('toggle')
+                void doUpdateReg(
+                  next,
+                  regSettings?.registration_limit,
+                  regSettings?.unassigned_account_ttl_days
+                )
               }}
               style={{
                 padding: '4px 12px',

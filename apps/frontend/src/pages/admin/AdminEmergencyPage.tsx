@@ -5,7 +5,6 @@ import {
   getGetReadOnlyApiV1AdminEmergencyReadOnlyGetQueryKey,
   useSetReadOnlyApiV1AdminEmergencyReadOnlyPost,
 } from '@/api/generated/admin/admin'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -44,7 +43,6 @@ function relativeTime(iso: string): string {
 
 export function AdminEmergencyPage() {
   const qc = useQueryClient()
-  const [stepUpFor, setStepUpFor] = useState<'enable' | 'disable' | null>(null)
   const [reasonText, setReasonText] = useState('')
   const [showReasonModal, setShowReasonModal] = useState(false)
 
@@ -76,25 +74,6 @@ export function AdminEmergencyPage() {
         minHeight: '100%',
       }}
     >
-      {stepUpFor === 'enable' && (
-        <StepUpModal
-          onSuccess={() => {
-            setStepUpFor(null)
-            setShowReasonModal(true)
-          }}
-          onCancel={() => setStepUpFor(null)}
-        />
-      )}
-      {stepUpFor === 'disable' && (
-        <StepUpModal
-          onSuccess={async () => {
-            setStepUpFor(null)
-            await doDisable()
-          }}
-          onCancel={() => setStepUpFor(null)}
-        />
-      )}
-
       {/* Reason modal */}
       {showReasonModal && (
         <div
@@ -298,7 +277,7 @@ export function AdminEmergencyPage() {
       <div style={{ display: 'flex', gap: 12 }}>
         {!isEnabled ? (
           <button
-            onClick={() => setStepUpFor('enable')}
+            onClick={() => setShowReasonModal(true)}
             style={{
               padding: '10px 20px',
               borderRadius: 8,
@@ -314,7 +293,7 @@ export function AdminEmergencyPage() {
           </button>
         ) : (
           <button
-            onClick={() => setStepUpFor('disable')}
+            onClick={() => void doDisable()}
             style={{
               padding: '10px 20px',
               borderRadius: 8,

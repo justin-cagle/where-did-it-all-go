@@ -43,7 +43,7 @@ from app.admin.schemas import (
     SystemOverviewOut,
 )
 from app.database import get_db
-from app.households.deps import AppAdmin, StepUpUser
+from app.households.deps import AppAdmin
 
 router = APIRouter(tags=["admin"])
 
@@ -121,7 +121,6 @@ async def get_user(
 @router.post("/admin/users/{user_id}/promote", status_code=status.HTTP_204_NO_CONTENT)
 async def promote_user(
     user_id: uuid.UUID,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -135,7 +134,6 @@ async def promote_user(
 @router.post("/admin/users/{user_id}/demote", status_code=status.HTTP_204_NO_CONTENT)
 async def demote_user(
     user_id: uuid.UUID,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -155,7 +153,6 @@ async def demote_user(
 async def assign_household(
     user_id: uuid.UUID,
     body: AssignHouseholdIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -185,7 +182,6 @@ async def force_logout(
 @router.delete("/admin/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: uuid.UUID,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -307,7 +303,6 @@ async def get_smtp(
 @router.post("/admin/smtp", response_model=SMTPConfigOut, status_code=status.HTTP_200_OK)
 async def upsert_smtp(
     body: SMTPConfigIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> SMTPConfigOut:
@@ -349,7 +344,6 @@ async def test_smtp(
 
 @router.delete("/admin/smtp", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_smtp(
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -396,7 +390,6 @@ async def get_backup_config(
 )
 async def upsert_backup_config(
     body: BackupConfigIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> BackupConfigOut:
@@ -435,7 +428,6 @@ async def test_s3(
 
 @router.delete("/admin/backup/config/s3", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_s3(
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:
@@ -466,7 +458,6 @@ async def list_backup_runs(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def trigger_backup(
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> BackupTriggerOut:
@@ -492,7 +483,6 @@ async def get_registration(
 @router.post("/admin/registration", response_model=RegistrationSettingsOut)
 async def update_registration(
     body: RegistrationSettingsIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> RegistrationSettingsOut:
@@ -524,7 +514,6 @@ async def get_read_only(
 @router.post("/admin/emergency/read-only", response_model=ReadOnlyStateOut)
 async def set_read_only(
     body: SetReadOnlyIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> ReadOnlyStateOut:
@@ -546,7 +535,6 @@ async def set_read_only(
 @router.post("/admin/force-logout-all", status_code=status.HTTP_204_NO_CONTENT)
 async def force_logout_all(
     body: ForceLogoutAllIn,
-    _step_up: StepUpUser,
     current_admin: _Admin,
     session: _DbSession,
 ) -> None:

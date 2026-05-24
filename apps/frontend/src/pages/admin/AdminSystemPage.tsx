@@ -6,7 +6,6 @@ import {
   useForceLogoutAllApiV1AdminForceLogoutAllPost,
 } from '@/api/generated/admin/admin'
 import { formatBytes } from '@/lib/format'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -126,7 +125,6 @@ function RefreshIcon() {
 export function AdminSystemPage() {
   const qc = useQueryClient()
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [stepUpLogoutAll, setStepUpLogoutAll] = useState(false)
   const [logoutConfirmInput, setLogoutConfirmInput] = useState('')
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
@@ -149,16 +147,6 @@ export function AdminSystemPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {stepUpLogoutAll && (
-        <StepUpModal
-          onSuccess={() => {
-            setStepUpLogoutAll(false)
-            setShowLogoutConfirm(true)
-          }}
-          onCancel={() => setStepUpLogoutAll(false)}
-        />
-      )}
-
       {showLogoutConfirm && (
         <div
           style={{
@@ -444,7 +432,7 @@ export function AdminSystemPage() {
             <Section title="Sessions">
               <Row label="Active sessions" value={system.active_session_count} />
               <button
-                onClick={() => setStepUpLogoutAll(true)}
+                onClick={() => setShowLogoutConfirm(true)}
                 style={{
                   alignSelf: 'flex-start',
                   padding: '7px 14px',

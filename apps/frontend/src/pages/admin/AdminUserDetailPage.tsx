@@ -11,7 +11,6 @@ import {
   useForceLogoutApiV1AdminUsersUserIdForceLogoutPost,
   getListUsersApiV1AdminUsersGetQueryKey,
 } from '@/api/generated/admin/admin'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -194,7 +193,6 @@ export function AdminUserDetailPage() {
   const assign = useAssignHouseholdApiV1AdminUsersUserIdAssignHouseholdPost()
   const forceLogout = useForceLogoutApiV1AdminUsersUserIdForceLogoutPost()
 
-  const [stepUpType, setStepUpType] = useState<StepUpType | null>(null)
   const [showAssign, setShowAssign] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -227,17 +225,6 @@ export function AdminUserDetailPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 760 }}>
-      {stepUpType && (
-        <StepUpModal
-          onSuccess={async () => {
-            const t = stepUpType
-            setStepUpType(null)
-            await executeStepUp(t)
-          }}
-          onCancel={() => setStepUpType(null)}
-        />
-      )}
-
       {showAssign && (
         <AssignModal
           onCancel={() => setShowAssign(false)}
@@ -549,16 +536,24 @@ export function AdminUserDetailPage() {
           {[
             {
               label: user.is_app_admin ? 'Demote admin' : 'Promote to admin',
-              action: () => setStepUpType(user.is_app_admin ? 'demote' : 'promote'),
+              action: () => void executeStepUp(user.is_app_admin ? 'demote' : 'promote'),
               color: A.fg,
             },
-            { label: 'Assign to household', action: () => setStepUpType('assign'), color: A.fg },
+            {
+              label: 'Assign to household',
+              action: () => void executeStepUp('assign'),
+              color: A.fg,
+            },
             {
               label: 'Force logout all sessions',
               action: () => setForceLogoutConfirm(true),
               color: A.fg,
             },
-            { label: 'Delete account', action: () => setStepUpType('delete'), color: A.danger },
+            {
+              label: 'Delete account',
+              action: () => void executeStepUp('delete'),
+              color: A.danger,
+            },
           ].map(({ label, action, color }) => (
             <button
               key={label}

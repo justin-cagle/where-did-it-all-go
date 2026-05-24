@@ -13,7 +13,6 @@ import {
   useListHouseholdsApiV1AdminHouseholdsGet,
 } from '@/api/generated/admin/admin'
 import type { AdminUserOut } from '@/api/generated/model'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -216,7 +215,6 @@ export function AdminUsersPage() {
   const [filter, setFilter] = useState<'all' | 'unassigned' | 'admins'>(
     searchParams.get('unassigned') === 'true' ? 'unassigned' : 'all'
   )
-  const [stepUpAction, setStepUpAction] = useState<ActionPending | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; email: string } | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [assignUser, setAssignUser] = useState<string | null>(null)
@@ -260,18 +258,6 @@ export function AdminUsersPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Step-up modal */}
-      {stepUpAction && (
-        <StepUpModal
-          onSuccess={async () => {
-            const action = stepUpAction
-            setStepUpAction(null)
-            await executeAction(action)
-          }}
-          onCancel={() => setStepUpAction(null)}
-        />
-      )}
-
       {/* Delete confirm modal */}
       {deleteConfirm && (
         <div
@@ -475,15 +461,19 @@ export function AdminUsersPage() {
               onToggleMenu={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
               onView={() => navigate(`/admin/users/${user.id}`)}
               onAssign={() => {
-                setStepUpAction({ type: 'assign', userId: user.id, userName: user.display_name })
+                void executeAction({ type: 'assign', userId: user.id, userName: user.display_name })
                 setOpenMenuId(null)
               }}
               onPromote={() => {
-                setStepUpAction({ type: 'promote', userId: user.id, userName: user.display_name })
+                void executeAction({
+                  type: 'promote',
+                  userId: user.id,
+                  userName: user.display_name,
+                })
                 setOpenMenuId(null)
               }}
               onDemote={() => {
-                setStepUpAction({ type: 'demote', userId: user.id, userName: user.display_name })
+                void executeAction({ type: 'demote', userId: user.id, userName: user.display_name })
                 setOpenMenuId(null)
               }}
               onForceLogout={async () => {

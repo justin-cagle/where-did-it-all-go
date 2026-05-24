@@ -14,7 +14,6 @@ import {
   useTestS3ApiV1AdminBackupConfigTestS3Post,
 } from '@/api/generated/admin/admin'
 import { formatBytes } from '@/lib/format'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 import type { BackupStatus } from '@/api/generated/model'
 
 const A = {
@@ -85,8 +84,6 @@ const inputStyle = {
 export function AdminBackupPage() {
   const qc = useQueryClient()
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [stepUpFor, setStepUpFor] = useState<'trigger' | 'saveS3' | 'deleteS3' | null>(null)
-  const [pendingS3, setPendingS3] = useState<S3FormData | null>(null)
   const [s3TestResult, setS3TestResult] = useState<{
     success: boolean
     detail: string | null
@@ -174,41 +171,6 @@ export function AdminBackupPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {stepUpFor === 'trigger' && (
-        <StepUpModal
-          onSuccess={async () => {
-            setStepUpFor(null)
-            await doTrigger()
-          }}
-          onCancel={() => setStepUpFor(null)}
-        />
-      )}
-      {stepUpFor === 'saveS3' && pendingS3 && (
-        <StepUpModal
-          onSuccess={async () => {
-            const d = pendingS3
-            setStepUpFor(null)
-            setPendingS3(null)
-            await doSaveS3(d)
-          }}
-          onCancel={() => {
-            setStepUpFor(null)
-            setPendingS3(null)
-          }}
-        />
-      )}
-      {stepUpFor === 'deleteS3' && (
-        <StepUpModal
-          onSuccess={async () => {
-            setStepUpFor(null)
-            await deleteS3.mutateAsync()
-            await qc.invalidateQueries({
-              queryKey: getGetBackupConfigApiV1AdminBackupConfigGetQueryKey(),
-            })
-          }}
-          onCancel={() => setStepUpFor(null)}
-        />
-      )}
       {s3DeleteConfirm && (
         <div
           style={{
@@ -253,9 +215,12 @@ export function AdminBackupPage() {
                 Cancel
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setS3DeleteConfirm(false)
-                  setStepUpFor('deleteS3')
+                  await deleteS3.mutateAsync()
+                  await qc.invalidateQueries({
+                    queryKey: getGetBackupConfigApiV1AdminBackupConfigGetQueryKey(),
+                  })
                 }}
                 style={{
                   padding: '7px 14px',
@@ -330,7 +295,7 @@ export function AdminBackupPage() {
           <div style={{ fontSize: 13, color: A.fgMuted }}>No backups yet</div>
         )}
         <button
-          onClick={() => setStepUpFor('trigger')}
+          onClick={() => void doTrigger()}
           style={{
             alignSelf: 'flex-start',
             padding: '7px 14px',
@@ -470,8 +435,7 @@ export function AdminBackupPage() {
         {showS3 && (
           <form
             onSubmit={handleSubmit((data) => {
-              setPendingS3(data)
-              setStepUpFor('saveS3')
+              void doSaveS3(data)
             })}
             style={{
               background: A.bgRaised,
