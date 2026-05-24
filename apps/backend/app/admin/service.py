@@ -779,12 +779,25 @@ async def assign_household(
     if household is None:
         raise NotFoundError(f"household {household_id} not found")
 
-    membership = HouseholdMembership(
-        household_id=household_id,
-        user_id=user_id,
-        role=role,
+    existing_result = await session.execute(
+        sa.select(HouseholdMembership).where(
+            HouseholdMembership.household_id == household_id,
+            HouseholdMembership.user_id == user_id,
+        )
     )
-    session.add(membership)
+    existing = existing_result.scalar_one_or_none()
+    if existing is not None:
+        existing.role = role
+        existing.archived_at = None
+        existing.archived_by = None
+        membership = existing
+    else:
+        membership = HouseholdMembership(
+            household_id=household_id,
+            user_id=user_id,
+            role=role,
+        )
+        session.add(membership)
     await session.flush()
 
     mgr = get_sse_manager()

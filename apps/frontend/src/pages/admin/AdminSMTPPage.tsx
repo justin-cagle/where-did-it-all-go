@@ -10,7 +10,6 @@ import {
   useDeleteSmtpApiV1AdminSmtpDelete,
   useTestSmtpApiV1AdminSmtpTestPost,
 } from '@/api/generated/admin/admin'
-import { StepUpModal } from '@/components/admin/StepUpModal'
 
 const A = {
   bg: '#0a0f1a',
@@ -71,8 +70,6 @@ const inputStyle = {
 
 export function AdminSMTPPage() {
   const qc = useQueryClient()
-  const [stepUpFor, setStepUpFor] = useState<'save' | 'delete' | null>(null)
-  const [pendingData, setPendingData] = useState<SMTPFormData | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; detail: string | null } | null>(
     null
@@ -157,29 +154,6 @@ export function AdminSMTPPage() {
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
-      {stepUpFor === 'save' && pendingData && (
-        <StepUpModal
-          onSuccess={async () => {
-            const d = pendingData
-            setStepUpFor(null)
-            setPendingData(null)
-            await doSave(d)
-          }}
-          onCancel={() => {
-            setStepUpFor(null)
-            setPendingData(null)
-          }}
-        />
-      )}
-      {stepUpFor === 'delete' && (
-        <StepUpModal
-          onSuccess={async () => {
-            setStepUpFor(null)
-            await doDelete()
-          }}
-          onCancel={() => setStepUpFor(null)}
-        />
-      )}
       {deleteConfirm && (
         <div
           style={{
@@ -227,7 +201,7 @@ export function AdminSMTPPage() {
               <button
                 onClick={() => {
                   setDeleteConfirm(false)
-                  setStepUpFor('delete')
+                  void doDelete()
                 }}
                 style={{
                   padding: '7px 14px',
@@ -397,8 +371,7 @@ export function AdminSMTPPage() {
       {/* Config form */}
       <form
         onSubmit={handleSubmit((data) => {
-          setPendingData(data)
-          setStepUpFor('save')
+          void doSave(data)
         })}
         style={{
           background: A.bgRaised,
