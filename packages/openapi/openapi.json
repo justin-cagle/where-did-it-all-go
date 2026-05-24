@@ -4451,6 +4451,61 @@
         }
       }
     },
+    "/api/v1/households/{household_id}/categories/reorder": {
+      "post": {
+        "tags": ["classification"],
+        "summary": "Reorder Categories",
+        "operationId": "reorder_categories_api_v1_households__household_id__categories_reorder_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryOut"
+                  },
+                  "title": "Response Reorder Categories Api V1 Households  Household Id  Categories Reorder Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/households/{household_id}/tags": {
       "get": {
         "tags": ["classification"],
@@ -14653,6 +14708,36 @@
           "updated_at"
         ],
         "title": "CategoryOut"
+      },
+      "CategoryReorderItem": {
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          }
+        },
+        "type": "object",
+        "required": ["category_id", "sort_order"],
+        "title": "CategoryReorderItem"
+      },
+      "CategoryReorderRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryReorderItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": ["items"],
+        "title": "CategoryReorderRequest"
       },
       "CategoryUpdate": {
         "properties": {

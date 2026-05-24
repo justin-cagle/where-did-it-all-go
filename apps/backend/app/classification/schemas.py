@@ -62,6 +62,15 @@ class TagUpdate(BaseModel):
     color: str | None = None
 
 
+class CategoryReorderItem(BaseModel):
+    category_id: uuid.UUID
+    sort_order: int
+
+
+class CategoryReorderRequest(BaseModel):
+    items: list[CategoryReorderItem]
+
+
 class TagReorderItem(BaseModel):
     tag_id: uuid.UUID
     sort_order: int

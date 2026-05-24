@@ -841,6 +841,38 @@ async def archive_category(
     )
 
 
+async def reorder_categories(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    actor_id: uuid.UUID,
+    items: list[dict[str, Any]],
+) -> list[Category]:
+    """Bulk-update sort_order for a list of household-scoped categories."""
+    updated: list[Category] = []
+    for item in items:
+        cat_id = uuid.UUID(str(item["category_id"]))
+        new_order = int(item["sort_order"])
+        cat = await get_category(session, category_id=cat_id, household_id=household_id)
+        if cat.system:
+            raise ValidationError("cannot reorder system categories")
+        cat.sort_order = new_order
+        updated.append(cat)
+    await session.flush()
+    await _write_audit(
+        session,
+        actor_type=ActorType.USER,
+        actor_id=actor_id,
+        actor_source="user_action",
+        household_id=household_id,
+        entity_type="category",
+        entity_id=household_id,
+        operation=AuditOperation.UPDATE,
+        delta=[{"op": "replace", "path": "/sort_orders", "value": items}],
+    )
+    return updated
+
+
 # ---------------------------------------------------------------------------
 # Tag CRUD
 # ---------------------------------------------------------------------------
