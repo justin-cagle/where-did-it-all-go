@@ -783,7 +783,8 @@ async def assign_household(
         sa.select(HouseholdMembership).where(
             HouseholdMembership.household_id == household_id,
             HouseholdMembership.user_id == user_id,
-        )
+        ),
+        execution_options={"include_archived": True},
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
