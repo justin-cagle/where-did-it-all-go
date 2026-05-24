@@ -48,6 +48,7 @@ interface LoginResponse {
   display_name: string
   is_app_admin: boolean
   totp_enabled: boolean
+  avatar_url: string | null
 }
 
 export function LoginPage() {

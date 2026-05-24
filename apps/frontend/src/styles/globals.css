@@ -96,3 +96,24 @@
     min-height: 100dvh;
   }
 }
+
+@layer components {
+  .nav-link-hover:hover {
+    background: color-mix(in oklch, var(--fg-primary) 6%, transparent) !important;
+    color: var(--fg-primary) !important;
+  }
+
+  .nav-link-hover-danger:hover {
+    background: color-mix(in oklch, var(--danger) 10%, transparent) !important;
+  }
+
+  .icon-btn-hover:hover {
+    background: color-mix(in oklch, var(--fg-primary) 8%, transparent);
+    color: var(--fg-primary);
+  }
+
+  .user-btn-hover:hover {
+    background: color-mix(in oklch, var(--fg-primary) 6%, transparent);
+    border-color: var(--border) !important;
+  }
+}

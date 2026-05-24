@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { useGetOverviewApiV1AdminOverviewGet } from '@/api/generated/admin/admin'
 import { useListProvidersApiV1HouseholdsHouseholdIdInsightsProvidersGet } from '@/api/generated/insights/insights'
@@ -62,38 +62,24 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
       }}
     >
       {/* Logo + wordmark */}
-      <div
+      <Link
+        to="/dashboard"
         style={{
           padding: compact ? '6px 6px 14px' : '6px 8px 18px',
           display: 'flex',
           alignItems: 'center',
           gap: 8,
           flexShrink: 0,
+          textDecoration: 'none',
         }}
       >
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            flexShrink: 0,
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span
-            style={{
-              color: 'var(--accent-fg)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            $
-          </span>
-        </div>
+        <img
+          src="/logo.svg"
+          alt="WDIAG"
+          width={28}
+          height={28}
+          style={{ borderRadius: 6, flexShrink: 0 }}
+        />
         {!compact && (
           <span
             style={{
@@ -107,7 +93,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
             wdiag
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Nav items */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
@@ -116,6 +102,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
             <NavLink
               key={to}
               to={to}
+              className="nav-link-hover"
               style={({ isActive }) => ({
                 display: 'flex',
                 alignItems: 'center',
@@ -129,7 +116,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
                 textDecoration: 'none',
                 fontSize: 13,
                 fontWeight: isActive ? 500 : 400,
-                transition: 'background 0.1s, color 0.1s',
+                transition: 'background 0.15s, color 0.15s',
                 whiteSpace: 'nowrap',
               })}
             >
@@ -145,6 +132,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
         {isAdmin && (
           <NavLink
             to="/admin"
+            className="nav-link-hover-danger"
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
@@ -160,6 +148,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
               fontWeight: isActive ? 500 : 400,
               whiteSpace: 'nowrap',
               position: 'relative',
+              transition: 'background 0.15s',
             })}
           >
             <AdminIcon />
@@ -209,6 +198,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
         )}
         <NavLink
           to="/settings"
+          className="nav-link-hover"
           style={({ isActive }) => ({
             display: 'flex',
             alignItems: 'center',
@@ -221,7 +211,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
             color: isActive ? 'var(--accent)' : 'var(--fg-muted)',
             textDecoration: 'none',
             fontSize: 13,
-            transition: 'background 0.1s, color 0.1s',
+            transition: 'background 0.15s, color 0.15s',
             whiteSpace: 'nowrap',
           })}
         >
@@ -232,6 +222,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
         <button
           onClick={onToggleCompact}
           aria-label={compact ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="nav-link-hover"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -244,7 +235,7 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
             color: 'var(--fg-muted)',
             fontSize: 13,
             cursor: 'pointer',
-            transition: 'color 0.1s',
+            transition: 'background 0.15s, color 0.15s',
             width: '100%',
             whiteSpace: 'nowrap',
           }}
@@ -279,9 +270,13 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
               gap: 5,
               whiteSpace: 'nowrap',
             }}
-            title={updateAvailable ? `v${versionStatus?.latest ?? ''} available` : undefined}
+            title={
+              updateAvailable
+                ? `Update available: v${versionStatus?.latest ?? ''}`
+                : `App version v${versionStatus?.current ?? __APP_VERSION__}`
+            }
           >
-            {updateAvailable && (
+            {updateAvailable ? (
               <svg
                 width="11"
                 height="11"
@@ -294,7 +289,8 @@ export function Sidebar({ compact, onToggleCompact }: SidebarProps) {
               >
                 <polyline points="18 15 12 9 6 15" />
               </svg>
-            )}
+            ) : null}
+            <span style={{ color: 'var(--fg-muted)', opacity: 0.6 }}>Version</span>
             <span>v{versionStatus?.current ?? __APP_VERSION__}</span>
           </div>
         )}
