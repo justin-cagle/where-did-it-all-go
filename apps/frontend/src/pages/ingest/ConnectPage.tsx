@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ExternalLink, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { useHousehold } from '@/hooks/use-household'
+import { ApiError } from '@/api/client'
 import { useCreateSyncConfigApiV1HouseholdsHouseholdIdIngestSyncConfigsPost } from '@/api/generated/ingest/ingest'
 
 const ERR_INVALID = 'Invalid token. Check that you copied the full token from SimpleFIN Bridge.'
@@ -125,18 +126,11 @@ export function ConnectPage() {
           void navigate(`/settings/ingest/connect/${config.id}/map?wizard=true`)
         },
         onError: (err: unknown) => {
-          const status = (err as { response?: { status?: number } })?.response?.status ?? 0
-          const detail =
-            (
-              err as { response?: { data?: { detail?: string } } }
-            )?.response?.data?.detail?.toLowerCase() ?? ''
+          const status = err instanceof ApiError ? err.status : 0
+          const detail = err instanceof ApiError ? err.message.toLowerCase() : ''
           if (status === 409 || detail.includes('claimed')) {
             setError(ERR_CLAIMED)
-          } else if (
-            status === 502 ||
-            detail.includes('could not reach') ||
-            detail.includes('connectivity')
-          ) {
+          } else if (status === 502 || detail.includes('could not reach')) {
             setError(ERR_NETWORK)
           } else {
             setError(ERR_INVALID)
