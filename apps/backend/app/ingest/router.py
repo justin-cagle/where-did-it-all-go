@@ -102,8 +102,12 @@ def _exchange_setup_token(setup_token: str) -> str:
     except Exception:  # noqa: S110
         pass
     try:
-        # SimpleFIN claim endpoint requires POST with empty body (Content-Length: 0).
-        req = urllib.request.Request(claim_url, data=b"")  # noqa: S310
+        # SimpleFIN sits behind Cloudflare; python-urllib UA triggers error 1010.
+        req = urllib.request.Request(  # noqa: S310
+            claim_url,
+            data=b"",
+            headers={"User-Agent": "wdiag-finance/0 httpx/0.28", "Accept": "*/*"},
+        )
         with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
             access_url = resp.read().decode("utf-8").strip()
     except urllib.error.HTTPError as exc:
