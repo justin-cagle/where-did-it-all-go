@@ -32,6 +32,7 @@ import type { MembershipOut } from '@/api/generated/model/membershipOut'
 import type { InvitationOut } from '@/api/generated/model/invitationOut'
 import { VisibilityMode } from '@/api/generated/model/visibilityMode'
 import { CurrencySelect } from '@/components/CurrencySelect'
+import { ApiError } from '@/api/client'
 import { useAuthStore } from '@/store'
 
 const VISIBILITY_OPTIONS = [
@@ -301,7 +302,7 @@ export function HouseholdPage() {
       clearUser()
       navigate('/login', { replace: true })
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+      const detail = err instanceof ApiError ? err.message : undefined
       setLeaveError(detail ?? 'Failed to leave household')
       setConfirmLeave(false)
     }
