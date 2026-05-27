@@ -67,6 +67,7 @@ async def fetch_transactions(
 
     results: list[ParsedTransaction] = []
     for account in data.get("accounts", []):
+        simplefin_account_id = str(account.get("id", ""))
         currency = str(account.get("currency", "USD")).upper()
         for txn in account.get("transactions", []):
             raw_id = txn.get("id")
@@ -101,6 +102,7 @@ async def fetch_transactions(
                     description=description,
                     merchant_name=txn.get("payee") or None,
                     transaction_type_hint=None,
+                    source_account_id=simplefin_account_id or None,
                 )
             )
 

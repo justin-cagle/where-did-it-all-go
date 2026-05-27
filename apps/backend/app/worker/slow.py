@@ -20,6 +20,7 @@ from app.households.jobs import cleanup_unassigned_accounts, expire_stale_invite
 from app.ingest import (
     process_upload_job,
     reset_requests_today_job,
+    schedule_syncs_job,
     sync_account_job,
     sync_account_job_initial,
 )
@@ -37,6 +38,7 @@ class WorkerSettings:
         reclassify_all_job,
         sync_account_job,
         sync_account_job_initial,
+        schedule_syncs_job,
         process_upload_job,
         reset_requests_today_job,
         recurrence_detection_sweep_job,
@@ -57,6 +59,7 @@ class WorkerSettings:
         cron(check_backup_health_job, hour=2, minute=0),
         cron(reset_requests_today_job, hour=0, minute=0),
         cron(expire_stale_invites, hour=1, minute=0),
+        cron(schedule_syncs_job, minute=0),
     ]
 
     redis_settings: RedisSettings = get_redis_settings()

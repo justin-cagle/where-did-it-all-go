@@ -25,3 +25,6 @@ class ParsedTransaction:
     external_id: str | None = None
     merchant_name: str | None = None
     transaction_type_hint: str | None = None
+    # Set by SimpleFIN parser to route transactions to the correct account;
+    # None for OFX/CSV sources where account is implicit.
+    source_account_id: str | None = None
