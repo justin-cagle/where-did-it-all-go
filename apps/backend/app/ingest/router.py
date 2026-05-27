@@ -89,13 +89,22 @@ def _exchange_setup_token(setup_token: str) -> str:
     try:
         # SimpleFIN tokens use URL-safe base64 (-/_); normalise padding then decode.
         token = setup_token.strip().rstrip("=")
-        token += "=" * (4 - len(token) % 4)
-        claim_url = base64.urlsafe_b64decode(token).decode("utf-8").strip()
+        padding = (4 - len(token) % 4) % 4
+        claim_url = base64.urlsafe_b64decode(token + "=" * padding).decode("utf-8").strip()
     except Exception as exc:
         logger.warning("simplefin.token_exchange_value_error", detail=str(exc))
         raise _SimplefinTokenError(f"setup token is not valid base64: {exc}") from exc
     try:
-        with urllib.request.urlopen(claim_url, timeout=15) as resp:  # noqa: S310
+        from urllib.parse import urlparse
+
+        parsed = urlparse(claim_url)
+        logger.info("simplefin.token_exchange_attempt", scheme=parsed.scheme, host=parsed.netloc)
+    except Exception:  # noqa: S110
+        pass
+    try:
+        # SimpleFIN claim endpoint requires POST (not GET) — GET returns 403.
+        req = urllib.request.Request(claim_url, method="POST")  # noqa: S310
+        with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
             access_url = resp.read().decode("utf-8").strip()
     except urllib.error.HTTPError as exc:
         try:
