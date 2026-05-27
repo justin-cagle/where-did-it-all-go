@@ -87,8 +87,12 @@ def _exchange_setup_token(setup_token: str) -> str:
     Never log the setup_token or the returned access URL.
     """
     try:
-        claim_url = base64.b64decode(setup_token.strip()).decode("utf-8").strip()
+        # SimpleFIN tokens use URL-safe base64 (-/_); normalise padding then decode.
+        token = setup_token.strip().rstrip("=")
+        token += "=" * (4 - len(token) % 4)
+        claim_url = base64.urlsafe_b64decode(token).decode("utf-8").strip()
     except Exception as exc:
+        logger.warning("simplefin.token_exchange_value_error", detail=str(exc))
         raise _SimplefinTokenError(f"setup token is not valid base64: {exc}") from exc
     try:
         with urllib.request.urlopen(claim_url, timeout=15) as resp:  # noqa: S310
@@ -121,6 +125,7 @@ def _exchange_setup_token(setup_token: str) -> str:
         )
         raise _SimplefinNetworkError(f"SimpleFIN token exchange failed: {exc}") from exc
     if not access_url:
+        logger.warning("simplefin.token_exchange_empty_response")
         raise _SimplefinTokenError("SimpleFIN returned empty access URL")
     return access_url
 
