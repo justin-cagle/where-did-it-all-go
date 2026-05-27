@@ -152,17 +152,10 @@ async def _run_simplefin_sync(
         accounts = list(acct_result.scalars().all())
 
     for acct in accounts:
-        acct_txns = (
-            [
-                t
-                for t in parsed
-                if acct.simplefin_account_id
-                and t.external_id
-                and t.external_id.startswith(str(acct.simplefin_account_id) + ":")
-            ]
-            if acct.simplefin_account_id
-            else parsed
-        )
+        if acct.simplefin_account_id:
+            acct_txns = [t for t in parsed if t.source_account_id == str(acct.simplefin_account_id)]
+        else:
+            acct_txns = parsed
 
         if not acct_txns:
             continue
@@ -308,6 +301,61 @@ async def process_upload_job(
         "duplicate": pipeline_result.duplicate,
         "errors": pipeline_result.errors,
     }
+
+
+async def schedule_syncs_job(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Hourly ARQ cron: enqueue sync_account_job for all SyncConfigs that are due.
+
+    A config is due when:
+      - sync_enabled is True and status is not "disabled"
+      - rate_limited configs are skipped unless next_sync_at has passed
+      - last_synced_at is None (never synced) OR older than sync_interval_hours
+    """
+    import arq
+
+    from app.worker.settings import get_redis_settings
+
+    _ = ctx
+    now = datetime.now(tz=UTC)
+    factory = get_session_factory()
+
+    async with factory() as session:
+        result = await session.execute(
+            sa.select(SyncConfig).where(
+                SyncConfig.archived_at.is_(None),
+                SyncConfig.sync_enabled.is_(True),
+                SyncConfig.status != "disabled",
+            )
+        )
+        all_configs = list(result.scalars().all())
+
+    configs_due: list[SyncConfig] = []
+    for c in all_configs:
+        if c.status == "rate_limited":
+            if c.next_sync_at is None or now < c.next_sync_at:
+                continue
+        if c.last_synced_at is None:
+            configs_due.append(c)
+            continue
+        due_at = c.last_synced_at + timedelta(hours=c.sync_interval_hours)
+        if now >= due_at:
+            configs_due.append(c)
+
+    logger.info("schedule_syncs_job.start", configs_due=len(configs_due))
+
+    pool = await arq.create_pool(get_redis_settings())
+    enqueued = 0
+    try:
+        for c in configs_due:
+            job = await pool.enqueue_job("sync_account_job", sync_config_id=str(c.id))
+            if job is not None:
+                enqueued += 1
+    finally:
+        await pool.aclose()
+
+    skipped = len(configs_due) - enqueued
+    logger.info("schedule_syncs_job.complete", enqueued=enqueued, skipped=skipped)
+    return {"configs_due": len(configs_due), "enqueued": enqueued}
 
 
 async def reset_requests_today_job(ctx: dict[str, Any]) -> dict[str, Any]:

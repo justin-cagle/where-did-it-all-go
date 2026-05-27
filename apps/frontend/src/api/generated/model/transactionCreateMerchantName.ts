@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.52
+ * OpenAPI spec version: 0.2.53
  */
 
 export type TransactionCreateMerchantName = string | null
