@@ -26,6 +26,7 @@ import uuid
 from typing import Annotated
 
 import arq
+import structlog
 from arq.connections import RedisSettings
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +55,7 @@ from app.worker.settings import get_redis_settings
 
 router = APIRouter(tags=["ingest"])
 limiter = get_limiter()
+logger = structlog.get_logger(__name__)
 
 _DbSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -97,14 +99,26 @@ def _exchange_setup_token(setup_token: str) -> str:
         except Exception:
             body = ""
         combined = (body + " " + str(exc)).lower()
-        if "already" in combined or "claimed" in combined:
+        # SimpleFIN returns 403 for already-claimed tokens (in addition to body text signals)
+        if exc.code == 403 or "already" in combined or "claimed" in combined:
+            logger.warning("simplefin.token_claimed", http_status=exc.code)
             raise _SimplefinTokenError("token already claimed", claimed=True) from exc
+        logger.warning(
+            "simplefin.token_exchange_http_error", http_status=exc.code, body_prefix=body[:120]
+        )
         raise _SimplefinTokenError(f"SimpleFIN returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
+        logger.warning("simplefin.token_exchange_network_error", reason=str(exc.reason))
         raise _SimplefinNetworkError(f"cannot reach SimpleFIN: {exc.reason}") from exc
     except ValueError as exc:
+        logger.warning("simplefin.token_exchange_value_error", detail=str(exc))
         raise _SimplefinTokenError(f"invalid setup token format: {exc}") from exc
     except Exception as exc:
+        logger.warning(
+            "simplefin.token_exchange_unexpected_error",
+            exc_type=type(exc).__name__,
+            detail=str(exc),
+        )
         raise _SimplefinNetworkError(f"SimpleFIN token exchange failed: {exc}") from exc
     if not access_url:
         raise _SimplefinTokenError("SimpleFIN returned empty access URL")

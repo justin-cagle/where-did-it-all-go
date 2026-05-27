@@ -7,7 +7,7 @@ packages = ["app"]
 
 [project]
 name = "wdiag-backend"
-version = "0.2.46"
+version = "0.2.47"
 description = "WDIAG — Where Did It All Go: personal finance backend"
 requires-python = ">=3.12"
 dependencies = [
