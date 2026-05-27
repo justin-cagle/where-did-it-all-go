@@ -289,10 +289,23 @@ async def trigger_sync(
 
     pool = await _get_arq_pool()
     try:
-        await pool.enqueue_job(
+        arq_job = await pool.enqueue_job(
             "sync_account_job",
             sync_config_id=str(config.id),
+            trigger_import_job_id=str(job_row.id),
         )
+        logger.info(
+            "trigger_sync.enqueued",
+            sync_config_id=str(config.id),
+            import_job_id=str(job_row.id),
+            arq_job_id=arq_job.job_id if arq_job else None,
+        )
+        if arq_job is None:
+            logger.warning(
+                "trigger_sync.enqueue_returned_none",
+                sync_config_id=str(config.id),
+                import_job_id=str(job_row.id),
+            )
     finally:
         await pool.aclose()
 

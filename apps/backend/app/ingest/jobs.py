@@ -35,6 +35,7 @@ _REQUESTS_WARNING_THRESHOLD = 20
 async def _run_simplefin_sync(
     sync_config_id: str,
     lookback_days: int = _SIMPLEFIN_LOOKBACK_DAYS,
+    trigger_import_job_id: str | None = None,
 ) -> dict[str, Any]:
     """Core SimpleFIN sync logic. Returns result dict."""
     from app.accounts.models import Account
@@ -42,24 +43,43 @@ async def _run_simplefin_sync(
     from app.ingest.parsers.simplefin import fetch_transactions
 
     config_id = uuid.UUID(sync_config_id)
+    trigger_job_id = uuid.UUID(trigger_import_job_id) if trigger_import_job_id else None
     logger.info("sync_account_job.start", sync_config_id=sync_config_id)
 
     factory = get_session_factory()
     settings = get_settings()
 
+    if trigger_job_id:
+        async with factory() as run_session:
+            await service.mark_job_running(run_session, job_id=trigger_job_id)
+            await run_session.commit()
+
     async with factory() as session:
         result = await session.execute(sa.select(SyncConfig).where(SyncConfig.id == config_id))
         config = result.scalar_one_or_none()
         if config is None:
+            if trigger_job_id:
+                await service.mark_job_failed(
+                    session, job_id=trigger_job_id, error="sync config not found"
+                )
+                await session.commit()
             logger.error("sync_account_job.config_not_found", sync_config_id=sync_config_id)
             return {"error": "sync config not found"}
 
         if not config.sync_enabled or config.status == "disabled":
+            if trigger_job_id:
+                await service.mark_job_failed(session, job_id=trigger_job_id, error="sync disabled")
+                await session.commit()
             logger.info("sync_account_job.skipped_disabled", sync_config_id=sync_config_id)
             return {"skipped": "sync disabled"}
 
         if config.status == "rate_limited" and config.next_sync_at:
             if datetime.now(tz=UTC) < config.next_sync_at:
+                if trigger_job_id:
+                    await service.mark_job_failed(
+                        session, job_id=trigger_job_id, error="rate limited"
+                    )
+                    await session.commit()
                 logger.info("sync_account_job.skipped_rate_limited", sync_config_id=sync_config_id)
                 return {"skipped": "rate limited"}
 
@@ -75,6 +95,11 @@ async def _run_simplefin_sync(
         accounts = list(acct_result.scalars().all())
 
         if not accounts:
+            if trigger_job_id:
+                await service.mark_job_failed(
+                    session, job_id=trigger_job_id, error="no accounts mapped"
+                )
+                await session.commit()
             logger.info("sync_account_job.no_accounts", sync_config_id=sync_config_id)
             return {"skipped": "no accounts mapped"}
 
@@ -87,6 +112,10 @@ async def _run_simplefin_sync(
                 status="error",
                 last_error=f"credential decryption failed: {exc}",
             )
+            if trigger_job_id:
+                await service.mark_job_failed(
+                    session, job_id=trigger_job_id, error="credential decryption failed"
+                )
             await session.commit()
             logger.error("sync_account_job.credential_error", sync_config_id=sync_config_id)
             return {"error": "credential decryption failed"}
@@ -100,6 +129,10 @@ async def _run_simplefin_sync(
                 status="error",
                 last_error="missing access_url in credentials",
             )
+            if trigger_job_id:
+                await service.mark_job_failed(
+                    err_session, job_id=trigger_job_id, error="missing access_url"
+                )
             await err_session.commit()
         return {"error": "missing access_url"}
 
@@ -133,6 +166,8 @@ async def _run_simplefin_sync(
                     status="error",
                     last_error=error_str,
                 )
+            if trigger_job_id:
+                await service.mark_job_failed(err_session, job_id=trigger_job_id, error=error_str)
             await err_session.commit()
         logger.error("sync_account_job.fetch_failed", error=error_str)
         return {"error": error_str}
@@ -191,6 +226,14 @@ async def _run_simplefin_sync(
             status=new_status,
             last_error=None,
         )
+        if trigger_job_id:
+            await service.mark_job_complete(
+                session,
+                job_id=trigger_job_id,
+                imported=total_imported,
+                duplicate=total_duplicate,
+                errors=total_errors,
+            )
         await session.commit()
 
     logger.info(
@@ -208,10 +251,19 @@ async def _run_simplefin_sync(
     }
 
 
-async def sync_account_job(ctx: dict[str, Any], *, sync_config_id: str) -> dict[str, Any]:
+async def sync_account_job(
+    ctx: dict[str, Any],
+    *,
+    sync_config_id: str,
+    trigger_import_job_id: str | None = None,
+) -> dict[str, Any]:
     """Fetch transactions from SimpleFIN for one SyncConfig and run the pipeline."""
     _ = ctx
-    return await _run_simplefin_sync(sync_config_id, lookback_days=_SIMPLEFIN_LOOKBACK_DAYS)
+    return await _run_simplefin_sync(
+        sync_config_id,
+        lookback_days=_SIMPLEFIN_LOOKBACK_DAYS,
+        trigger_import_job_id=trigger_import_job_id,
+    )
 
 
 async def sync_account_job_initial(ctx: dict[str, Any], *, sync_config_id: str) -> dict[str, Any]:

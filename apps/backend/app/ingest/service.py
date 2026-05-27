@@ -399,6 +399,28 @@ async def mark_job_failed(
     )
 
 
+async def mark_job_complete(
+    session: AsyncSession,
+    *,
+    job_id: uuid.UUID,
+    imported: int = 0,
+    duplicate: int = 0,
+    errors: int = 0,
+) -> None:
+    """Transition ImportJob to completed state with aggregate counts."""
+    await session.execute(
+        sa.update(ImportJob)
+        .where(ImportJob.id == job_id)
+        .values(
+            status=str(ImportStatus.COMPLETED),
+            completed_at=datetime.now(tz=UTC),
+            imported_count=imported,
+            duplicate_count=duplicate,
+            error_count=errors,
+        )
+    )
+
+
 async def get_import_job(
     session: AsyncSession,
     *,
