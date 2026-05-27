@@ -102,8 +102,8 @@ def _exchange_setup_token(setup_token: str) -> str:
     except Exception:  # noqa: S110
         pass
     try:
-        # SimpleFIN claim endpoint requires POST (not GET) — GET returns 403.
-        req = urllib.request.Request(claim_url, method="POST")  # noqa: S310
+        # SimpleFIN claim endpoint requires POST with empty body (Content-Length: 0).
+        req = urllib.request.Request(claim_url, data=b"")  # noqa: S310
         with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
             access_url = resp.read().decode("utf-8").strip()
     except urllib.error.HTTPError as exc:
@@ -114,7 +114,7 @@ def _exchange_setup_token(setup_token: str) -> str:
         combined = (body + " " + str(exc)).lower()
         # SimpleFIN returns 403 for already-claimed tokens (in addition to body text signals)
         if exc.code == 403 or "already" in combined or "claimed" in combined:
-            logger.warning("simplefin.token_claimed", http_status=exc.code)
+            logger.warning("simplefin.token_claimed", http_status=exc.code, body_prefix=body[:120])
             raise _SimplefinTokenError("token already claimed", claimed=True) from exc
         logger.warning(
             "simplefin.token_exchange_http_error", http_status=exc.code, body_prefix=body[:120]
