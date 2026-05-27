@@ -8,6 +8,7 @@ import {
   useLogoutApiV1AuthLogoutPost,
 } from '@/api/generated/households/households'
 import type { MembershipOut } from '@/api/generated/model/membershipOut'
+import { ApiError } from '@/api/client'
 import { useAuthStore } from '@/store'
 import { useHousehold } from '@/hooks/use-household'
 
@@ -49,7 +50,7 @@ export function DangerZonePage() {
       clearUser()
       navigate('/login', { replace: true })
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+      const detail = err instanceof ApiError ? err.message : undefined
       setArchiveError(detail ?? 'Failed to archive household')
       setConfirmOpen(false)
       setConfirmName('')
