@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.49
+ * OpenAPI spec version: 0.2.50
  */
 import type { BudgetLineOut } from './budgetLineOut'
 import type { BudgetLineStatusOutPeriodActual } from './budgetLineStatusOutPeriodActual'
