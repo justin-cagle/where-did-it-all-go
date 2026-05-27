@@ -80,11 +80,16 @@ class _SimplefinTokenError(Exception):
 def _exchange_setup_token(setup_token: str) -> str:
     """Exchange a SimpleFIN setup token for an access URL.
 
-    Setup tokens are one-time-use URLs that return the access URL on GET.
+    SimpleFIN setup tokens are base64-encoded claim URLs. Decode first, then
+    GET the claim URL — SimpleFIN returns the access URL as plain text.
     Never log the setup_token or the returned access URL.
     """
     try:
-        with urllib.request.urlopen(setup_token, timeout=15) as resp:  # noqa: S310
+        claim_url = base64.b64decode(setup_token.strip()).decode("utf-8").strip()
+    except Exception as exc:
+        raise _SimplefinTokenError(f"setup token is not valid base64: {exc}") from exc
+    try:
+        with urllib.request.urlopen(claim_url, timeout=15) as resp:  # noqa: S310
             access_url = resp.read().decode("utf-8").strip()
     except urllib.error.HTTPError as exc:
         try:
