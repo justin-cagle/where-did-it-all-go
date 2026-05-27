@@ -20,6 +20,7 @@ Routes:
 
 import base64
 import json
+import urllib.error
 import urllib.request
 import uuid
 from typing import Annotated
@@ -64,6 +65,18 @@ async def _get_arq_pool() -> arq.ArqRedis:
     return await arq.create_pool(redis_settings)
 
 
+class _SimplefinNetworkError(Exception):
+    """Raised when the backend cannot reach SimpleFIN Bridge."""
+
+
+class _SimplefinTokenError(Exception):
+    """Raised when the setup token is invalid or already claimed."""
+
+    def __init__(self, msg: str, *, claimed: bool = False) -> None:
+        super().__init__(msg)
+        self.claimed = claimed
+
+
 def _exchange_setup_token(setup_token: str) -> str:
     """Exchange a SimpleFIN setup token for an access URL.
 
@@ -73,10 +86,23 @@ def _exchange_setup_token(setup_token: str) -> str:
     try:
         with urllib.request.urlopen(setup_token, timeout=15) as resp:  # noqa: S310
             access_url = resp.read().decode("utf-8").strip()
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            body = ""
+        combined = (body + " " + str(exc)).lower()
+        if "already" in combined or "claimed" in combined:
+            raise _SimplefinTokenError("token already claimed", claimed=True) from exc
+        raise _SimplefinTokenError(f"SimpleFIN returned HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise _SimplefinNetworkError(f"cannot reach SimpleFIN: {exc.reason}") from exc
+    except ValueError as exc:
+        raise _SimplefinTokenError(f"invalid setup token format: {exc}") from exc
     except Exception as exc:
-        raise ValueError(f"SimpleFIN token exchange failed: {exc}") from exc
+        raise _SimplefinNetworkError(f"SimpleFIN token exchange failed: {exc}") from exc
     if not access_url:
-        raise ValueError("SimpleFIN returned empty access URL")
+        raise _SimplefinTokenError("SimpleFIN returned empty access URL")
     return access_url
 
 
@@ -115,16 +141,20 @@ async def create_sync_config(
             )
         try:
             access_url = _exchange_setup_token(body.setup_token)
-        except ValueError as exc:
-            error_str = str(exc).lower()
-            if "already" in error_str or "claimed" in error_str:
+        except _SimplefinTokenError as exc:
+            if exc.claimed:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="This token has already been used. Generate a new one from SimpleFIN.",
                 ) from exc
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Could not reach SimpleFIN. Check your connection and try again.",
+                detail="Invalid setup token. Make sure you copied the full token from SimpleFIN Bridge.",  # noqa: E501
+            ) from exc
+        except _SimplefinNetworkError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Could not reach SimpleFIN Bridge. Check server connectivity and try again.",
             ) from exc
         credentials = {"access_url": access_url}
 

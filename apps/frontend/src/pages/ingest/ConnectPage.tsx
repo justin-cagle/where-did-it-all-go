@@ -132,10 +132,14 @@ export function ConnectPage() {
             )?.response?.data?.detail?.toLowerCase() ?? ''
           if (status === 409 || detail.includes('claimed')) {
             setError(ERR_CLAIMED)
-          } else if (status === 400 || detail.includes('invalid') || detail.includes('token')) {
-            setError(ERR_INVALID)
-          } else {
+          } else if (
+            status === 502 ||
+            detail.includes('could not reach') ||
+            detail.includes('connectivity')
+          ) {
             setError(ERR_NETWORK)
+          } else {
+            setError(ERR_INVALID)
           }
         },
       }
