@@ -3,7 +3,7 @@
  * Do not edit manually.
  * WDIAG — Where Did It All Go
  * Personal finance budgeting and intelligence
- * OpenAPI spec version: 0.2.50
+ * OpenAPI spec version: 0.2.51
  */
 import type { Cadence } from './cadence'
 import type { RecurrenceCreateExpectedAmount } from './recurrenceCreateExpectedAmount'
